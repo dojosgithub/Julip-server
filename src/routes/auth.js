@@ -40,6 +40,8 @@ router.post('/verify-email', CONTROLLER_AUTH.verifyEmail)
 
 router.post('/get-code', CONTROLLER_AUTH.resendEmailVerificationCode)
 
+router.post('/create-slug', CONTROLLER_AUTH.createSlug)
+
 router.post(
   '/sendNotification',
   Authenticate(),

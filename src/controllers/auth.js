@@ -433,6 +433,27 @@ export const CONTROLLER_AUTH = {
     res.json({ message: 'Password updated successfully.' })
   }),
 
+  createSlug: asyncMiddleware(async (req, res) => {
+    const { userId, userName } = req.body
+
+    if (!userId || !userName) {
+      return res.status(400).json({ message: 'User ID and username are required.' })
+    }
+
+    const existingUser = await User.findOne({ userName })
+    if (existingUser) {
+      return res.status(400).json({ message: 'Username is already taken.' })
+    }
+
+    const user = await User.findByIdAndUpdate(userId, { userName }, { new: true, runValidators: true })
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' })
+    }
+
+    res.status(200).json({ message: 'Username added successfully.', user })
+  }),
+
   forgotPassword: asyncMiddleware(async (req, res) => {
     // console.log('INSIDE1')
     const { email } = req.body
