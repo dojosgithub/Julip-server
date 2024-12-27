@@ -6,7 +6,6 @@ export * from './comment'
 export * from './group'
 export * from './challenge'
 export * from './exercise'
-export * from './badge'
 export * from './progress'
 
 export * from './payment'

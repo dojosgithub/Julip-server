@@ -18,7 +18,7 @@ const router = Router()
 
 // Zeal App User Routes
 
-router.post('/get-code', CONTROLLER_AUTH.getCode)
+// router.post('/get-code', CONTROLLER_AUTH.getCode)
 
 router.post('/verify-account', CONTROLLER_AUTH.verifyAccount)
 
@@ -30,13 +30,15 @@ router.post('/sign-in', CONTROLLER_AUTH.signIn)
 
 router.post('/forgot-password', CONTROLLER_AUTH.forgotPassword)
 
+router.post('/forgot-password-link', CONTROLLER_AUTH.forgotPasswordLink)
+
+router.post('/reset-password', CONTROLLER_AUTH.resetPassword)
+
 router.post('/verify', CONTROLLER_AUTH.verifyUpdatePasswordCode)
 
-router.post(
-  '/forgot-password-update',
+router.post('/verify-email', CONTROLLER_AUTH.verifyEmail)
 
-  CONTROLLER_AUTH.forgotPasswordUpdate
-)
+router.post('/get-code', CONTROLLER_AUTH.resendEmailVerificationCode)
 
 router.post(
   '/sendNotification',
