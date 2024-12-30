@@ -7,8 +7,8 @@ import commentRoutes from './comment'
 import groupRoutes from './group'
 import challengeRoutes from './challenge'
 import exerciseRoutes from './exercise'
-import badgeRoutes from './badge'
 import progressRoutes from './progress'
+import profileRoutes from './profile'
 import errorRoutes from './error'
 
 const router = Router()
@@ -21,8 +21,8 @@ router.use('/comment', commentRoutes)
 router.use('/group', groupRoutes)
 router.use('/challenge', challengeRoutes)
 router.use('/exercise', exerciseRoutes)
-router.use('/badge', badgeRoutes)
 router.use('/progress', progressRoutes)
+router.use('/profile', profileRoutes)
 router.use('/error', errorRoutes)
 
 export default router

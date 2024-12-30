@@ -7,83 +7,42 @@ import mongooseAggregatePaginate from 'mongoose-aggregate-paginate-v2'
 
 export const userSchema = new Schema(
   {
-    firstName: String,
-    lastName: String,
+    fullName: String,
     email: {
       type: String,
       required: true,
       unique: true,
     },
-    gender: String,
-    file: Object,
-    age: String,
-    weight: {
-      value: String,
-      unit: {
-        type: String,
-        enum: ['imperial', 'metric'],
-      },
-    },
-    height: {
-      value: String,
-      unit: {
-        type: String,
-        enum: ['imperial', 'metric'],
-      },
-    },
-    followers: { type: [Schema.Types.ObjectId], ref: 'User', default: [] },
-    following: { type: [Schema.Types.ObjectId], ref: 'User', default: [] },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    }, // added
+    resetToken: String, // added
+    resetTokenExpiry: Date, // added
+    fullName: String, // added
+    userName: {
+      type: String,
+      unique: true,
+    }, // added
+    avatar: Object,
     password: { type: String, select: false },
-    location: String,
-    username: String,
+    // username: String,
     accountType: String,
-    about: String,
     role: Object,
-    userTypes: Array,
+    userTypes: {
+      type: String,
+      enum: ['Premium', 'Basic'],
+      default: 'Basic',
+    },
+    bio: String,
+    profileName: String,
     refreshTokens: [String],
-
-    challenges: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'Challenge',
-      },
-    ],
-
-    badges: [
-      {
-        badgeId: {
-          type: Schema.Types.ObjectId,
-          ref: 'Badge',
-        },
-        name: String,
-        quantity: Number,
-        _type: String,
-        image: String,
-      },
-    ],
-
     lastActive: {
       type: Date,
     },
-
-    points: {
-      type: Number,
-      default: 0,
-    },
-
-    fcmToken: String,
-    totalCaloriesBurnt: {
-      type: Number,
-      default: 0,
-    },
-    totalTimeInSeconds: {
-      type: Number,
-      default: 0,
-    },
-
-    level: {
-      type: String,
-      default: 'Beginner',
+    profile: {
+      type: Schema.Types.ObjectId,
+      ref: 'Profile',
     },
   },
   { versionKey: false, timestamps: true }
@@ -114,18 +73,18 @@ export const validateRegistration = (obj) => {
     email: Joi.string().email({ minDomainSegments: 2 }).required(),
     password: Joi.string().required(),
     gender: Joi.string(),
-    age: Joi.string(),
-    location: Joi.string(),
+    // age: Joi.string(),
+    // location: Joi.string(),
     username: Joi.string(),
-    about: Joi.string(),
-    weight: Joi.object({
-      value: Joi.number(),
-      unit: Joi.string().valid('imperial', 'metric'),
-    }),
-    height: Joi.object({
-      value: Joi.number(),
-      unit: Joi.string().valid('imperial', 'metric'),
-    }),
+    // about: Joi.string(),
+    // weight: Joi.object({
+    //   value: Joi.number(),
+    //   unit: Joi.string().valid('imperial', 'metric'),
+    // }),
+    // height: Joi.object({
+    //   value: Joi.number(),
+    //   unit: Joi.string().valid('imperial', 'metric'),
+    // }),
   }).options({ abortEarly: false })
 
   return schema.validate(obj)

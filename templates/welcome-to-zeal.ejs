@@ -206,6 +206,11 @@
 															<td class="pad" style="text-align:center;width:100%;">
 																<h1 style="margin: 0; color: #101010; direction: ltr; font-family: Arial, Helvetica Neue, Helvetica, sans-serif; font-size: 27px; font-weight: normal; letter-spacing: normal; line-height: 120%; text-align: center; margin-top: 0; margin-bottom: 0; mso-line-height-alt: 32.4px;"><strong>Hi, <%= emailProps.firstName %></strong></h1>
 															</td>
+															<% if (emailProps.text) { %>
+																<p style="margin: 0; color: #101010; direction: ltr; font-family: Arial, Helvetica Neue, Helvetica, sans-serif; font-size: 16px; font-weight: normal; letter-spacing: normal; line-height: 150%; text-align: center; margin-top: 10px; margin-bottom: 0; mso-line-height-alt: 24px;">
+																  <%= emailProps.text %>
+																</p>
+															  <% } %>
 														</tr>
 													</table>
 													<div class="spacer_block block-2" style="height:20px;line-height:35px;font-size:1px;">&#8202;</div>

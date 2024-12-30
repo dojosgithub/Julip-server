@@ -26,8 +26,8 @@ export const USER_LEVELS = {
 }
 
 export const USER_TYPES = {
-  SYS: 'System',
-  USR: 'User',
+  Premium: 'Premium',
+  Basic: 'Basic',
 }
 
 export const SYSTEM_STAFF_ROLE = {
