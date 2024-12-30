@@ -12,7 +12,7 @@ const admin = require('firebase-admin')
 dotenv.config()
 
 // * Models
-import { User, TOTP, Group, Post, Comment, Badge, Challenge, UserChallengeProgress } from '../models'
+import { User, Group, Challenge, Profile } from '../models'
 
 // * Middlewares
 import { asyncMiddleware } from '../middlewares'
@@ -129,10 +129,7 @@ export const CONTROLLER_PROFILE = {
 
   updateProfile: asyncMiddleware(async (req, res) => {
     const id = req.query.id
-    console.log('req.body', req.body)
-
     let body = JSON.parse(req.body.body)
-    console.log('body after', body)
 
     // Mapping of platforms to their base URLs
     const platformBaseUrls = {
@@ -155,7 +152,9 @@ export const CONTROLLER_PROFILE = {
         const baseUrl = platformBaseUrls[platform]
 
         if (!baseUrl) {
-          throw new Error(`Unsupported platform: ${platform}`)
+          return res.status(StatusCodes.BAD_REQUEST).json({
+            message: 'User not found.',
+          })
         }
 
         // Check if the provided URL is already a full URL
@@ -164,21 +163,70 @@ export const CONTROLLER_PROFILE = {
       })
     }
 
+    // Validate and process webLinks
+    if (body.webLinks && Array.isArray(body.webLinks)) {
+      body.webLinks = body.webLinks.map((webLink) => {
+        const { title, link } = webLink
+
+        if (!title || !link) {
+          return res.status(StatusCodes.BAD_REQUEST).json({
+            message: 'Both title and link are required for webLinks.',
+          })
+        }
+
+        // Check if the link is a valid URL (simple validation)
+        const fullLink = link.startsWith('http') ? link : `https://${link}`
+        return { title, link: fullLink }
+      })
+    }
+
     body = {
       avatar: req.file && req.file.path,
       ...body,
     }
 
-    const user = await User.findByIdAndUpdate(id, body, { new: true }).select('-password -refreshToken').lean()
-
-    if (!user)
+    const user = await User.findById(id).populate('profile').exec()
+    if (!user) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: 'User not found.',
       })
+    }
+
+    const profileData = {
+      bio: body.bio,
+      profileName: body.profileName,
+      socialLinks: body.socialLinks,
+      webLinks: body.webLinks,
+      imageStyle: body.imageStyle,
+    }
+
+    let profile
+    if (user.profile) {
+      profile = await Profile.findByIdAndUpdate(user.profile._id, profileData, { new: true })
+    } else {
+      profile = await Profile.create(profileData)
+      user.profile = profile._id
+      await user.save()
+    }
 
     res.status(StatusCodes.OK).json({
-      data: user,
+      data: profile,
       message: 'Profile updated Successfully',
+    })
+  }),
+
+  getUser: asyncMiddleware(async (req, res) => {
+    const id = req.query.id
+
+    const user = await User.findById(id)
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'User not found.',
+      })
+    }
+    res.status(StatusCodes.OK).json({
+      data: user,
+      message: 'User Details Successfully Fetched',
     })
   }),
 
