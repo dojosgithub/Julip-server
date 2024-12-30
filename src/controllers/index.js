@@ -7,6 +7,6 @@ export * from './group'
 export * from './challenge'
 export * from './exercise'
 export * from './progress'
-
+export * from './profile'
 export * from './payment'
 export * from './error'

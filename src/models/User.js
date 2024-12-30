@@ -34,9 +34,15 @@ export const userSchema = new Schema(
       enum: ['Premium', 'Basic'],
       default: 'Basic',
     },
+    bio: String,
+    profileName: String,
     refreshTokens: [String],
     lastActive: {
       type: Date,
+    },
+    profile: {
+      type: Schema.Types.ObjectId,
+      ref: 'Profile',
     },
   },
   { versionKey: false, timestamps: true }

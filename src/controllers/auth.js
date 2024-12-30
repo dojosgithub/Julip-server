@@ -445,11 +445,16 @@ export const CONTROLLER_AUTH = {
       return res.status(400).json({ message: 'Username is already taken.' })
     }
 
-    const user = await User.findByIdAndUpdate(userId, { userName }, { new: true, runValidators: true })
+    const user = await User.findById(userId)
 
     if (!user) {
       return res.status(404).json({ message: 'User not found.' })
     }
+    if (user.userName) {
+      return res.status(400).json({ message: 'Username has already been set and cannot be changed.' })
+    }
+    user.userName = userName
+    await user.save()
 
     res.status(200).json({ message: 'Username added successfully.', user })
   }),
