@@ -11,7 +11,6 @@ import { CONTROLLER_AUTH } from '../controllers'
 // * Middlewares
 import { validateMiddleware, permitMiddleware, Authenticate } from '../middlewares'
 import { parser } from '../utils/cloudinary'
-import { totpRateLimiter } from '../utils/rateLimiter'
 import { USER_TYPES } from '../utils'
 
 const router = Router()
