@@ -129,8 +129,6 @@ export const CONTROLLER_USER = {
 
   updateProfile: asyncMiddleware(async (req, res) => {
     const id = req.body.id
-    console.log('id ki koshis', id)
-    console.log('id ki body', req.body)
 
     let body = JSON.parse(req.body.body)
     body = {
