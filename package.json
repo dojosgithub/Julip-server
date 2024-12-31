@@ -109,6 +109,10 @@
     "stripe": "^8.213.0",
     "swagger-ui-express": "^4.5.0",
     "twilio": "^4.22.0",
+    "uuid": "^11.0.3",
     "yamljs": "^0.3.0"
+  },
+  "engines": {
+    "node": ">=16.x.x"
   }
 }

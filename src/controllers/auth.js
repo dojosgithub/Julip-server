@@ -6,6 +6,7 @@ import mongoose, { model } from 'mongoose'
 const axios = require('axios')
 import passport from 'passport'
 import dotenv from 'dotenv'
+import { v4 as uuidv4 } from 'uuid'
 
 const admin = require('firebase-admin')
 
@@ -176,7 +177,7 @@ export const CONTROLLER_AUTH = {
   }),
 
   signUp: asyncMiddleware(async (req, res) => {
-    let { firstName, lastName, email, password, weight, height, location, fcmToken, age } = req.body
+    let { fullName, email, password } = req.body
 
     const user = await User.findOne({
       email: email,
@@ -190,21 +191,13 @@ export const CONTROLLER_AUTH = {
     const hasedPassword = await generatePassword(password)
 
     const newUser = new User({
-      firstName,
-      lastName,
+      fullName,
       email,
       password: hasedPassword,
-      weight,
-      height,
-      file: 'https://res.cloudinary.com/dojo-dev/image/upload/v1721912391/biddi-cars-dev/1721912406433.png',
-      age,
-      accountType: 'Zeal-Account',
-      location,
-      points: 0,
-      fcmToken,
-      userTypes: [USER_TYPES.USR],
+      avatar: 'https://res.cloudinary.com/dojo-dev/image/upload/v1721912391/biddi-cars-dev/1721912406433.png',
+      accountType: 'Julip-Account',
+      userTypes: USER_TYPES.Basic,
       role: { name: SYSTEM_USER_ROLE.USR, shortName: getRoleShortName(USER_TYPES.USR, SYSTEM_USER_ROLE.USR) },
-      level: USER_LEVELS.BEG,
     })
 
     await newUser.save()
@@ -217,10 +210,29 @@ export const CONTROLLER_AUTH = {
 
     const tokens = await generateToken(tokenPayload)
 
-    // email temp here
+    ////// sending verification email ///////////////////////////////////////////////////////////////////
 
+    var secret = speakeasy.generateSecret({ length: 20 }).base32
+    var token = speakeasy.totp({
+      digits: 6,
+      secret: secret,
+      encoding: 'base32',
+      window: 6,
+    })
+    const TOTPToken = await generateOTToken({ secret })
+
+    // Find if the document with the phoneNumber exists in the database
+    let totp = await TOTP.findOneAndUpdate({ email }, { token: TOTPToken })
+
+    if (isEmpty(totp)) {
+      new TOTP({
+        email,
+        token: TOTPToken,
+      }).save()
+    }
     const sendEmail = await new Email({ email })
-    const emailProps = { firstName }
+    const emailProps = { firstName: token }
+    console.log('emailProps', emailProps)
     await sendEmail.welcomeToZeal(emailProps)
 
     res.status(StatusCodes.OK).json({
@@ -230,6 +242,65 @@ export const CONTROLLER_AUTH = {
       },
       message: 'User registered successfully',
     })
+  }),
+
+  resendEmailVerificationCode: asyncMiddleware(async (req, res) => {
+    const { email } = req.body
+
+    var secret = speakeasy.generateSecret({ length: 20 }).base32
+    var token = speakeasy.totp({
+      digits: 6,
+      secret: secret,
+      encoding: 'base32',
+      window: 6,
+    })
+
+    const TOTPToken = await generateOTToken({ secret })
+
+    // Find if the document with the phoneNumber exists in the database
+    let totp = await TOTP.findOneAndUpdate({ email }, { token: TOTPToken })
+    console.log('token resend', token)
+
+    if (isEmpty(totp)) {
+      new TOTP({
+        email,
+        token: TOTPToken,
+      }).save()
+    }
+    const sendEmail = await new Email({ email })
+    const emailProps = { firstName: token }
+    await sendEmail.welcomeToZeal(emailProps)
+    res.status(StatusCodes.OK).json({
+      message: 'Code sent',
+    })
+  }),
+
+  verifyEmail: asyncMiddleware(async (req, res) => {
+    const { email, code } = req.body
+    let totp = await TOTP.findOneAndDelete({ email })
+
+    if (!totp) {
+      return res.status(400).json({ message: 'No TOTP record found or it has already been used.' })
+    }
+
+    let decoded = await verifyTOTPToken(totp.token)
+
+    let verified = speakeasy.totp.verify({
+      digits: 6,
+      secret: decoded.secret,
+      encoding: 'base32',
+      token: code,
+      window: 10,
+    })
+
+    if (verified) {
+      const user = await User.findOne({ email })
+      user.isEmailVerified = true
+      await user.save()
+      res.status(200).json({ message: 'code verified' })
+    } else {
+      res.status(400).json({ message: 'Invalid verification code' })
+    }
   }),
 
   signIn: asyncMiddleware(async (req, res) => {
@@ -256,9 +327,6 @@ export const CONTROLLER_AUTH = {
       })
     }
 
-    if (fcmToken) {
-      user.fcmToken = fcmToken
-    }
     delete user.password
 
     const tokenPayload = {
@@ -288,16 +356,107 @@ export const CONTROLLER_AUTH = {
     const { userId } = req.body
 
     const user = await User.findById(userId)
+    console.log('testing', user, userId)
 
     if (!user) {
       return res.status(StatusCodes.NOT_FOUND).json({ message: 'User not found' })
     }
 
     if (user) {
-      ;(user.refreshTokens = ''), (user.accessToken = ''), (user.fcmToken = ''), await user.save()
+      user.refreshTokens = ''
+      user.accessToken = ''
+      await user.save()
     }
 
     res.status(StatusCodes.OK).json({ message: 'Logged out successfully' })
+  }),
+
+  forgotPasswordLink: asyncMiddleware(async (req, res) => {
+    const { email } = req.body
+
+    const user = await User.findOne({ email })
+
+    if (!user) {
+      return res.status(400).json({
+        message: 'Email provided is not valid',
+      })
+    }
+
+    if (user.accountType === 'Google-Account') {
+      return res.status(400).json({
+        message: 'Not a Zeal Account',
+      })
+    }
+
+    const resetToken = uuidv4()
+    console.log('resetToken', resetToken)
+
+    const resetTokenExpiry = Date.now() + 15 * 60 * 1000
+    // Save the token and expiry in the user's record
+    user.resetToken = resetToken
+    user.resetTokenExpiry = resetTokenExpiry
+    await user.save()
+
+    // Create the reset URL
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`
+
+    // Send email with the reset URL
+    const sendEmail = new Email({ email })
+    const emailProps = { firstName: resetUrl }
+    await sendEmail.welcomeToZeal(emailProps)
+    res.json({ message: 'Password reset link sent to your email.' })
+  }),
+
+  resetPassword: asyncMiddleware(async (req, res) => {
+    const { token, newPassword } = req.body
+
+    // Find the user by the reset token and check token validity
+    const user = await User.findOne({
+      resetToken: token,
+      resetTokenExpiry: { $gt: Date.now() }, // Ensure token hasn't expired
+    })
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired reset token.' })
+    }
+
+    // Update the user's password
+    const hashedPassword = await generatePassword(newPassword)
+    user.password = hashedPassword
+
+    // Clear the reset token and expiry
+    user.resetToken = undefined
+    user.resetTokenExpiry = undefined
+
+    await user.save()
+
+    res.json({ message: 'Password updated successfully.' })
+  }),
+
+  createSlug: asyncMiddleware(async (req, res) => {
+    const { userId, userName } = req.body
+
+    if (!userId || !userName) {
+      return res.status(400).json({ message: 'User ID and username are required.' })
+    }
+
+    const existingUser = await User.findOne({ userName })
+    if (existingUser) {
+      return res.status(400).json({ message: 'Username is already taken.' })
+    }
+
+    const user = await User.findById(userId)
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' })
+    }
+    if (user.userName) {
+      return res.status(400).json({ message: 'Username has already been set and cannot be changed.' })
+    }
+    user.userName = userName
+    await user.save()
+
+    res.status(200).json({ message: 'Username added successfully.', user })
   }),
 
   forgotPassword: asyncMiddleware(async (req, res) => {
