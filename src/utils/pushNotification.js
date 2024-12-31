@@ -5,14 +5,4 @@ export const sendPushNotification = ({ token, notification }) => {
     notification,
     token,
   }
-
-  admin
-    .messaging()
-    .send(message)
-    .then((response) => {
-      console.log('Notification sent:', response)
-    })
-    .catch((error) => {
-      console.error('Error sending notification:', error)
-    })
 }

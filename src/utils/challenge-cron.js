@@ -14,7 +14,6 @@ import { Notification } from '../models/Notifications'
 import { toObjectId } from './misc'
 import { User, Badge, Challenge, UserChallengeProgress } from '../models'
 import { sendPushNotification } from './pushNotification'
-const admin = require('firebase-admin')
 
 // "0 0 * * 0", Every sunday at 00:00 - Required
 // "59 14 * * 1", Every monday at 14:59

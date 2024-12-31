@@ -8,8 +8,6 @@ import passport from 'passport'
 import dotenv from 'dotenv'
 import { v4 as uuidv4 } from 'uuid'
 
-const admin = require('firebase-admin')
-
 dotenv.config()
 
 // * Models
@@ -17,53 +15,6 @@ import { User, TOTP, Group, Post, Comment, Badge, Challenge, UserChallengeProgre
 
 // * Middlewares
 import { asyncMiddleware } from '../middlewares'
-
-// * Services
-import {
-  addGroup,
-  getGroupsPaginated,
-  getGroupDetails,
-  updateGroupDetails,
-  getGroupMembersPaginated,
-  createPost,
-  getUserPostsPaginated,
-  updatePost,
-  getPostDetails,
-  getgroupsPostsPaginated,
-  getallPostsPaginated,
-  getPostLike,
-  getPostdisLike,
-  createComment,
-  updateComment,
-  getAllComments,
-  createExercise,
-  getAllExercises,
-  createBadge,
-  getABadge,
-  getAllBadge,
-  updateBadge,
-  createChallenge,
-  updateChallenge,
-  getAllZealAdminChallenges,
-  getFriendsChallenges,
-  getCommunityChallenges,
-  getUserProgress,
-  getUserExerciseLog,
-  getChallengeHistory,
-  getUserAllCurrentChallenges,
-  getAllFeaturedChallenges,
-  getUserCreatedChallenges,
-  getSpecificCommunityChallenges,
-  getAllPopularChallenges,
-  getChallengeDetails,
-  retrieveUserChallange,
-  getAllExercisesCategory,
-  getChallengeLeaderboard,
-  authenticateGoogleUser,
-  authenticateFacebookUser,
-  signupOAuthUser,
-  signinOAuthUser,
-} from '../services'
 
 // * Utilities
 import {
@@ -594,9 +545,6 @@ export const CONTROLLER_AUTH = {
       },
       token,
     }
-
-    // admin.messaging().sendMulticast(message)
-    admin.messaging().send(message)
 
     res.json({ message: 'notification sent successfully' })
   }),

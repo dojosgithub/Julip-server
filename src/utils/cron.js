@@ -6,7 +6,6 @@ import { Notification } from '../models/Notifications'
 import { toObjectId } from './misc'
 import { Comment, Group, Post, User, Badge } from '../models'
 import { sendPushNotification } from './pushNotification'
-const admin = require('firebase-admin')
 
 // "0 0 * * 0", Every sunday at 00:00 - Required
 // "59 14 * * 1", Every monday at 14:59
@@ -57,15 +56,15 @@ async function StreakMasterBadge() {
           }
           user.badges.push(newBadge)
           await user.save()
-          if (user.fcmToken) {
-            sendPushNotification({
-              token: user.fcmToken,
-              notification: {
-                title: 'Congratulations!',
-                body: `Congratulation! You’ve received a badge for starting activity streak.`,
-              },
-            })
-          }
+          // if (user.fcmToken) {
+          //   sendPushNotification({
+          //     token: user.fcmToken,
+          //     notification: {
+          //       title: 'Congratulations!',
+          //       body: `Congratulation! You’ve received a badge for starting activity streak.`,
+          //     },
+          //   })
+          // }
         }
       }
     } else {
@@ -115,15 +114,15 @@ async function EngagementDynamoBadge() {
           user.badges.push(newBadge)
           await user.save()
 
-          if (user.fcmToken) {
-            sendPushNotification({
-              token: user.fcmToken,
-              notification: {
-                title: 'Congratulations!',
-                body: `Congratulation! You’ve received a badge for active participation.`,
-              },
-            })
-          }
+          // if (user.fcmToken) {
+          //   sendPushNotification({
+          //     token: user.fcmToken,
+          //     notification: {
+          //       title: 'Congratulations!',
+          //       body: `Congratulation! You’ve received a badge for active participation.`,
+          //     },
+          //   })
+          // }
         }
       }
     }
@@ -150,15 +149,15 @@ async function ZealVeteranBadge() {
         }
         user.badges.push(newBadge)
         await user.save()
-        if (user.fcmToken) {
-          sendPushNotification({
-            token: user.fcmToken,
-            notification: {
-              title: 'Congratulations!',
-              body: `Congratulation! You’ve received a badge for an early zeal user.`,
-            },
-          })
-        }
+        // if (user.fcmToken) {
+        //   sendPushNotification({
+        //     token: user.fcmToken,
+        //     notification: {
+        //       title: 'Congratulations!',
+        //       body: `Congratulation! You’ve received a badge for an early zeal user.`,
+        //     },
+        //   })
+        // }
       }
     }
   } catch (e) {
@@ -185,15 +184,15 @@ async function FollowerBadge() {
         }
         user.badges.push(newBadge)
         await user.save()
-        if (user.fcmToken) {
-          sendPushNotification({
-            token: user.fcmToken,
-            notification: {
-              title: 'Congratulations!',
-              body: `Congratulation! You’ve received a badge for hitting 500 followers.`,
-            },
-          })
-        }
+        // if (user.fcmToken) {
+        //   sendPushNotification({
+        //     token: user.fcmToken,
+        //     notification: {
+        //       title: 'Congratulations!',
+        //       body: `Congratulation! You’ve received a badge for hitting 500 followers.`,
+        //     },
+        //   })
+        // }
         console.log('NOTIFICATION SEND')
       }
 
@@ -244,15 +243,15 @@ async function ActiveCommunityBadge() {
         group.badges.push(newBadge)
         await group.save()
         const user = await User.findById(group.groupAdmin[0])
-        if (user.fcmToken) {
-          sendPushNotification({
-            token: user.fcmToken,
-            notification: {
-              title: 'Congratulations!',
-              body: `Congratulation! Your community received a badge for consistent engagement.`,
-            },
-          })
-        }
+        // if (user.fcmToken) {
+        //   sendPushNotification({
+        //     token: user.fcmToken,
+        //     notification: {
+        //       title: 'Congratulations!',
+        //       body: `Congratulation! Your community received a badge for consistent engagement.`,
+        //     },
+        //   })
+        // }
       }
     }
     for (const inactiveGroup of inactiveGroups) {
@@ -291,15 +290,15 @@ async function LongevityBadge() {
         group.badges.push(newBadge)
         await group.save()
         const user = await User.findById(group.groupAdmin[0])
-        if (user.fcmToken) {
-          sendPushNotification({
-            token: user.fcmToken,
-            notification: {
-              title: 'Congratulations!',
-              body: `Congratulation! Your community received a badge for three months of continuous activity.`,
-            },
-          })
-        }
+        // if (user.fcmToken) {
+        //   sendPushNotification({
+        //     token: user.fcmToken,
+        //     notification: {
+        //       title: 'Congratulations!',
+        //       body: `Congratulation! Your community received a badge for three months of continuous activity.`,
+        //     },
+        //   })
+        // }
       }
     }
   } catch (e) {
@@ -333,15 +332,15 @@ async function GrowthChampionBadge() {
           group.badges.push(newBadge)
           await group.save()
           const user = await User.findById(group.groupAdmin[0])
-          if (user.fcmToken) {
-            sendPushNotification({
-              token: user.fcmToken,
-              notification: {
-                title: 'Congratulations!',
-                body: `Congratulation! Your community received a badge for onboarding 10 new members this week.`,
-              },
-            })
-          }
+          // if (user.fcmToken) {
+          //   sendPushNotification({
+          //     token: user.fcmToken,
+          //     notification: {
+          //       title: 'Congratulations!',
+          //       body: `Congratulation! Your community received a badge for onboarding 10 new members this week.`,
+          //     },
+          //   })
+          // }
         }
       }
     }
