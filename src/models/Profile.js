@@ -1,8 +1,4 @@
-import mongoose, { Schema, model } from 'mongoose'
-import { CAR_STATUS, DOC_STATUS } from '../utils/user'
-import Joi, { object } from 'joi'
-import mongoosePaginate from 'mongoose-paginate-v2'
-import aggregatePaginate from 'mongoose-aggregate-paginate-v2'
+import { Schema, model } from 'mongoose'
 
 export const profileSchema = new Schema(
   {
@@ -45,8 +41,13 @@ export const profileSchema = new Schema(
         },
       },
     ],
+    imageStyle: {
+      type: String,
+      enum: ['horizontal', 'vertical'],
+      default: 'vertical',
+    },
   },
   { versionKey: false, timestamps: true }
 )
 
-export const Post = model('Profile', profileSchema)
+export const Profile = model('Profile', profileSchema)

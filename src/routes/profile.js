@@ -18,4 +18,7 @@ router.put(
   parser.single('avatar'),
   CONTROLLER_PROFILE.updateProfile
 )
+
+router.get('/get-user', Authenticate(), CONTROLLER_PROFILE.getUser)
+
 export default router
