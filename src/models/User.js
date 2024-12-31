@@ -47,7 +47,7 @@ export const userSchema = new Schema(
   },
   { versionKey: false, timestamps: true }
 )
-
+//
 userSchema.methods.createEmailVerifyToken = function () {
   const emailToken = crypto.randomBytes(32).toString('hex')
 

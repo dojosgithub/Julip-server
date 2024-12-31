@@ -7,8 +7,6 @@ const axios = require('axios')
 import passport from 'passport'
 import dotenv from 'dotenv'
 
-const admin = require('firebase-admin')
-
 dotenv.config()
 
 // * Models
@@ -129,8 +127,6 @@ export const CONTROLLER_USER = {
 
   updateProfile: asyncMiddleware(async (req, res) => {
     const id = req.body.id
-    console.log('id ki koshis', id)
-    console.log('id ki body', req.body)
 
     let body = JSON.parse(req.body.body)
     body = {

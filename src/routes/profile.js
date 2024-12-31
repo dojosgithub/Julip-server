@@ -11,9 +11,6 @@ import { totpRateLimiter } from '../utils/rateLimiter'
 import { USER_TYPES } from '../utils'
 
 const router = Router()
-
-router.get('/profile', Authenticate(), CONTROLLER_PROFILE.profile)
-
 router.put(
   '/profile-update',
   Authenticate(),

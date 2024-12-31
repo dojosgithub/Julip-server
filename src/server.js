@@ -19,12 +19,11 @@ import dotenv from 'dotenv'
 import configSwagger from './config/swagger'
 
 import { createServer } from 'node:http'
-import { Server } from 'socket.io'
+
 import { init } from './socket'
 import { setupSocketEventHandlers } from './socketEvents'
 import { task } from './utils/cron'
-import { challengeTask } from './utils/challenge-cron'
-import { initializeFirebase } from './utils/firebase'
+// import { challengeTask } from './utils/challenge-cron'
 
 // For Socket.io
 global.serverRoot = path.resolve(__dirname)
@@ -36,7 +35,7 @@ const server = createServer(app)
 init(server)
 // Setup Socket.IO event handlers
 setupSocketEventHandlers()
-initializeFirebase()
+
 const PORT = process.env.PORT || 3000
 const PUBLIC_PATH = path.join(__dirname, 'public')
 connectMongoDB()
@@ -100,7 +99,7 @@ app.get('/ping', (req, res) => res.send('Ping Successfulls 😄'))
 server.listen(PORT, async () => {
   // app.listen(PORT, '0.0.0.0', '0', async () => {
   task.start()
-  challengeTask.start()
+  // challengeTask.start()
   console.log(`[⚡️ server]: Server running on port ${PORT} | Environment: ${process.env.NODE_ENV}`)
 })
 

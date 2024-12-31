@@ -7,8 +7,6 @@ const axios = require('axios')
 import passport from 'passport'
 import dotenv from 'dotenv'
 
-const admin = require('firebase-admin')
-
 dotenv.config()
 
 // * Models
