@@ -20,7 +20,7 @@ export const shopSchema = new Schema(
         products: [
           {
             type: Schema.Types.ObjectId,
-            ref: 'Profile',
+            ref: 'Product',
           },
         ],
       },

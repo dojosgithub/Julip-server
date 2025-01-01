@@ -10,7 +10,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 // * Models
-import { Shop } from '../models'
+import { Shop, User } from '../models'
 
 // * Middlewares
 import { asyncMiddleware } from '../middlewares'
@@ -94,16 +94,25 @@ const { ObjectId } = mongoose.Types
 
 export const CONTROLLER_SHOP = {
   createShop: asyncMiddleware(async (req, res) => {
-    const { name, collections, pinnedProducts, visibility } = req.body
+    const { name, collections, pinnedProducts, visibility, userId } = req.body
 
     if (!name) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'Shop name is required.',
       })
     }
+    const user = await User.findById(userId)
+
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'User not found.',
+      })
+    }
 
     const shop = new Shop({ name, collections, pinnedProducts, visibility })
     await shop.save()
+    user.shop = shop._id
+    await user.save()
 
     res.status(StatusCodes.CREATED).json({
       data: shop,
@@ -163,8 +172,8 @@ export const CONTROLLER_SHOP = {
     })
   }),
 
-  // Get shops
-  getShops: asyncMiddleware(async (req, res) => {
+  // Get All shops
+  getAllShops: asyncMiddleware(async (req, res) => {
     const shops = await Shop.find().populate({
       path: 'collections.products',
       model: 'Product',
@@ -172,6 +181,37 @@ export const CONTROLLER_SHOP = {
 
     res.status(StatusCodes.OK).json({
       data: shops,
+      message: 'Shops retrieved successfully.',
+    })
+  }),
+
+  getShop: asyncMiddleware(async (req, res) => {
+    const { userId } = req.body
+
+    const user = await User.findById(userId).populate({
+      path: 'shop',
+      populate: [
+        {
+          path: 'collections.products',
+          model: 'Product', // Populating products in collections
+        },
+        {
+          path: 'pinnedProducts.productsList',
+          model: 'Product', // Populating products in pinnedProducts
+        },
+      ],
+    })
+
+    if (!user || !user.shop) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Shop not found.',
+      })
+    }
+
+    console.log('Shop', user)
+
+    res.status(StatusCodes.OK).json({
+      data: user.shop,
       message: 'Shops retrieved successfully.',
     })
   }),

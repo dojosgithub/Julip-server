@@ -18,14 +18,14 @@ const router = Router()
 
 // Zeal App User Routes
 
-router.get('/profile', Authenticate(), CONTROLLER_USER.profile)
+router.get('/user', Authenticate(), CONTROLLER_USER.getUser)
 
 router.put(
-  '/profile-update',
+  '/user-update',
   Authenticate(),
   // permitMiddleware([USER_TYPES.SYS, USER_TYPES.USR]),
   parser.single('avatar'),
-  CONTROLLER_USER.updateProfile
+  CONTROLLER_USER.updateUser
 )
 
 router.get('/home', Authenticate(), permitMiddleware([USER_TYPES.SYS, USER_TYPES.USR]), CONTROLLER_USER.home)

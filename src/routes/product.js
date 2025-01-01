@@ -11,37 +11,20 @@ import { totpRateLimiter } from '../utils/rateLimiter'
 import { USER_TYPES } from '../utils'
 
 const router = Router()
-router.get(
-  '/profile-update',
-  Authenticate(),
-  // permitMiddleware([USER_TYPES.SYS, USER_TYPES.USR]),
-  parser.single('avatar'),
-  CONTROLLER_PROFILE.updateProfile
-)
+router.get('/get-all-products', CONTROLLER_PRODUCT.getProducts)
+
+router.get('/get-user-all-products', CONTROLLER_PRODUCT.getUserAllProducts)
+
+router.post('/create-product', Authenticate(), parser.single('image'), CONTROLLER_PRODUCT.createProduct)
 
 router.put(
-  '/profile-update',
+  '/update-product',
   Authenticate(),
   // permitMiddleware([USER_TYPES.SYS, USER_TYPES.USR]),
-  parser.single('avatar'),
-  CONTROLLER_PROFILE.updateProfile
+  parser.single('image'),
+  CONTROLLER_PRODUCT.updateProduct
 )
 
-router.put(
-  '/profile-update',
-  Authenticate(),
-  // permitMiddleware([USER_TYPES.SYS, USER_TYPES.USR]),
-  parser.single('avatar'),
-  CONTROLLER_PROFILE.updateProfile
-)
-
-router.put(
-  '/profile-update',
-  Authenticate(),
-  // permitMiddleware([USER_TYPES.SYS, USER_TYPES.USR]),
-  parser.single('avatar'),
-  CONTROLLER_PROFILE.updateProfile
-)
-router.get('/get-user', Authenticate(), CONTROLLER_PROFILE.getUser)
+router.delete('/delete-product', Authenticate(), CONTROLLER_PRODUCT.deleteProduct)
 
 export default router

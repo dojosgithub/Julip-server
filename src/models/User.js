@@ -24,6 +24,14 @@ export const userSchema = new Schema(
       type: String,
       unique: true,
     }, // added
+    isSlugCreated: {
+      type: Boolean,
+      default: false,
+    },
+    isProfileCreated: {
+      type: Boolean,
+      default: false,
+    },
     avatar: Object,
     password: { type: String, select: false },
     // username: String,
@@ -34,15 +42,21 @@ export const userSchema = new Schema(
       enum: ['Premium', 'Basic'],
       default: 'Basic',
     },
-    bio: String,
-    profileName: String,
     refreshTokens: [String],
+    isLoggedIn: {
+      type: Boolean,
+      default: false,
+    },
     lastActive: {
       type: Date,
     },
     profile: {
       type: Schema.Types.ObjectId,
       ref: 'Profile',
+    },
+    shop: {
+      type: Schema.Types.ObjectId,
+      ref: 'Shop',
     },
   },
   { versionKey: false, timestamps: true }

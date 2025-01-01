@@ -10,7 +10,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 // * Models
-import { Shop } from '../models'
+import { Product, Shop, User } from '../models'
 
 // * Middlewares
 import { asyncMiddleware } from '../middlewares'
@@ -115,7 +115,9 @@ export const CONTROLLER_PRODUCT = {
   // Update a product
   updateProduct: asyncMiddleware(async (req, res) => {
     const { id } = req.query
-    const { url, brandName, price, image, title, description, buttonTitle } = req.body
+    const parsedbody = JSON.parse(req.body.body)
+    const { url, brandName, price, image, title, description, buttonTitle } = parsedbody
+    console.log('req.body', parsedbody)
 
     if (!id) {
       return res.status(StatusCodes.BAD_REQUEST).json({
@@ -128,7 +130,7 @@ export const CONTROLLER_PRODUCT = {
       { url, brandName, price, image, title, description, buttonTitle },
       { new: true }
     )
-
+    console.log('updated product', updatedProduct)
     if (!updatedProduct) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: 'Product not found.',
@@ -166,11 +168,37 @@ export const CONTROLLER_PRODUCT = {
 
   // Get products
   getProducts: asyncMiddleware(async (req, res) => {
-    const products = await Product.find()
+    const products = await Shop.find()
 
     res.status(StatusCodes.OK).json({
       data: products,
       message: 'Products retrieved successfully.',
+    })
+  }),
+
+  getUserAllProducts: asyncMiddleware(async (req, res) => {
+    const { userId } = req.body
+    console.log('first', userId, 'req', req.body)
+    const user = await User.findById(userId).populate({
+      path: 'shop',
+      populate: {
+        path: 'collections.products',
+        model: 'Product', // Populating products in collections
+      },
+    })
+
+    if (!user || !user.shop) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Shop not found.',
+      })
+    }
+
+    const collections = user.shop.collections || []
+    const allProducts = collections.flatMap((collection) => collection.products)
+
+    res.status(StatusCodes.OK).json({
+      data: allProducts,
+      message: 'All products retrieved successfully.',
     })
   }),
 }

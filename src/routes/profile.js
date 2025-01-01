@@ -11,14 +11,23 @@ import { totpRateLimiter } from '../utils/rateLimiter'
 import { USER_TYPES } from '../utils'
 
 const router = Router()
+
+router.post(
+  '/profile-create',
+  Authenticate(),
+  // permitMiddleware([USER_TYPES.SYS, USER_TYPES.USR]),
+  parser.single('image'),
+  CONTROLLER_PROFILE.createProfile
+)
+
 router.put(
   '/profile-update',
   Authenticate(),
   // permitMiddleware([USER_TYPES.SYS, USER_TYPES.USR]),
-  parser.single('avatar'),
+  parser.single('image'),
   CONTROLLER_PROFILE.updateProfile
 )
 
-router.get('/get-user', Authenticate(), CONTROLLER_PROFILE.getUser)
+router.get('/get-profile', Authenticate(), CONTROLLER_PROFILE.getProfile)
 
 export default router

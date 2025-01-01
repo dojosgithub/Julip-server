@@ -41,6 +41,7 @@ export const profileSchema = new Schema(
         },
       },
     ],
+    image: Object,
     imageStyle: {
       type: String,
       enum: ['horizontal', 'vertical'],
