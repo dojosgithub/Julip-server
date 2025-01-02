@@ -288,16 +288,15 @@ export const CONTROLLER_AUTH = {
 
     const tokens = await generateToken(tokenPayload)
 
-    user.refreshTokens = [tokens.refreshToken]
     if (user && !user.accountType) {
       user.accountType = 'Zeal-Account'
     }
+    user.isLoggedIn = true
     await user.save()
 
     res.status(StatusCodes.OK).json({
       data: {
         user: { ...user._doc },
-        ...tokens,
       },
       message: 'Logged In Successfully',
     })
@@ -314,8 +313,7 @@ export const CONTROLLER_AUTH = {
     }
 
     if (user) {
-      user.refreshTokens = ''
-      user.accessToken = ''
+      user.isLoggedIn = false
       await user.save()
     }
 
@@ -405,6 +403,7 @@ export const CONTROLLER_AUTH = {
       return res.status(400).json({ message: 'Username has already been set and cannot be changed.' })
     }
     user.userName = userName
+    user.isSlugCreated = true
     await user.save()
 
     res.status(200).json({ message: 'Username added successfully.', user })

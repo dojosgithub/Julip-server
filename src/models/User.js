@@ -23,7 +23,16 @@ export const userSchema = new Schema(
     userName: {
       type: String,
       unique: true,
+      sparse: true, // Ensures null values are not indexed for uniqueness
     }, // added
+    isSlugCreated: {
+      type: Boolean,
+      default: false,
+    },
+    isProfileCreated: {
+      type: Boolean,
+      default: false,
+    },
     avatar: Object,
     password: { type: String, select: false },
     // username: String,
@@ -34,15 +43,25 @@ export const userSchema = new Schema(
       enum: ['Premium', 'Basic'],
       default: 'Basic',
     },
-    bio: String,
-    profileName: String,
     refreshTokens: [String],
+    isLoggedIn: {
+      type: Boolean,
+      default: false,
+    },
     lastActive: {
       type: Date,
     },
     profile: {
       type: Schema.Types.ObjectId,
       ref: 'Profile',
+    },
+    shop: {
+      type: Schema.Types.ObjectId,
+      ref: 'Shop',
+    },
+    about: {
+      type: Schema.Types.ObjectId,
+      ref: 'About',
     },
   },
   { versionKey: false, timestamps: true }

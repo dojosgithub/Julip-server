@@ -1,4 +1,7 @@
 export * from './User'
 export * from './TOTP'
 export * from './Profile'
+export * from './Template'
+export * from './Shop'
+export * from './Product'
 export * from './errorLog'

@@ -24,3 +24,7 @@ const storage = new CloudinaryStorage({
 export const parser = multer({
   storage: storage,
 })
+
+export const parserMultiple = multer({
+  storage: storage,
+}).array('images', 10)

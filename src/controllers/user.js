@@ -95,7 +95,7 @@ const { ObjectId } = mongoose.Types
 export const CONTROLLER_USER = {
   // ZEAL FITNESS APP APIS
 
-  profile: asyncMiddleware(async (req, res) => {
+  getUser: asyncMiddleware(async (req, res) => {
     const { _id } = req.decoded
     const id = req.query.id
     // console.log('id', id)
@@ -125,8 +125,8 @@ export const CONTROLLER_USER = {
     })
   }),
 
-  updateProfile: asyncMiddleware(async (req, res) => {
-    const id = req.body.id
+  updateUser: asyncMiddleware(async (req, res) => {
+    const id = req.query.id
 
     let body = JSON.parse(req.body.body)
     body = {
@@ -134,7 +134,7 @@ export const CONTROLLER_USER = {
       ...body,
     }
     console.log(body)
-    const user = await User.findByIdAndUpdate(body.id, body, { new: true }).select('-password -refreshToken').lean()
+    const user = await User.findByIdAndUpdate(id, body, { new: true }).select('-password -refreshToken').lean()
 
     if (!user)
       return res.status(StatusCodes.NOT_FOUND).json({
