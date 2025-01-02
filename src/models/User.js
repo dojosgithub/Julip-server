@@ -23,6 +23,7 @@ export const userSchema = new Schema(
     userName: {
       type: String,
       unique: true,
+      sparse: true, // Ensures null values are not indexed for uniqueness
     }, // added
     isSlugCreated: {
       type: Boolean,
@@ -57,6 +58,10 @@ export const userSchema = new Schema(
     shop: {
       type: Schema.Types.ObjectId,
       ref: 'Shop',
+    },
+    about: {
+      type: Schema.Types.ObjectId,
+      ref: 'About',
     },
   },
   { versionKey: false, timestamps: true }
