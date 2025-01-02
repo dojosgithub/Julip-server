@@ -345,9 +345,18 @@ export const CONTROLLER_AUTH = {
     user.resetToken = resetToken
     user.resetTokenExpiry = resetTokenExpiry
     await user.save()
-
+    let baseUrl
+    if (process.env.FRONTEND_URL.includes('localhost')) {
+      baseUrl = process.env.FRONTEND_URL_LOCAL
+    } else if (process.env.FRONTEND_URL.includes('dev')) {
+      baseUrl = process.env.FRONTEND_URL_DEV
+    } else if (process.env.FRONTEND_URL.includes('qa')) {
+      baseUrl = process.env.FRONTEND_URL_QA
+    } else {
+      baseUrl = process.env.FRONTEND_URL_PROD
+    }
     // Create the reset URL
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`
+    const resetUrl = `${baseUrl}/auth-demo/modern/reset-password?token=${resetToken}`
 
     // Send email with the reset URL
     const sendEmail = new Email({ email })
