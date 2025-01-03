@@ -19,8 +19,8 @@ const router = Router()
 
 router.get('/get-about', Authenticate(), CONTROLLER_ABOUT.getAbout)
 
-router.post('/create-about', Authenticate(), parserMultiple.single('image'), CONTROLLER_ABOUT.addAboutItems)
+router.post('/create-about', Authenticate(), parserMultiple, CONTROLLER_ABOUT.addAboutItems)
 
-router.put('/update-about', Authenticate(), parserMultiple.single('image'), CONTROLLER_ABOUT.updateAboutItems)
+router.put('/update-about', Authenticate(), parserMultiple, CONTROLLER_ABOUT.updateAboutItems)
 
 export default router

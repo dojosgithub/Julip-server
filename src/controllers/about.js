@@ -95,7 +95,8 @@ const { ObjectId } = mongoose.Types
 
 export const CONTROLLER_ABOUT = {
   addAboutItems: asyncMiddleware(async (req, res) => {
-    const { userId, items = [] } = req.body
+    const body = JSON.parse(req.body.body)
+    const { userId, items = [] } = body
 
     if (!userId) {
       return res.status(400).json({ message: 'User ID is required.' })
@@ -107,29 +108,39 @@ export const CONTROLLER_ABOUT = {
 
     const validTypes = ['heading', 'description', 'image']
 
+    // Index to keep track of image files in req.files
+    let imageFileIndex = 0
+
     // Validate and map items with sequence
     const processedItems = items.map((item, index) => {
       if (!item.type || !validTypes.includes(item.type)) {
         throw new Error(`Invalid item type: ${item.type}`)
       }
+
       if (item.type === 'image') {
-        // Map the uploaded image to its corresponding item
-        if (!req.files || !req.files[index]) {
+        if (!req.files || !req.files[imageFileIndex]) {
           throw new Error('Image file is missing for an image item.')
         }
+
+        const file = req.files[imageFileIndex]
+        imageFileIndex++ // Move to the next file for subsequent images
+
         return {
           type: 'image',
-          value: req.files[index].path,
+          value: file.path,
           visibility: item.visibility ?? true, // Default visibility if not provided
           sequence: item.sequence ?? index, // Use provided sequence or fallback to index
         }
       }
+
       if (!item.value) {
         throw new Error('Each item must have a value.')
       }
+
       if (typeof item.visibility !== 'boolean') {
         throw new Error('Each item must have a visibility property of true or false.')
       }
+
       return {
         ...item,
         sequence: item.sequence ?? index, // Ensure each item has a sequence
@@ -159,7 +170,8 @@ export const CONTROLLER_ABOUT = {
   }),
 
   updateAboutItems: asyncMiddleware(async (req, res) => {
-    const { userId, items = [] } = req.body
+    const body = JSON.parse(req.body.body)
+    const { userId, items = [] } = body
 
     if (!userId) {
       return res.status(400).json({ message: 'User ID is required.' })
@@ -171,10 +183,38 @@ export const CONTROLLER_ABOUT = {
 
     const validTypes = ['heading', 'description', 'image']
 
+    // Index to track image files in req.files
+    let imageFileIndex = 0
+
     // Process and validate items
     const processedItems = items.map((item, index) => {
       if (!item.type || !validTypes.includes(item.type)) {
         throw new Error(`Invalid item type: ${item.type}`)
+      }
+
+      if (item.type === 'image') {
+        if (item.value && item.value.startsWith('http')) {
+          // Retain existing image URL if provided
+          return {
+            ...item,
+            sequence: item.sequence ?? index,
+          }
+        }
+
+        if (!req.files || !req.files[imageFileIndex]) {
+          throw new Error('Image file is missing for an image item.')
+        }
+
+        // Use the uploaded image for the item
+        const file = req.files[imageFileIndex]
+        imageFileIndex++
+
+        return {
+          type: 'image',
+          value: file.path,
+          visibility: item.visibility ?? true,
+          sequence: item.sequence ?? index,
+        }
       }
 
       if (!item.value) {
@@ -185,10 +225,9 @@ export const CONTROLLER_ABOUT = {
         throw new Error('Each item must have a visibility property of true or false.')
       }
 
-      // Ensure sequence is maintained or assigned
       return {
         ...item,
-        sequence: item.sequence ?? index, // Use provided sequence or default to index
+        sequence: item.sequence ?? index,
       }
     })
 
@@ -238,9 +277,8 @@ export const CONTROLLER_ABOUT = {
   }),
 
   getAbout: asyncMiddleware(async (req, res) => {
-    const { userId } = req.params
-
-    const about = await About.findOne({ userId })
+    const { id } = req.params
+    const about = await About.findOne({ id })
 
     if (!about) {
       return res.status(404).json({ message: 'About section not found.' })
