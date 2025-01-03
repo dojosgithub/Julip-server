@@ -41,7 +41,14 @@ import { getLoginLinkByEnv, getSanitizeCompanyName, toObjectId } from '../utils/
 import { stripe } from '../utils/stripe'
 import Email from '../utils/email'
 import { escapeRegex } from '../utils/misc'
-import { comparePassword, generateOTToken, generatePassword, generateToken, verifyTOTPToken } from '../utils'
+import {
+  comparePassword,
+  decodeToken,
+  generateOTToken,
+  generatePassword,
+  generateToken,
+  verifyTOTPToken,
+} from '../utils'
 import { sendSMS } from '../utils/smsUtil'
 import { getIO } from '../socket'
 
@@ -255,7 +262,7 @@ export const CONTROLLER_AUTH = {
   }),
 
   signIn: asyncMiddleware(async (req, res) => {
-    const { email, password, fcmToken } = req.body // Changed from req.query to req.body
+    const { email, password } = req.body
     const user = await User.findOne({ email }).select('+password')
 
     if (!user) {
@@ -297,6 +304,7 @@ export const CONTROLLER_AUTH = {
     res.status(StatusCodes.OK).json({
       data: {
         user: { ...user._doc },
+        tokens,
       },
       message: 'Logged In Successfully',
     })
@@ -337,17 +345,29 @@ export const CONTROLLER_AUTH = {
       })
     }
 
-    const resetToken = uuidv4()
-    console.log('resetToken', resetToken)
+    const tokenPayload = {
+      email,
+    }
+
+    const resetToken = await generateToken(tokenPayload)
 
     const resetTokenExpiry = Date.now() + 15 * 60 * 1000
     // Save the token and expiry in the user's record
-    user.resetToken = resetToken
+    user.resetToken = resetToken.resetPasswordToken
     user.resetTokenExpiry = resetTokenExpiry
     await user.save()
-
+    let baseUrl
+    if (process.env.FRONTEND_URL.includes('localhost')) {
+      baseUrl = process.env.FRONTEND_URL_LOCAL
+    } else if (process.env.FRONTEND_URL.includes('dev')) {
+      baseUrl = process.env.FRONTEND_URL_DEV
+    } else if (process.env.FRONTEND_URL.includes('qa')) {
+      baseUrl = process.env.FRONTEND_URL_QA
+    } else {
+      baseUrl = process.env.FRONTEND_URL_PROD
+    }
     // Create the reset URL
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`
+    const resetUrl = `${baseUrl}/auth-demo/modern/reset-password?token=${resetToken.resetPasswordToken}`
 
     // Send email with the reset URL
     const sendEmail = new Email({ email })
@@ -359,9 +379,11 @@ export const CONTROLLER_AUTH = {
   resetPassword: asyncMiddleware(async (req, res) => {
     const { token, newPassword } = req.body
 
+    const decoded = await decodeToken(token)
+
     // Find the user by the reset token and check token validity
     const user = await User.findOne({
-      resetToken: token,
+      email: decoded.email,
       resetTokenExpiry: { $gt: Date.now() }, // Ensure token hasn't expired
     })
 
@@ -379,7 +401,7 @@ export const CONTROLLER_AUTH = {
 
     await user.save()
 
-    res.json({ message: 'Password updated successfully.' })
+    res.json({ message: 'Password updated successfully.', user })
   }),
 
   createSlug: asyncMiddleware(async (req, res) => {

@@ -7,8 +7,20 @@ export const generateToken = (payload) => {
 
     tokens.accessToken = jwt.sign(payload, process.env.JWT_SECRET_KEY, { expiresIn: '7d' }) //1m,1d,1y
     tokens.refreshToken = jwt.sign(payload, process.env.JWT_SECRET_KEY, { expiresIn: '60m' }) // 1m,1d,1y
+    tokens.resetPasswordToken = jwt.sign(payload, process.env.JWT_SECRET_KEY, { expiresIn: '10m' }) // 1m,1d,1y
 
     resolve(tokens)
+  })
+}
+
+export const decodeToken = (token) => {
+  return new Promise((resolve, reject) => {
+    jwt.verify(token, process.env.JWT_SECRET_KEY, (err, decoded) => {
+      if (err) {
+        return reject(new Error('Invalid or expired token.'))
+      }
+      resolve(decoded)
+    })
   })
 }
 
