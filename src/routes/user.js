@@ -18,7 +18,7 @@ const router = Router()
 
 // Zeal App User Routes
 
-router.get('/user', Authenticate(), CONTROLLER_USER.getUser)
+router.get('/user-details', Authenticate(), CONTROLLER_USER.getUser)
 
 router.put(
   '/user-update',
