@@ -63,6 +63,10 @@ export const userSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'About',
     },
+    template: {
+      type: Schema.Types.ObjectId,
+      ref: 'Template',
+    },
   },
   { versionKey: false, timestamps: true }
 )

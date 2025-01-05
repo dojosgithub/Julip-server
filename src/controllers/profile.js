@@ -184,6 +184,7 @@ export const CONTROLLER_PROFILE = {
 
     // Link profile to user
     user.profile = profile._id
+    user.isProfileCreated = true
     await user.save()
 
     // Send response
@@ -301,8 +302,9 @@ export const CONTROLLER_PROFILE = {
   }),
 
   getProfile: asyncMiddleware(async (req, res) => {
-    const id = req.query.userId
-
+    // const id = req.query.userId
+    const { _id: id } = req.decoded
+    console.log(`getProfile`, id)
     const user = await User.findById(id).populate('profile')
     if (!user) {
       return res.status(StatusCodes.NOT_FOUND).json({

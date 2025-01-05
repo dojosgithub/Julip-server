@@ -20,4 +20,8 @@ router.post('/create-template', Authenticate(), CONTROLLER_TEMPLATE.createTempla
 
 router.put('/update-template', Authenticate(), CONTROLLER_TEMPLATE.updateTemplate)
 
+router.get('/list', Authenticate(), CONTROLLER_TEMPLATE.getTemplateList)
+
+router.get('/:id', Authenticate(), CONTROLLER_TEMPLATE.getTemplate)
+
 export default router

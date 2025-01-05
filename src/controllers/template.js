@@ -150,4 +150,37 @@ export const CONTROLLER_TEMPLATE = {
       message: 'Template updated successfully.',
     })
   }),
+  getTemplateList: asyncMiddleware(async (req, res) => {
+    // Create a new template
+    const templates = await Template.find()
+
+    res.status(StatusCodes.OK).json({
+      data: templates,
+      message: 'Template list fetched successfully.',
+    })
+  }),
+  getTemplate: asyncMiddleware(async (req, res) => {
+    const { id } = req.params
+
+    // Validate ID
+    if (!id) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'Template ID is required.',
+      })
+    }
+
+    // fetched the template
+    const template = await Template.findById(id)
+
+    if (!template) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Template not found.',
+      })
+    }
+
+    res.status(StatusCodes.OK).json({
+      data: template,
+      message: 'Template fetched successfully.',
+    })
+  }),
 }
