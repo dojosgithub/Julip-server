@@ -94,20 +94,24 @@ const { ObjectId } = mongoose.Types
 
 export const CONTROLLER_TEMPLATE = {
   createTemplate: asyncMiddleware(async (req, res) => {
-    const { mode, colors, fonts } = req.body
+    const { name, mode, colors, fonts } = req.body
 
     // Validate required fields
-    if (!mode || !colors || !fonts) {
+    if (!name || isEmpty(colors) || isEmpty(colors?.light) || isEmpty(colors?.dark) || isEmpty(fonts)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
-        message: 'Mode, colors, and fonts are required.',
+        message: 'Name, colors, and fonts are required.',
       })
     }
 
     // Create a new template
     const template = new Template({
-      mode,
+      name,
+      mode: mode || 'light', // Default to 'light' mode if not provided
       colors,
-      fonts,
+      fonts: {
+        header: fonts.header,
+        body: fonts.body,
+      },
     })
 
     await template.save()
@@ -119,8 +123,8 @@ export const CONTROLLER_TEMPLATE = {
   }),
 
   updateTemplate: asyncMiddleware(async (req, res) => {
-    const { id } = req.query
-    const { mode, colors, fonts } = req.body
+    const { id } = req.params
+    const { name, mode, colors, fonts } = req.body
 
     // Validate ID
     if (!id) {
@@ -130,14 +134,14 @@ export const CONTROLLER_TEMPLATE = {
     }
 
     // Validate fields to update
-    if (!mode && !colors && !fonts) {
+    if (!name && !mode && !colors && !fonts) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'At least one field is required to update.',
       })
     }
 
     // Update the template
-    const updatedTemplate = await Template.findByIdAndUpdate(id, { mode, colors, fonts }, { new: true })
+    const updatedTemplate = await Template.findByIdAndUpdate(id, { name, mode, colors, fonts }, { new: true })
 
     if (!updatedTemplate) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -181,6 +185,37 @@ export const CONTROLLER_TEMPLATE = {
     res.status(StatusCodes.OK).json({
       data: template,
       message: 'Template fetched successfully.',
+    })
+  }),
+  selectTemplate: asyncMiddleware(async (req, res) => {
+    const { _id: userId } = req.decoded
+    const { templateId } = req.params
+
+    if (!templateId) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'Template id not found.',
+      })
+    }
+    const template = await Template.findById(toObjectId(templateId))
+
+    if (!template) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Template not found.',
+      })
+    }
+    const user = await User.findById(userId)
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'User not found.',
+      })
+    }
+    user.isTemplateSelected = true
+    user.template = templateId
+    await user.save()
+
+    res.status(StatusCodes.OK).json({
+      data: null,
+      message: 'Template updated successfully.',
     })
   }),
 }

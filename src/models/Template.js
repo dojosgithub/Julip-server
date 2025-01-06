@@ -7,24 +7,46 @@ import mongooseAggregatePaginate from 'mongoose-aggregate-paginate-v2'
 
 export const templateSchema = new Schema(
   {
-    mode: {
+    name: {
       type: String,
       required: true,
     },
+    mode: {
+      type: String,
+      enum: ['light', 'dark'],
+      default: 'light',
+    },
     colors: {
-      main: {
-        type: String,
-        required: true,
+      dark: {
+        main: {
+          type: String,
+          required: true,
+        },
+        background: {
+          type: String,
+          required: true,
+        },
+        buttons: {
+          type: String,
+          required: true,
+        },
       },
-      background: {
-        type: String,
-        required: true,
-      },
-      buttons: {
-        type: String,
-        required: true,
+      light: {
+        main: {
+          type: String,
+          required: true,
+        },
+        background: {
+          type: String,
+          required: true,
+        },
+        buttons: {
+          type: String,
+          required: true,
+        },
       },
     },
+
     fonts: {
       header: {
         type: String,

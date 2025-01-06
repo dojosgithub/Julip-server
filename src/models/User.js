@@ -33,6 +33,15 @@ export const userSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    isTemplateSelected: {
+      type: Boolean,
+      default: false,
+    },
+
+    isPricingSelected: {
+      type: Boolean,
+      default: false,
+    },
     avatar: Object,
     password: { type: String, select: false },
     // username: String,
