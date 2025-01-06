@@ -311,8 +311,11 @@ export const CONTROLLER_AUTH = {
   }),
 
   signOut: asyncMiddleware(async (req, res) => {
-    const { userId } = req.body
+    const { _id: userId } = req.decoded
 
+    if (!userId) {
+      return res.status(StatusCodes.NOT_FOUND).json({ message: 'user id not found' })
+    }
     const user = await User.findById(userId)
     console.log('testing', user, userId)
 
@@ -320,10 +323,8 @@ export const CONTROLLER_AUTH = {
       return res.status(StatusCodes.NOT_FOUND).json({ message: 'User not found' })
     }
 
-    if (user) {
-      user.isLoggedIn = false
-      await user.save()
-    }
+    user.isLoggedIn = false
+    await user.save()
 
     res.status(StatusCodes.OK).json({ message: 'Logged out successfully' })
   }),

@@ -23,7 +23,7 @@ router.post('/verify-account', CONTROLLER_AUTH.verifyAccount)
 
 router.post('/sign-up', CONTROLLER_AUTH.signUp)
 
-router.post('/sign-out', CONTROLLER_AUTH.signOut)
+router.get('/sign-out', Authenticate(), CONTROLLER_AUTH.signOut)
 
 router.post('/sign-in', CONTROLLER_AUTH.signIn)
 
@@ -33,13 +33,13 @@ router.post('/forgot-password-link', CONTROLLER_AUTH.forgotPasswordLink)
 
 router.post('/reset-password', CONTROLLER_AUTH.resetPassword)
 
-router.post('/verify', CONTROLLER_AUTH.verifyUpdatePasswordCode)
+router.post('/verify', Authenticate(), CONTROLLER_AUTH.verifyUpdatePasswordCode)
 
-router.post('/verify-email', CONTROLLER_AUTH.verifyEmail)
+router.post('/verify-email', Authenticate(), CONTROLLER_AUTH.verifyEmail)
 
-router.post('/get-code', CONTROLLER_AUTH.resendEmailVerificationCode)
+router.post('/get-code', Authenticate(), CONTROLLER_AUTH.resendEmailVerificationCode)
 
-router.post('/create-slug', CONTROLLER_AUTH.createSlug)
+router.post('/create-slug', Authenticate(), CONTROLLER_AUTH.createSlug)
 
 router.post(
   '/sendNotification',
