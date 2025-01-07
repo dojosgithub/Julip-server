@@ -37,6 +37,10 @@ export const shopSchema = new Schema(
     visibility: {
       type: Boolean,
     },
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    },
   },
   { versionKey: false, timestamps: true }
 )

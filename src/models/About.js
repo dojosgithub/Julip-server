@@ -21,7 +21,6 @@ const aboutItemSchema = new mongoose.Schema({
   },
   sequence: {
     type: Number,
-    default: true,
   },
 })
 

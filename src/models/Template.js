@@ -35,6 +35,10 @@ export const templateSchema = new Schema(
         required: true,
       },
     },
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    },
   },
   { versionKey: false, timestamps: true }
 )

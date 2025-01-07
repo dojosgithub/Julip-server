@@ -47,6 +47,10 @@ export const profileSchema = new Schema(
       enum: ['horizontal', 'vertical'],
       default: 'vertical',
     },
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    },
   },
   { versionKey: false, timestamps: true }
 )
