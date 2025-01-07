@@ -22,6 +22,8 @@ router.put('/update-template/:id', Authenticate(), CONTROLLER_TEMPLATE.updateTem
 
 router.get('/list', Authenticate(), CONTROLLER_TEMPLATE.getTemplateList)
 
+router.get('/predifined-list', Authenticate(), CONTROLLER_TEMPLATE.getPredefined)
+
 router.get('/:id', Authenticate(), CONTROLLER_TEMPLATE.getTemplate)
 
 router.get('/select/:templateId', Authenticate(), CONTROLLER_TEMPLATE.selectTemplate)

@@ -94,6 +94,7 @@ const { ObjectId } = mongoose.Types
 
 export const CONTROLLER_TEMPLATE = {
   createTemplate: asyncMiddleware(async (req, res) => {
+    const { _id: userId } = req.decoded
     const { name, mode, colors, fonts } = req.body
 
     // Validate required fields
@@ -108,13 +109,22 @@ export const CONTROLLER_TEMPLATE = {
       name,
       mode: mode || 'light', // Default to 'light' mode if not provided
       colors,
+      userId,
       fonts: {
         header: fonts.header,
         body: fonts.body,
       },
     })
 
-    await template.save()
+    const savedTemplate = await template.save()
+    const user = await User.findById(userId)
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'User not found.',
+      })
+    }
+    user.template = savedTemplate._id
+    await user.save()
 
     res.status(StatusCodes.CREATED).json({
       data: template,
@@ -203,6 +213,18 @@ export const CONTROLLER_TEMPLATE = {
         message: 'Template not found.',
       })
     }
+
+    const newTemplate = new Template({
+      name: template.name,
+      mode: template.mode || 'light', // Default to 'light' mode if not provided
+      colors: template.colors,
+      fonts: template.fonts,
+      userId,
+    })
+
+    const savedTemplate = await newTemplate.save()
+    console.log('savedTemplate', savedTemplate)
+
     const user = await User.findById(userId)
     if (!user) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -210,12 +232,30 @@ export const CONTROLLER_TEMPLATE = {
       })
     }
     user.isTemplateSelected = true
-    user.template = templateId
+    user.template = savedTemplate._id
     await user.save()
 
     res.status(StatusCodes.OK).json({
       data: null,
       message: 'Template updated successfully.',
+    })
+  }),
+
+  getPredefined: asyncMiddleware(async (req, res) => {
+    // const { _id: userId } = req.decoded
+    // const { templateId } = req.params
+
+    const templates = await Template.find({ predefined: true })
+
+    if (!templates) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Templates not found.',
+      })
+    }
+    console.log('templates', templates)
+    res.status(StatusCodes.OK).json({
+      data: templates,
+      message: 'Template fetched successfully.',
     })
   }),
 }

@@ -11,10 +11,18 @@ export const templateSchema = new Schema(
       type: String,
       required: true,
     },
+    predefined: {
+      type: Boolean,
+      default: false,
+    },
     mode: {
       type: String,
       enum: ['light', 'dark'],
       default: 'light',
+    },
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
     },
     colors: {
       dark: {
