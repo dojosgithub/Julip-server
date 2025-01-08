@@ -94,7 +94,8 @@ const { ObjectId } = mongoose.Types
 
 export const CONTROLLER_SHOP = {
   createShop: asyncMiddleware(async (req, res) => {
-    const { name, collections, pinnedProducts, visibility, userId } = req.body
+    const { _id: userId } = req.decoded
+    const { name, collections, pinnedProducts, visibility } = req.body
 
     if (!name) {
       return res.status(StatusCodes.BAD_REQUEST).json({
@@ -109,7 +110,7 @@ export const CONTROLLER_SHOP = {
       })
     }
 
-    const shop = new Shop({ name, collections, pinnedProducts, visibility })
+    const shop = new Shop({ name, collections, pinnedProducts, visibility, userId })
     await shop.save()
     user.shop = shop._id
     await user.save()
@@ -122,17 +123,18 @@ export const CONTROLLER_SHOP = {
 
   // Update a shop
   updateShop: asyncMiddleware(async (req, res) => {
-    const { id } = req.query
+    const { _id: userId } = req.decoded
+    // const { us } = req.query
     const { name, collections, pinnedProducts, visibility } = req.body
 
-    if (!id) {
+    if (!userId) {
       return res.status(StatusCodes.BAD_REQUEST).json({
-        message: 'Shop ID is required.',
+        message: 'User ID is required.',
       })
     }
 
-    const updatedShop = await Shop.findByIdAndUpdate(
-      id,
+    const updatedShop = await Shop.findOneAndUpdate(
+      { userId: userId },
       { name, collections, pinnedProducts, visibility },
       { new: true }
     )
@@ -186,7 +188,7 @@ export const CONTROLLER_SHOP = {
   }),
 
   getShop: asyncMiddleware(async (req, res) => {
-    const { userId } = req.body
+    const { _id: userId } = req.decoded
 
     const user = await User.findById(userId).populate({
       path: 'shop',
@@ -201,6 +203,7 @@ export const CONTROLLER_SHOP = {
         },
       ],
     })
+    console.log('Shop', user)
 
     if (!user || !user.shop) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -208,11 +211,34 @@ export const CONTROLLER_SHOP = {
       })
     }
 
-    console.log('Shop', user)
-
     res.status(StatusCodes.OK).json({
       data: user.shop,
       message: 'Shops retrieved successfully.',
+    })
+  }),
+
+  getCollections: asyncMiddleware(async (req, res) => {
+    const { _id: userId } = req.decoded
+
+    const user = await User.findById(userId).populate({
+      path: 'shop',
+      populate: [
+        {
+          path: 'collections.products',
+          model: 'Product', // Populating products in collections
+        },
+      ],
+    })
+
+    if (!user || !user.shop) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Shop not found.',
+      })
+    }
+
+    res.status(StatusCodes.OK).json({
+      data: user.shop.collections,
+      message: 'Collection retrieved successfully.',
     })
   }),
 }

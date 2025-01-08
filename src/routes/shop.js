@@ -20,6 +20,8 @@ router.get('/get-shops', Authenticate(), CONTROLLER_SHOP.getAllShops)
 
 router.get('/get-shop', Authenticate(), CONTROLLER_SHOP.getShop)
 
+router.get('/get-collection', Authenticate(), CONTROLLER_SHOP.getCollections)
+
 router.post('/create-shop', Authenticate(), CONTROLLER_SHOP.createShop)
 
 router.put('/update-shop', Authenticate(), CONTROLLER_SHOP.updateShop)

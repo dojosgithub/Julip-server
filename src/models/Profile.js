@@ -5,6 +5,10 @@ export const profileSchema = new Schema(
     bio: String,
     profileName: String,
     description: String,
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    },
     socialLinks: [
       {
         platform: {
@@ -27,6 +31,10 @@ export const profileSchema = new Schema(
           type: String,
           required: true,
         },
+        visibility: {
+          type: Boolean,
+          default: true,
+        },
       },
     ],
     webLinks: [
@@ -38,6 +46,10 @@ export const profileSchema = new Schema(
         link: {
           type: String,
           required: true,
+        },
+        visibility: {
+          type: Boolean,
+          default: true,
         },
       },
     ],

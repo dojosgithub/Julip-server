@@ -174,17 +174,10 @@ export const CONTROLLER_TEMPLATE = {
     })
   }),
   getTemplate: asyncMiddleware(async (req, res) => {
-    const { id } = req.params
-
-    // Validate ID
-    if (!id) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        message: 'Template ID is required.',
-      })
-    }
+    const { _id: userId } = req.decoded
 
     // fetched the template
-    const template = await Template.findById(id)
+    const template = await Template.find({ userId: userId })
 
     if (!template) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -223,7 +216,6 @@ export const CONTROLLER_TEMPLATE = {
     })
 
     const savedTemplate = await newTemplate.save()
-    console.log('savedTemplate', savedTemplate)
 
     const user = await User.findById(userId)
     if (!user) {

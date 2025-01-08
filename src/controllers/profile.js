@@ -128,11 +128,12 @@ export const CONTROLLER_PROFILE = {
       }
 
       body.socialLinks = body.socialLinks.map((link) => {
-        const { platform, url } = link
+        const { platform, url, visibility } = link
         const baseUrl = platformBaseUrls[platform]
         return {
           platform,
           url: url.startsWith('http') ? url : `${baseUrl}${url}`,
+          visibility,
         }
       })
     }
@@ -148,10 +149,11 @@ export const CONTROLLER_PROFILE = {
       }
 
       body.webLinks = body.webLinks.map((webLink) => {
-        const { title, link } = webLink
+        const { title, link, visibility } = webLink
         return {
           title,
           link: link.startsWith('http') ? link : `https://${link}`,
+          visibility,
         }
       })
     }
@@ -177,6 +179,7 @@ export const CONTROLLER_PROFILE = {
       webLinks: body.webLinks,
       imageStyle: body.imageStyle,
       image: body.image,
+      userId,
     }
 
     // Create new profile
@@ -197,7 +200,6 @@ export const CONTROLLER_PROFILE = {
   updateProfile: asyncMiddleware(async (req, res) => {
     const body = await JSON.parse(req.body.body)
     const id = body.userId
-    console.log('first', req.body)
     if (!id) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'User ID is required.',
@@ -230,11 +232,12 @@ export const CONTROLLER_PROFILE = {
 
       // Map only after validation
       body.socialLinks = body.socialLinks.map((link) => {
-        const { platform, url } = link
+        const { platform, url, visibility } = link
         const baseUrl = platformBaseUrls[platform]
         return {
           platform,
           url: url.startsWith('http') ? url : `${baseUrl}${url}`,
+          visibility,
         }
       })
     }
@@ -251,10 +254,11 @@ export const CONTROLLER_PROFILE = {
 
       // Map only after validation
       body.webLinks = body.webLinks.map((webLink) => {
-        const { title, link } = webLink
+        const { title, link, visibility } = webLink
         return {
           title,
           link: link.startsWith('http') ? link : `https://${link}`,
+          visibility,
         }
       })
     }
