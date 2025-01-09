@@ -8,6 +8,7 @@ import productRoutes from './product'
 import aboutRoutes from './about'
 import errorRoutes from './error'
 import pricingRoutes from './pricing'
+import scrappingRoute from './scrapper'
 
 const router = Router()
 
@@ -20,5 +21,6 @@ router.use('/product', productRoutes)
 router.use('/about', aboutRoutes)
 router.use('/error', errorRoutes)
 router.use('/pricing', pricingRoutes)
+router.use('/scrape', scrappingRoute)
 
 export default router

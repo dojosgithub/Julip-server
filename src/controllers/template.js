@@ -250,4 +250,24 @@ export const CONTROLLER_TEMPLATE = {
       message: 'Template fetched successfully.',
     })
   }),
+  getUsernameTemplate: asyncMiddleware(async (req, res) => {
+    // const { _id: userId } = req.decoded
+    const { userName } = req.body
+
+    const data = await User.find({ userName })
+      .populate('template')
+      .populate('profile')
+      .populate('about')
+      .populate('shop')
+
+    if (!data) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Data not found.',
+      })
+    }
+    res.status(StatusCodes.OK).json({
+      data: data,
+      message: 'Data fetched successfully.',
+    })
+  }),
 }

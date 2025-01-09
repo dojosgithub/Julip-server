@@ -1,14 +1,13 @@
-import { Parser } from "htmlparser2";
-import { PlatformParser, ParsedProduct } from "./typeParser";
-import { decode } from "html-entities";
+const { Parser } = require("htmlparser2");
+const { decode } = require("html-entities");
 
-export class Shopify implements PlatformParser {
-  detect(url: string, html: string): boolean {
+class Shopify {
+  detect(url, html) {
     return html.includes("Shopify") || url.includes("myshopify.com");
   }
 
-  parse(html: string, url: string): ParsedProduct {
-    const product: ParsedProduct = {
+  parse(html, url) {
+    const product = {
       platform: "Shopify",
       siteName: "",
       productUrl: url,
@@ -115,10 +114,9 @@ export class Shopify implements PlatformParser {
     return product;
   }
 
-  private parseJsonLd(content: string, product: ParsedProduct): void {
+  parseJsonLd(content, product) {
     try {
       // Clean the content before parsing
-      // eslint-disable-next-line no-control-regex
       const cleanContent = content.replace(/[\u0000-\u001F\u007F-\u009F]/g, "")
         .trim();
 
@@ -175,3 +173,5 @@ export class Shopify implements PlatformParser {
     }
   }
 }
+
+module.exports = Shopify;

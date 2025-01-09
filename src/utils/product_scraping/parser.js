@@ -1,18 +1,17 @@
 import fetch from "node-fetch";
 import { Readable } from "stream";
-import { ParsedProduct, PlatformParser } from "./typeParser";
 import { Amazon } from "./amazonParser";
 import { Shopify } from "./shopifyParser";
 import { Walmart } from "./wallmartParser";
 
-const parsers: PlatformParser[] = [
+const parsers = [
   new Amazon(),
   new Shopify(),
   new Walmart(),
   // Add more parsers here
 ];
 
-export async function fetchAndParseURL(url: string): Promise<ParsedProduct | { error: string }> {
+export async function fetchAndParseURL(url) {
   console.log(`Starting to fetch and parse URL: ${url}`);
   try {
     const response = await fetch(url, {
@@ -66,12 +65,10 @@ export async function fetchAndParseURL(url: string): Promise<ParsedProduct | { e
   }
 }
 
-function isValidProduct(product: ParsedProduct): boolean {
+function isValidProduct(product) {
   const isValid = product &&
     Object.keys(product).length > 0 &&
     (!!product.title || !!product.description || !!product.image);
   console.log(`Product validity check: ${isValid}`, product);
   return isValid;
 }
-
-export { PlatformParser, ParsedProduct };

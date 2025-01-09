@@ -23,6 +23,8 @@ import { createServer } from 'node:http'
 import { init } from './socket'
 import { setupSocketEventHandlers } from './socketEvents'
 import { task } from './utils/cron'
+import bodyParser from 'body-parser'
+
 // import { challengeTask } from './utils/challenge-cron'
 
 // For Socket.io
@@ -61,6 +63,7 @@ app.use(
 // initialize passport and session
 app.use(passport.initialize())
 app.use(passport.session())
+app.use(bodyParser.json())
 // app.get(
 //   '/api/stream',
 //   (req, res, next) => {

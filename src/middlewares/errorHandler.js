@@ -46,7 +46,7 @@ export const notifyError = async (error) => {
     serverError: true,
     error: `<pre>${JSON.stringify(error)}</pre>`,
     // toMultiple: ['ayazhussainbs@gmail.com', 'muzammilsarwar0@gmail.com', 'madeeha.hiba123@gmail.com'],
-    toMultiple: ['fatik.khan.200@gmail.com', 'zuhra.softthree@gmail.com'],
+    toMultiple: ['fatik.khan.200@gmail.com', 'zuhra.softthree@gmail.com', 'saad.salman98@gmail.com'],
     isDevServer: process.env.NODE_ENV == 'development' ? true : false,
   }
 

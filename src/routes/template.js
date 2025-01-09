@@ -28,4 +28,6 @@ router.get('/', Authenticate(), CONTROLLER_TEMPLATE.getTemplate)
 
 router.get('/select/:templateId', Authenticate(), CONTROLLER_TEMPLATE.selectTemplate)
 
+router.post('/get-detailed-template', Authenticate(), CONTROLLER_TEMPLATE.getUsernameTemplate)
+
 export default router
