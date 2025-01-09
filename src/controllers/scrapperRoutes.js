@@ -14,6 +14,27 @@ import { User, Group, Challenge, Profile } from '../models'
 // * Middlewares
 import { asyncMiddleware } from '../middlewares'
 
+const createBrowser = async () => {
+  // Check if running on Heroku (process.env.DYNO is set on Heroku)
+  const isHeroku = process.env.DYNO
+
+  return await puppeteer.launch({
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--window-size=1920x1080',
+      // Additional args for Heroku
+      isHeroku ? '--disable-software-rasterizer' : null,
+      isHeroku ? '--disable-extensions' : null,
+    ].filter(Boolean), // Remove null values
+    // Specify executable path for Heroku
+    executablePath: isHeroku ? process.env.PUPPETEER_EXECUTABLE_PATH : null,
+  })
+}
+
 export const CONTROLLER_SCRAPE = {
   scrapeAmazon: asyncMiddleware(async (req, res) => {
     const { url } = req.body
@@ -24,7 +45,7 @@ export const CONTROLLER_SCRAPE = {
     }
 
     try {
-      const browser = await puppeteer.launch({ headless: true })
+      const browser = await createBrowser()
       const page = await browser.newPage()
       await page.goto(url, { waitUntil: 'domcontentloaded' })
 
@@ -78,17 +99,7 @@ export const CONTROLLER_SCRAPE = {
     }
 
     try {
-      const browser = await puppeteer.launch({
-        headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--disable-gpu',
-          '--window-size=1920x1080',
-        ],
-      })
+      const browser = await createBrowser()
 
       const page = await browser.newPage()
 
@@ -200,10 +211,7 @@ export const CONTROLLER_SCRAPE = {
     }
 
     try {
-      const browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-      })
+      const browser = await createBrowser()
 
       const page = await browser.newPage()
 
