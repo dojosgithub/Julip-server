@@ -27,6 +27,10 @@ export const profileSchema = new Schema(
           ],
           required: true,
         },
+        username: {
+          type: String,
+          required: true,
+        },
         url: {
           type: String,
           required: true,
@@ -43,7 +47,7 @@ export const profileSchema = new Schema(
           type: String,
           required: true,
         },
-        link: {
+        url: {
           type: String,
           required: true,
         },

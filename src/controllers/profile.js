@@ -222,21 +222,27 @@ export const CONTROLLER_PROFILE = {
 
     // Validate and process socialLinks
     if (body.socialLinks && Array.isArray(body.socialLinks)) {
-      const invalidPlatform = body.socialLinks.find((link) => !platformBaseUrls[link.platform])
+      // Check for missing or invalid platforms
+      const invalidPlatform = body.socialLinks.find((link) => !link.platform || !platformBaseUrls[link.platform])
 
       if (invalidPlatform) {
         return res.status(StatusCodes.BAD_REQUEST).json({
-          message: `Invalid platform: ${invalidPlatform.platform}.`,
+          message: `Invalid platform: ${invalidPlatform.platform || 'unknown'}.`,
         })
       }
 
-      // Map only after validation
+      // Map validated socialLinks
       body.socialLinks = body.socialLinks.map((link) => {
-        const { platform, url, visibility } = link
+        const { platform, url, username, visibility } = link
         const baseUrl = platformBaseUrls[platform]
+
+        // Construct the full URL
+        const fullUrl = url?.startsWith('http') ? url : `${baseUrl}${username.split('@')[1]}`
+
         return {
           platform,
-          url: url.startsWith('http') ? url : `${baseUrl}${url}`,
+          username, // Original input URL stored as `name`
+          url: fullUrl, // Fully constructed URL
           visibility,
         }
       })
@@ -244,20 +250,21 @@ export const CONTROLLER_PROFILE = {
 
     // Validate and process webLinks
     if (body.webLinks && Array.isArray(body.webLinks)) {
-      const invalidWebLink = body.webLinks.find((webLink) => !webLink.title || !webLink.link)
+      const invalidWebLink = body.webLinks.find((webLink) => !webLink.title || !webLink.url)
 
       if (invalidWebLink) {
         return res.status(StatusCodes.BAD_REQUEST).json({
-          message: 'Both title and link are required for all webLinks.',
+          message: 'Both title and url are required for all webLinks.',
         })
       }
 
       // Map only after validation
       body.webLinks = body.webLinks.map((webLink) => {
-        const { title, link, visibility } = webLink
+        const { title, url, visibility } = webLink
         return {
           title,
-          link: link.startsWith('http') ? link : `https://${link}`,
+          // url: url?.startsWith('http') ? url : `https://${url}`,
+          url,
           visibility,
         }
       })
