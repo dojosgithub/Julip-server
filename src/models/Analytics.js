@@ -2,32 +2,52 @@ import mongoose, { Schema, model } from 'mongoose'
 
 export const analyticsSchema = new Schema(
   {
-    url: {
-      type: String,
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
       required: true,
     },
-    brandName: {
-      type: String,
-      required: true,
+    webClicks: {
+      timestamp: {
+        type: Date,
+        default: Date.now,
+      },
+      count: {
+        type: Number,
+        default: 0,
+      },
     },
-    price: {
-      type: Number,
-      required: true,
+    webViews: {
+      timestamp: {
+        type: Date,
+        default: Date.now,
+      },
+      count: {
+        type: Number,
+        default: 0,
+      },
     },
-    image: {
-      type: String,
-      required: true,
+    tabViews: {
+      type: Map, // Use a Map for dynamic tab names
+      of: {
+        timestamp: {
+          type: Date,
+          default: Date.now,
+        },
+        count: {
+          type: Number,
+          default: 0,
+        },
+      },
     },
-    title: {
-      type: String,
-      required: true,
-    },
-    description: {
-      type: String,
-      required: true,
-    },
-    buttonTitle: {
-      type: String, // Optional field
+    products: {
+      type: Map, // Use a Map for dynamic product names
+      of: {
+        count: {
+          type: Number,
+          default: 0,
+        },
+      },
     },
   },
   { versionKey: false, timestamps: true }
