@@ -186,7 +186,7 @@ export const CONTROLLER_TEMPLATE = {
     }
 
     res.status(StatusCodes.OK).json({
-      data: template,
+      data: template[0],
       message: 'Template fetched successfully.',
     })
   }),
