@@ -1,6 +1,6 @@
 import mongoose, { Schema, model } from 'mongoose'
 
-export const analyticsSchema = new Schema(
+const analyticsSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -41,8 +41,12 @@ export const analyticsSchema = new Schema(
       },
     },
     products: {
-      type: Map, // Use a Map for dynamic product names
+      type: Map,
       of: {
+        timestamp: {
+          type: Date,
+          default: Date.now,
+        },
         count: {
           type: Number,
           default: 0,
@@ -53,4 +57,4 @@ export const analyticsSchema = new Schema(
   { versionKey: false, timestamps: true }
 )
 
-export const Product = model('Analytics', analyticsSchema)
+export const Analytics = model('Analytics', analyticsSchema)
