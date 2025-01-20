@@ -146,77 +146,56 @@ export const CONTROLLER_TEMPLATE = {
   updateTemplate: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
     const { name, mode, colors, fonts, version = 'draft' } = req.body
-    // Validate ID
-    if (!id) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        message: 'Template ID is required.',
-      })
-    }
 
-    // Validate fields to update
-    if (!name && !mode && !colors && !fonts) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        message: 'At least one field is required to update.',
-      })
-    }
-    const templateData = {
-      name,
-      mode,
-      colors,
-      fonts,
-    }
+    // Validate user
     const user = await User.findById(userId)
     if (!user) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: 'User not found.',
       })
     }
-    // Update the template
 
-    let updatedTemplate
-    if (version === 'draft') {
-      updatedTemplate = await Template.findByIdAndUpdate(
-        user.template,
-        { draft: templateData, lastPublishedAt: Date.now() },
-        {
-          new: true,
-        }
-      )
-    } else if (version === 'published') {
-      updatedTemplate = await Template.findByIdAndUpdate(
-        user.template,
-        { published: templateData, lastPublishedAt: Date.now() },
-        {
-          new: true,
-        }
-      )
-    }
-
-    if (!updatedTemplate) {
+    // Fetch the existing template
+    const template = await Template.findById(user.template)
+    if (!template) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: 'Template not found.',
       })
     }
 
-    const { draft, published, ...restTemplate } = updatedTemplate.toObject()
-    let modifiedTemplate
-    if (version === 'draft') {
-      modifiedTemplate = {
-        ...restTemplate,
-        ...draft,
-      }
-    } else if (version === 'published') {
-      modifiedTemplate = {
-        ...restTemplate,
-        ...published,
-      }
+    // Merge the existing template data with the incoming data
+    const existingData = version === 'draft' ? template.draft : template.published
+    const updatedData = {
+      name: name || existingData.name,
+      mode: mode || existingData.mode,
+      colors: colors || existingData.colors,
+      fonts: fonts || existingData.fonts,
     }
+
+    // Update the template
+    const updateFields =
+      version === 'draft'
+        ? { draft: updatedData, lastPublishedAt: Date.now() }
+        : { published: updatedData, lastPublishedAt: Date.now() }
+
+    const updatedTemplate = await Template.findByIdAndUpdate(user.template, updateFields, { new: true })
+
+    if (!updatedTemplate) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Template update failed.',
+      })
+    }
+
+    // Format the response
+    const { draft, published, ...restTemplate } = updatedTemplate.toObject()
+    const modifiedTemplate = version === 'draft' ? { ...restTemplate, ...draft } : { ...restTemplate, ...published }
 
     res.status(StatusCodes.OK).json({
       data: modifiedTemplate,
       message: 'Template updated successfully.',
     })
   }),
+
   getTemplateList: asyncMiddleware(async (req, res) => {
     // Create a new template
     const templates = await Template.find()
@@ -231,14 +210,15 @@ export const CONTROLLER_TEMPLATE = {
     const { version = 'draft' } = req.query
 
     // fetched the template
-    const template = await Template.find({ userId: userId })
+    const template = await Template.findOne({ userId })
 
     if (!template) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: 'Template not found.',
       })
     }
-    const templateData = version === 'draft' ? template[0].draft : template[0].published
+    console.log('zxcvbn', template)
+    const templateData = version === 'draft' ? template.draft : template.published
 
     res.status(StatusCodes.OK).json({
       data: templateData,
