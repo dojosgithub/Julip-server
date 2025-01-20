@@ -190,9 +190,16 @@ export const CONTROLLER_PROFILE = {
     user.isProfileCreated = true
     await user.save()
 
+    const { draft, published, ...restProfile } = profile.toObject()
+    let modifiedProfile
+    modifiedProfile = {
+      ...restProfile,
+      ...draft,
+    }
+
     // Send response
     res.status(StatusCodes.CREATED).json({
-      data: profile,
+      data: modifiedProfile,
       message: 'Profile created successfully.',
     })
   }),
@@ -317,9 +324,23 @@ export const CONTROLLER_PROFILE = {
       )
     }
 
+    const { draft, published, ...restProfile } = profile.toObject()
+    let modifiedProfile
+    if (version === 'draft') {
+      modifiedProfile = {
+        ...restProfile,
+        ...draft,
+      }
+    } else if (version === 'published') {
+      modifiedProfile = {
+        ...restProfile,
+        ...published,
+      }
+    }
+
     // Send response
     res.status(StatusCodes.OK).json({
-      data: profile,
+      data: modifiedProfile,
       message: 'Profile updated successfully.',
     })
   }),

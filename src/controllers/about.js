@@ -88,8 +88,14 @@ export const CONTROLLER_ABOUT = {
     about.items.sort((a, b) => a.sequence - b.sequence)
 
     await about.save()
+    const { draft, published, ...restAbout } = about.toObject()
+    let modifiedAbout
+    modifiedAbout = {
+      ...restAbout,
+      ...draft,
+    }
 
-    res.status(200).json({ data: about, message: 'About section updated successfully.' })
+    res.status(200).json({ data: modifiedAbout, message: 'About section updated successfully.' })
   }),
 
   updateAboutItems: asyncMiddleware(async (req, res) => {
@@ -167,9 +173,22 @@ export const CONTROLLER_ABOUT = {
     }
 
     await about.save()
+    const { draft, published, ...restAbout } = about.toObject()
+    let modifiedAbout
+    if (version === 'draft') {
+      modifiedAbout = {
+        ...restAbout,
+        ...draft,
+      }
+    } else if (version === 'published') {
+      modifiedAbout = {
+        ...restAbout,
+        ...published,
+      }
+    }
 
     res.status(200).json({
-      data: about,
+      data: modifiedAbout,
       message: 'About section updated successfully.',
     })
   }),

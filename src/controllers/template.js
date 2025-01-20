@@ -132,8 +132,13 @@ export const CONTROLLER_TEMPLATE = {
     user.template = savedTemplate._id
     await user.save()
 
+    const { draft, published, ...restTemplate } = template.toObject()
+    const modifiedTemplate = {
+      ...restTemplate,
+      ...draft,
+    }
     res.status(StatusCodes.CREATED).json({
-      data: template,
+      data: modifiedTemplate,
       message: 'Template created successfully.',
     })
   }),
@@ -189,8 +194,22 @@ export const CONTROLLER_TEMPLATE = {
       })
     }
 
+    const { draft, published, ...restTemplate } = updatedTemplate.toObject()
+    let modifiedTemplate
+    if (version === 'draft') {
+      modifiedTemplate = {
+        ...restTemplate,
+        ...draft,
+      }
+    } else if (version === 'published') {
+      modifiedTemplate = {
+        ...restTemplate,
+        ...published,
+      }
+    }
+
     res.status(StatusCodes.OK).json({
-      data: updatedTemplate,
+      data: modifiedTemplate,
       message: 'Template updated successfully.',
     })
   }),

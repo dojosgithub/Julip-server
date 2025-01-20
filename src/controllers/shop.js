@@ -121,8 +121,16 @@ export const CONTROLLER_SHOP = {
     user.shop = shop._id
     await user.save()
 
+    const { draft, published, ...restShop } = shop.toObject()
+    let modifiedShop
+
+    modifiedShop = {
+      ...restShop,
+      ...draft,
+    }
+
     res.status(StatusCodes.CREATED).json({
-      data: shop,
+      data: modifiedShop,
       message: 'Shop created successfully.',
     })
   }),
@@ -166,9 +174,22 @@ export const CONTROLLER_SHOP = {
         message: 'Shop not found.',
       })
     }
+    const { draft, published, ...restShop } = updatedShop.toObject()
+    let modifiedShop
+    if (version === 'draft') {
+      modifiedShop = {
+        ...restShop,
+        ...draft,
+      }
+    } else if (version === 'published') {
+      modifiedShop = {
+        ...restShop,
+        ...published,
+      }
+    }
 
     res.status(StatusCodes.OK).json({
-      data: updatedShop,
+      data: modifiedShop,
       message: 'Shop updated successfully.',
     })
   }),
