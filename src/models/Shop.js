@@ -1,44 +1,54 @@
-import mongoose, { Schema, model } from 'mongoose'
-import { DOC_STATUS, USER_ROLE } from '../utils/user'
-import crypto from 'crypto'
-import Joi, { boolean } from 'joi'
-import mongoosePaginate from 'mongoose-paginate-v2'
-import mongooseAggregatePaginate from 'mongoose-aggregate-paginate-v2'
+import { Schema, model } from 'mongoose'
 
-export const shopSchema = new Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-    },
-    collections: [
-      {
-        name: {
-          type: String,
-          required: true,
-        },
-        products: [
-          {
-            type: Schema.Types.ObjectId,
-            ref: 'Product',
-          },
-        ],
+const shopContentSchema = {
+  name: {
+    type: String,
+    required: true,
+  },
+  collections: [
+    {
+      name: {
+        type: String,
+        required: true,
       },
-    ],
-    pinnedProducts: {
-      title: String,
-      productsList: [
+      products: [
         {
           type: Schema.Types.ObjectId,
-          ref: 'Profile',
+          ref: 'Product',
         },
       ],
     },
-    visibility: {
-      type: Boolean,
+  ],
+  pinnedProducts: {
+    title: String,
+    productsList: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Profile',
+      },
+    ],
+  },
+  visibility: {
+    type: Boolean,
+  },
+}
+
+// Updated profile schema with draft and published versions
+export const shopSchema = new Schema(
+  {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    // Draft version of the profile
+    draft: shopContentSchema,
+    // Published version of the profile
+    published: shopContentSchema,
+    lastPublishedAt: {
+      type: Date,
+      default: null,
     },
   },
   { versionKey: false, timestamps: true }
 )
-
 export const Shop = model('Shop', shopSchema)

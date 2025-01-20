@@ -1,69 +1,75 @@
-import mongoose, { Schema, model } from 'mongoose'
-import { DOC_STATUS, USER_ROLE } from '../utils/user'
-import crypto from 'crypto'
-import Joi from 'joi'
-import mongoosePaginate from 'mongoose-paginate-v2'
-import mongooseAggregatePaginate from 'mongoose-aggregate-paginate-v2'
+import { Schema, model } from 'mongoose'
 
-export const templateSchema = new Schema(
-  {
-    name: {
+const TemplateContentSchema = {
+  name: {
+    type: String,
+    required: true,
+  },
+  predefined: {
+    type: Boolean,
+    default: false,
+  },
+  mode: {
+    type: String,
+    enum: ['light', 'dark'],
+    default: 'light',
+  },
+  colors: {
+    dark: {
+      main: {
+        type: String,
+        required: true,
+      },
+      background: {
+        type: String,
+        required: true,
+      },
+      buttons: {
+        type: String,
+        required: true,
+      },
+    },
+    light: {
+      main: {
+        type: String,
+        required: true,
+      },
+      background: {
+        type: String,
+        required: true,
+      },
+      buttons: {
+        type: String,
+        required: true,
+      },
+    },
+  },
+
+  fonts: {
+    header: {
       type: String,
       required: true,
     },
-    predefined: {
-      type: Boolean,
-      default: false,
-    },
-    mode: {
+    body: {
       type: String,
-      enum: ['light', 'dark'],
-      default: 'light',
+      required: true,
     },
+  },
+}
+
+export const templateSchema = new Schema(
+  {
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
     },
-    colors: {
-      dark: {
-        main: {
-          type: String,
-          required: true,
-        },
-        background: {
-          type: String,
-          required: true,
-        },
-        buttons: {
-          type: String,
-          required: true,
-        },
-      },
-      light: {
-        main: {
-          type: String,
-          required: true,
-        },
-        background: {
-          type: String,
-          required: true,
-        },
-        buttons: {
-          type: String,
-          required: true,
-        },
-      },
-    },
-
-    fonts: {
-      header: {
-        type: String,
-        required: true,
-      },
-      body: {
-        type: String,
-        required: true,
-      },
+    // Draft version of the profile
+    draft: TemplateContentSchema,
+    // Published version of the profile
+    published: TemplateContentSchema,
+    lastPublishedAt: {
+      type: Date,
+      default: Date.now,
     },
   },
   { versionKey: false, timestamps: true }

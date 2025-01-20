@@ -31,6 +31,14 @@ const aboutSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
+  // Draft version of the profile
+  draft: {
+    items: [aboutItemSchema],
+  },
+  // Published version of the profile
+  published: {
+    items: [aboutItemSchema],
+  },
   items: [aboutItemSchema], // An array to maintain the sequence
 })
 

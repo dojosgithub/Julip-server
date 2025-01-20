@@ -6,6 +6,7 @@ import mongoose, { model } from 'mongoose'
 const axios = require('axios')
 import passport from 'passport'
 import dotenv from 'dotenv'
+import { getGeolocation } from '../utils/geo-location'
 
 dotenv.config()
 
@@ -70,53 +71,32 @@ import {
   getUsersPaginated,
 } from '../services'
 
-// * Utilities
-import {
-  DEALERSHIP_STATUS,
-  DEALERSHIP_STAFF_ROLE,
-  DOC_STATUS,
-  getRoleByValue,
-  getRoleShortName,
-  USER_ROLE,
-  USER_TYPES,
-  AUCTION_STATUS,
-  CAR_STATUS,
-  SYSTEM_STAFF_ROLE,
-  BID_STATUS,
-  getCurrentDayName,
-  getDateForDay,
-  getStartOfDayISO,
-  getDayName,
-  CHALLENGE_STATUS,
-} from '../utils/user'
-import { getLoginLinkByEnv, getSanitizeCompanyName, toObjectId } from '../utils/misc'
-import { stripe } from '../utils/stripe'
-import Email from '../utils/email'
-import { escapeRegex } from '../utils/misc'
-import { comparePassword, generateOTToken, generatePassword, generateToken, verifyTOTPToken } from '../utils'
-import { sendSMS } from '../utils/smsUtil'
-import { getIO } from '../socket'
-
 const { ObjectId } = mongoose.Types
 
-// const CLIENT_ID = process.env.GOOGLE_CLIENT_ID
-// const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
-// const REDIRECT_URI = 'http://localhost:3000/api/user/auth/google/callback'
+const calculatePercentages = (data, total) => {
+  return Object.entries(data).reduce((acc, [key, value]) => {
+    const percentage = ((value / total) * 100).toFixed(2) // Calculate percentage
+    acc[key] = { count: value, percentage: `${percentage}%` } // Add count and percentage
+    return acc
+  }, {})
+}
 
 export const CONTROLLER_ANALYTICS = {
   // Increment webClicks count
   addWebClick: asyncMiddleware(async (req, res) => {
-    // const { userId } = req.decoded
-    const { userId } = req.body
-    console.log('firstWebbbbbbb', userId)
+    const { userId, ip } = req.body // Assume IP is sent in the request body
+    const location = await getGeolocation(ip)
+
     let analytics = await Analytics.findOne({ userId })
 
     if (!analytics) {
       analytics = new Analytics({ userId })
     }
 
-    analytics.webClicks.count += 1
-    analytics.webClicks.timestamp = new Date()
+    analytics.webClicks.push({
+      timestamp: new Date(),
+      location,
+    })
 
     await analytics.save()
 
@@ -128,7 +108,8 @@ export const CONTROLLER_ANALYTICS = {
 
   // Increment webViews count
   addWebView: asyncMiddleware(async (req, res) => {
-    const { userId } = req.body
+    const { userId, ip } = req.body
+    const location = await getGeolocation(ip)
 
     let analytics = await Analytics.findOne({ userId })
 
@@ -136,8 +117,10 @@ export const CONTROLLER_ANALYTICS = {
       analytics = new Analytics({ userId })
     }
 
-    analytics.webViews.count += 1
-    analytics.webViews.timestamp = new Date()
+    analytics.webViews.push({
+      timestamp: new Date(),
+      location,
+    })
 
     await analytics.save()
 
@@ -151,12 +134,18 @@ export const CONTROLLER_ANALYTICS = {
   addTabView: asyncMiddleware(async (req, res) => {
     const { userId, tabName } = req.body
 
+    // Find or create the analytics document
     let analytics = await Analytics.findOne({ userId })
-
     if (!analytics) {
       analytics = new Analytics({ userId })
     }
 
+    // Ensure tabViews map is initialized
+    if (!analytics.tabViews) {
+      analytics.tabViews = new Map()
+    }
+
+    // Check if the tabName exists and update or add it
     if (!analytics.tabViews.has(tabName)) {
       analytics.tabViews.set(tabName, { count: 1, timestamp: new Date() })
     } else {
@@ -170,7 +159,7 @@ export const CONTROLLER_ANALYTICS = {
 
     res.status(StatusCodes.OK).json({
       message: 'Tab view added successfully.',
-      data: Object.fromEntries(analytics.tabViews), // Convert Map to object for easier frontend handling
+      data: Object.fromEntries(analytics.tabViews), // Convert Map to plain object for response
     })
   }),
 
@@ -182,32 +171,34 @@ export const CONTROLLER_ANALYTICS = {
 
     // Initialize the document if not found
     if (!analytics) {
-      analytics = new Analytics({ userId, products: new Map() }) // Ensure products is initialized
+      analytics = new Analytics({ userId })
     }
 
-    // Ensure the products map is initialized
-    if (!analytics.products) {
-      analytics.products = new Map()
-    }
+    // Check if the product already exists in the array
+    const productIndex = analytics.products.findIndex((product) => product.productName === productName)
 
-    // Add or update product click count
-    if (!analytics.products.has(productName)) {
-      analytics.products.set(productName, { count: 1, timestamp: new Date() })
+    if (productIndex === -1) {
+      // If product doesn't exist, add it
+      analytics.products.push({
+        productName,
+        count: 1,
+        timestamp: new Date(),
+      })
     } else {
-      const product = analytics.products.get(productName)
-      product.count += 1
-      product.timestamp = new Date()
-      analytics.products.set(productName, product)
+      // If product exists, update its count and timestamp
+      analytics.products[productIndex].count += 1
+      analytics.products[productIndex].timestamp = new Date()
     }
 
     await analytics.save()
 
     res.status(StatusCodes.OK).json({
       message: 'Product click added successfully.',
-      data: Object.fromEntries(analytics.products), // Convert Map to object for easier frontend handling
+      data: analytics.products, // Return the updated products array
     })
   }),
 
+  // Get analytics for the last 7 days
   // Get analytics for the last 7 days
   getAnalyticsLast7Days: asyncMiddleware(async (req, res) => {
     const { userId } = req.body
@@ -215,10 +206,7 @@ export const CONTROLLER_ANALYTICS = {
     const sevenDaysAgo = new Date()
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
-    const analytics = await Analytics.findOne({
-      userId,
-      $or: [{ 'webClicks.timestamp': { $gte: sevenDaysAgo } }, { 'webViews.timestamp': { $gte: sevenDaysAgo } }],
-    })
+    const analytics = await Analytics.findOne({ userId })
 
     if (!analytics) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -226,19 +214,49 @@ export const CONTROLLER_ANALYTICS = {
       })
     }
 
-    const tabViews = Object.fromEntries(
-      Array.from(analytics.tabViews.entries()).filter(([, { timestamp }]) => new Date(timestamp) >= sevenDaysAgo)
-    )
+    // Filter webClicks and webViews within the last 7 days
+    const webClicks = analytics.webClicks.filter(({ timestamp }) => new Date(timestamp) >= sevenDaysAgo)
+    const webViews = analytics.webViews.filter(({ timestamp }) => new Date(timestamp) >= sevenDaysAgo)
 
-    const products = Object.fromEntries(
-      Array.from(analytics.products.entries()).filter(([, { timestamp }]) => new Date(timestamp) >= sevenDaysAgo)
-    )
+    const totalWebClicks = webClicks.length
+    const totalWebViews = webViews.length
+
+    // Group and count webClicks by country
+    const webClicksByCountryRaw = webClicks.reduce((acc, { location: { country } }) => {
+      country = country || 'Unknown'
+      acc[country] = (acc[country] || 0) + 1
+      return acc
+    }, {})
+
+    // Group and count webViews by country
+    const webViewsByCountryRaw = webViews.reduce((acc, { location: { country } }) => {
+      country = country || 'Unknown'
+      acc[country] = (acc[country] || 0) + 1
+      return acc
+    }, {})
+
+    // Calculate percentages
+    const webClicksByCountry = calculatePercentages(webClicksByCountryRaw, totalWebClicks)
+    const webViewsByCountry = calculatePercentages(webViewsByCountryRaw, totalWebViews)
+
+    // Convert Map to Array for tabViews
+    const tabViews = Array.from(analytics.tabViews.entries())
+      .filter(([key, value]) => new Date(value.timestamp) >= sevenDaysAgo)
+      .sort((a, b) => b[1].count - a[1].count)
+
+    // Prepare top 5 products
+    const products = analytics.products
+      .filter(({ timestamp }) => new Date(timestamp) >= sevenDaysAgo)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5) // Limit to top 5
 
     res.status(StatusCodes.OK).json({
       message: 'Analytics data for the last 7 days fetched successfully.',
       data: {
-        webClicks: analytics.webClicks,
-        webViews: analytics.webViews,
+        webClicksByCountry,
+        webViewsByCountry,
+        webClicks: totalWebClicks, // Total click events
+        webViews: totalWebViews, // Total view events
         tabViews,
         products,
       },
@@ -252,10 +270,7 @@ export const CONTROLLER_ANALYTICS = {
     const fourteenDaysAgo = new Date()
     fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14)
 
-    const analytics = await Analytics.findOne({
-      userId,
-      $or: [{ 'webClicks.timestamp': { $gte: fourteenDaysAgo } }, { 'webViews.timestamp': { $gte: fourteenDaysAgo } }],
-    })
+    const analytics = await Analytics.findOne({ userId })
 
     if (!analytics) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -263,19 +278,49 @@ export const CONTROLLER_ANALYTICS = {
       })
     }
 
-    const tabViews = Object.fromEntries(
-      Array.from(analytics.tabViews.entries()).filter(([, { timestamp }]) => new Date(timestamp) >= fourteenDaysAgo)
-    )
+    // Filter webClicks and webViews within the last 14 days
+    const webClicks = analytics.webClicks.filter(({ timestamp }) => new Date(timestamp) >= fourteenDaysAgo)
+    const webViews = analytics.webViews.filter(({ timestamp }) => new Date(timestamp) >= fourteenDaysAgo)
 
-    const products = Object.fromEntries(
-      Array.from(analytics.products.entries()).filter(([, { timestamp }]) => new Date(timestamp) >= fourteenDaysAgo)
-    )
+    const totalWebClicks = webClicks.length
+    const totalWebViews = webViews.length
+
+    // Group and count webClicks by country
+    const webClicksByCountryRaw = webClicks.reduce((acc, { location: { country } }) => {
+      country = country || 'Unknown'
+      acc[country] = (acc[country] || 0) + 1
+      return acc
+    }, {})
+
+    // Group and count webViews by country
+    const webViewsByCountryRaw = webViews.reduce((acc, { location: { country } }) => {
+      country = country || 'Unknown'
+      acc[country] = (acc[country] || 0) + 1
+      return acc
+    }, {})
+
+    // Calculate percentages
+    const webClicksByCountry = calculatePercentages(webClicksByCountryRaw, totalWebClicks)
+    const webViewsByCountry = calculatePercentages(webViewsByCountryRaw, totalWebViews)
+
+    // Convert Map to Array for tabViews
+    const tabViews = Array.from(analytics.tabViews.entries())
+      .filter(([key, value]) => new Date(value.timestamp) >= fourteenDaysAgo)
+      .sort((a, b) => b[1].count - a[1].count)
+
+    // Prepare top 5 products
+    const products = analytics.products
+      .filter(({ timestamp }) => new Date(timestamp) >= fourteenDaysAgo)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5) // Limit to top 5
 
     res.status(StatusCodes.OK).json({
       message: 'Analytics data for the last 14 days fetched successfully.',
       data: {
-        webClicks: analytics.webClicks,
-        webViews: analytics.webViews,
+        webClicksByCountry,
+        webViewsByCountry,
+        webClicks: totalWebClicks, // Total click events
+        webViews: totalWebViews, // Total view events
         tabViews,
         products,
       },

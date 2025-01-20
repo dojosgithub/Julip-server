@@ -105,7 +105,7 @@ export const CONTROLLER_TEMPLATE = {
     }
 
     // Create a new template
-    const template = new Template({
+    const templateData = {
       name,
       mode: mode || 'light', // Default to 'light' mode if not provided
       colors,
@@ -114,6 +114,12 @@ export const CONTROLLER_TEMPLATE = {
         header: fonts.header,
         body: fonts.body,
       },
+    }
+    const template = new Template({
+      userId,
+      draft: templateData,
+      published: templateData,
+      lastPublishedAt: Date.now(),
     })
 
     const savedTemplate = await template.save()
@@ -133,9 +139,9 @@ export const CONTROLLER_TEMPLATE = {
   }),
 
   updateTemplate: asyncMiddleware(async (req, res) => {
+    const { _id: userId } = req.decoded
     const { id } = req.params
-    const { name, mode, colors, fonts } = req.body
-
+    const { name, mode, colors, fonts, version = 'draft' } = req.body
     // Validate ID
     if (!id) {
       return res.status(StatusCodes.BAD_REQUEST).json({
@@ -149,9 +155,33 @@ export const CONTROLLER_TEMPLATE = {
         message: 'At least one field is required to update.',
       })
     }
-
+    const templateData = {
+      name,
+      mode,
+      colors,
+      fonts,
+    }
     // Update the template
-    const updatedTemplate = await Template.findByIdAndUpdate(id, { name, mode, colors, fonts }, { new: true })
+    const temp1 = await Template.findById(id)
+
+    let updatedTemplate
+    if (version === 'draft') {
+      updatedTemplate = await Template.findByIdAndUpdate(
+        id,
+        { draft: templateData, lastPublishedAt: Date.now() },
+        {
+          new: true,
+        }
+      )
+    } else if (version === 'published') {
+      updatedTemplate = await Template.findByIdAndUpdate(
+        id,
+        { published: templateData, lastPublishedAt: Date.now() },
+        {
+          new: true,
+        }
+      )
+    }
 
     if (!updatedTemplate) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -175,6 +205,7 @@ export const CONTROLLER_TEMPLATE = {
   }),
   getTemplate: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
+    const { version = 'draft' } = req.query
 
     // fetched the template
     const template = await Template.find({ userId: userId })
@@ -184,9 +215,10 @@ export const CONTROLLER_TEMPLATE = {
         message: 'Template not found.',
       })
     }
+    const templateData = version === 'draft' ? template[0].draft : template[0].published
 
     res.status(StatusCodes.OK).json({
-      data: template[0],
+      data: templateData,
       message: 'Template fetched successfully.',
     })
   }),

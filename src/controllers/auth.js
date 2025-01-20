@@ -151,6 +151,7 @@ export const CONTROLLER_AUTH = {
     const newUser = new User({
       fullName,
       email,
+      isEmailVerified: true,
       password: hasedPassword,
       avatar: 'https://res.cloudinary.com/dojo-dev/image/upload/v1721912391/biddi-cars-dev/1721912406433.png',
       accountType: 'Julip-Account',

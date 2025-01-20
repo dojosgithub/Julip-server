@@ -20,7 +20,6 @@ export const CONTROLLER_ABOUT = {
   addAboutItems: asyncMiddleware(async (req, res) => {
     const body = JSON.parse(req.body.body)
     const { userId, items = [] } = body
-
     if (!userId) {
       return res.status(400).json({ message: 'User ID is required.' })
     }
@@ -75,7 +74,8 @@ export const CONTROLLER_ABOUT = {
     if (!about) {
       const newAbout = new About({
         userId,
-        items: processedItems,
+        draft: { items: processedItems },
+        published: { items: processedItems },
       })
       await newAbout.save()
       return res.status(201).json({ data: newAbout, message: 'About section created successfully.' })
@@ -94,7 +94,7 @@ export const CONTROLLER_ABOUT = {
 
   updateAboutItems: asyncMiddleware(async (req, res) => {
     const body = JSON.parse(req.body.body)
-    const { userId, items = [] } = body
+    const { userId, items = [], version = 'draft' } = body
 
     if (!userId) {
       return res.status(400).json({ message: 'User ID is required.' })
@@ -160,11 +160,11 @@ export const CONTROLLER_ABOUT = {
       return res.status(404).json({ message: 'About section not found for this user.' })
     }
 
-    // Update the items array
-    about.items = processedItems
-
-    // Sort items by sequence to ensure the order is maintained
-    about.items.sort((a, b) => a.sequence - b.sequence)
+    if (version === 'draft') {
+      about.draft.items = processedItems.sort((a, b) => a.sequence - b.sequence)
+    } else if (version === 'published') {
+      about.published.items = processedItems.sort((a, b) => a.sequence - b.sequence)
+    }
 
     await about.save()
 
@@ -200,13 +200,16 @@ export const CONTROLLER_ABOUT = {
   }),
 
   getAbout: asyncMiddleware(async (req, res) => {
-    const { id } = req.params
-    const about = await About.findOne({ id })
-
+    const { id, version = 'draft' } = req.query
+    const { _id: userId } = req.decoded
+    const about = await About.findOne({ userId })
     if (!about) {
       return res.status(404).json({ message: 'About section not found.' })
     }
-
-    res.status(200).json({ data: about.items })
+    if (version === 'draft') {
+      return res.status(200).json({ data: about.draft.items })
+    } else if (version === 'published') {
+      return res.status(200).json({ data: about.published.items })
+    }
   }),
 }

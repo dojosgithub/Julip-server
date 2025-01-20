@@ -1,67 +1,83 @@
 import { Schema, model } from 'mongoose'
 
+const profileContentSchema = {
+  bio: String,
+  profileName: String,
+  description: String,
+  socialLinks: [
+    {
+      platform: {
+        type: String,
+        enum: [
+          'Instagram',
+          'TikTok',
+          'YouTube',
+          'Facebook',
+          'Discord',
+          'Threads',
+          'LinkedIn',
+          'Pinterest',
+          'Spotify',
+          'Snapchat',
+        ],
+        required: true,
+      },
+      username: {
+        type: String,
+        required: true,
+      },
+      url: {
+        type: String,
+        required: true,
+      },
+      visibility: {
+        type: Boolean,
+        default: true,
+      },
+    },
+  ],
+  webLinks: [
+    {
+      title: {
+        type: String,
+        required: true,
+      },
+      url: {
+        type: String,
+        required: true,
+      },
+      visibility: {
+        type: Boolean,
+        default: true,
+      },
+    },
+  ],
+  image: Object,
+  imageStyle: {
+    type: String,
+    enum: ['horizontal', 'vertical'],
+    default: 'vertical',
+  },
+}
+
+// Updated profile schema with draft and published versions
 export const profileSchema = new Schema(
   {
-    bio: String,
-    profileName: String,
-    description: String,
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
     },
-    socialLinks: [
-      {
-        platform: {
-          type: String,
-          enum: [
-            'Instagram',
-            'TikTok',
-            'YouTube',
-            'Facebook',
-            'Discord',
-            'Threads',
-            'LinkedIn',
-            'Pinterest',
-            'Spotify',
-            'Snapchat',
-          ],
-          required: true,
-        },
-        username: {
-          type: String,
-          required: true,
-        },
-        url: {
-          type: String,
-          required: true,
-        },
-        visibility: {
-          type: Boolean,
-          default: true,
-        },
-      },
-    ],
-    webLinks: [
-      {
-        title: {
-          type: String,
-          required: true,
-        },
-        url: {
-          type: String,
-          required: true,
-        },
-        visibility: {
-          type: Boolean,
-          default: true,
-        },
-      },
-    ],
-    image: Object,
-    imageStyle: {
-      type: String,
-      enum: ['horizontal', 'vertical'],
-      default: 'vertical',
+    // Draft version of the profile
+    draft: profileContentSchema,
+    // Published version of the profile
+    published: profileContentSchema,
+    lastPublishedAt: {
+      type: Date,
+      default: null,
+    },
+    isDraft: {
+      type: Boolean,
+      default: false,
     },
   },
   { versionKey: false, timestamps: true }

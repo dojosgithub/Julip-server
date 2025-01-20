@@ -109,8 +109,14 @@ export const CONTROLLER_SHOP = {
         message: 'User not found.',
       })
     }
-
-    const shop = new Shop({ name, collections, pinnedProducts, visibility, userId })
+    const shopData = {
+      name,
+      collections,
+      pinnedProducts,
+      visibility,
+      userId,
+    }
+    const shop = new Shop({ userId, draft: shopData, published: shopData, lastPublishedAt: Date.now() })
     await shop.save()
     user.shop = shop._id
     await user.save()
@@ -124,20 +130,36 @@ export const CONTROLLER_SHOP = {
   // Update a shop
   updateShop: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
+    console.log()
     // const { us } = req.query
     const { name, collections, pinnedProducts, visibility } = req.body
-
+    const { version = 'draft' } = req.body
     if (!userId) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'User ID is required.',
       })
     }
+    let updatedShop
+    const shopData = {
+      name,
+      collections,
+      pinnedProducts,
+      visibility,
+    }
 
-    const updatedShop = await Shop.findOneAndUpdate(
-      { userId: userId },
-      { name, collections, pinnedProducts, visibility },
-      { new: true }
-    )
+    if (version === 'draft') {
+      updatedShop = await Shop.findOneAndUpdate(
+        { userId: userId },
+        { draft: shopData, lastPublishedAt: Date.now() },
+        { new: true }
+      )
+    } else if (version === 'published') {
+      updatedShop = await Shop.findOneAndUpdate(
+        { userId: userId },
+        { published: shopData, lastPublishedAt: Date.now() },
+        { new: true }
+      )
+    }
 
     if (!updatedShop) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -189,21 +211,22 @@ export const CONTROLLER_SHOP = {
 
   getShop: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
+    const { version = 'draft' } = req.query // 'draft' or 'published'
 
+    // Fetch the user along with the shop data
     const user = await User.findById(userId).populate({
       path: 'shop',
       populate: [
         {
-          path: 'collections.products',
-          model: 'Product', // Populating products in collections
+          path: `${version}.collections.products`, // Populate products in collections for the requested version
+          model: 'Product',
         },
         {
-          path: 'pinnedProducts.productsList',
-          model: 'Product', // Populating products in pinnedProducts
+          path: `${version}.pinnedProducts.productsList`, // Populate pinned products for the requested version
+          model: 'Product',
         },
       ],
     })
-    console.log('Shop', user)
 
     if (!user || !user.shop) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -211,9 +234,14 @@ export const CONTROLLER_SHOP = {
       })
     }
 
+    const shopData = user.shop[version] // Access draft or published version of the shop
+
     res.status(StatusCodes.OK).json({
-      data: user.shop,
-      message: 'Shops retrieved successfully.',
+      data: {
+        ...shopData,
+        lastPublishedAt: user.shop.lastPublishedAt,
+      },
+      message: 'Shop retrieved successfully.',
     })
   }),
 

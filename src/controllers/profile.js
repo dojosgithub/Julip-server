@@ -183,7 +183,7 @@ export const CONTROLLER_PROFILE = {
     }
 
     // Create new profile
-    const profile = await Profile.create(profileData)
+    const profile = await Profile.create({ userId, draft: profileData, published: profileData })
 
     // Link profile to user
     user.profile = profile._id
@@ -199,7 +199,9 @@ export const CONTROLLER_PROFILE = {
 
   updateProfile: asyncMiddleware(async (req, res) => {
     const body = await JSON.parse(req.body.body)
+    // const { version = 'published' } = req.query
     const id = body.userId
+    const { version = 'draft' } = body
     if (!id) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'User ID is required.',
@@ -235,7 +237,6 @@ export const CONTROLLER_PROFILE = {
       body.socialLinks = body.socialLinks.map((link) => {
         const { platform, url, username, visibility } = link
         const baseUrl = platformBaseUrls[platform]
-
         // Construct the full URL
         const fullUrl = url?.startsWith('http') ? url : `${baseUrl}${username.split('@')[1]}`
 
@@ -292,17 +293,28 @@ export const CONTROLLER_PROFILE = {
       imageStyle: body.imageStyle,
       image: body.image,
     }
-
-    // Update or create the profile
-    let profile
-    if (user.profile) {
-      profile = await Profile.findByIdAndUpdate(user.profile._id, profileData, {
-        new: true,
+    if (!user.profile) {
+      res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'Could not find Profile.',
       })
-    } else {
-      profile = await Profile.create(profileData)
-      user.profile = profile._id
-      await user.save()
+    }
+    let profile
+    if (version === 'draft') {
+      profile = await Profile.findByIdAndUpdate(
+        user.profile._id,
+        { draft: profileData, lastPublishedAt: Date.now() },
+        {
+          new: true,
+        }
+      )
+    } else if (version === 'published') {
+      profile = await Profile.findByIdAndUpdate(
+        user.profile._id,
+        { published: profileData, lastPublishedAt: Date.now() },
+        {
+          new: true,
+        }
+      )
     }
 
     // Send response
@@ -313,17 +325,33 @@ export const CONTROLLER_PROFILE = {
   }),
 
   getProfile: asyncMiddleware(async (req, res) => {
-    // const id = req.query.userId
     const { _id: id } = req.decoded
-    console.log(`getProfile`, id)
-    const user = await User.findById(id).populate('profile')
+    const { version = 'draft' } = req.query // 'draft' or 'published'
+
+    const user = await User.findById(id).populate('profile').populate({
+      path: 'profile',
+      select: 'draft published', // Explicitly include draft and published fields
+    })
     if (!user) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: 'User not found.',
       })
     }
+
+    if (!user.profile) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Profile not found.',
+      })
+    }
+
+    // Return the requested version
+    const profileData = version === 'draft' ? user.profile.draft : user.profile.published
     res.status(StatusCodes.OK).json({
-      data: user.profile,
+      data: {
+        ...profileData,
+        lastPublishedAt: user.profile.lastPublishedAt,
+        isDraft: user.profile.isDraft,
+      },
       message: 'Profile Details Successfully Fetched',
     })
   }),
