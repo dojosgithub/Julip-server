@@ -18,7 +18,7 @@ const router = Router()
 
 router.post('/create-template', Authenticate(), CONTROLLER_TEMPLATE.createTemplate)
 
-router.put('/update-template/:id', Authenticate(), CONTROLLER_TEMPLATE.updateTemplate)
+router.put('/update-template', Authenticate(), CONTROLLER_TEMPLATE.updateTemplate)
 
 router.get('/list', Authenticate(), CONTROLLER_TEMPLATE.getTemplateList)
 

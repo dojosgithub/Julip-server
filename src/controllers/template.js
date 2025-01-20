@@ -145,7 +145,6 @@ export const CONTROLLER_TEMPLATE = {
 
   updateTemplate: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
-    const { id } = req.params
     const { name, mode, colors, fonts, version = 'draft' } = req.body
     // Validate ID
     if (!id) {
@@ -166,13 +165,18 @@ export const CONTROLLER_TEMPLATE = {
       colors,
       fonts,
     }
+    const user = await User.findById(userId)
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'User not found.',
+      })
+    }
     // Update the template
-    const temp1 = await Template.findById(id)
 
     let updatedTemplate
     if (version === 'draft') {
       updatedTemplate = await Template.findByIdAndUpdate(
-        id,
+        user.template,
         { draft: templateData, lastPublishedAt: Date.now() },
         {
           new: true,
@@ -180,7 +184,7 @@ export const CONTROLLER_TEMPLATE = {
       )
     } else if (version === 'published') {
       updatedTemplate = await Template.findByIdAndUpdate(
-        id,
+        user.template,
         { published: templateData, lastPublishedAt: Date.now() },
         {
           new: true,
@@ -313,7 +317,7 @@ export const CONTROLLER_TEMPLATE = {
         message: 'Templates not found.',
       })
     }
-    console.log('templates', templates)
+
     res.status(StatusCodes.OK).json({
       data: templates,
       message: 'Template fetched successfully.',
