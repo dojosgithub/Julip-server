@@ -5,10 +5,6 @@ const TemplateContentSchema = {
     type: String,
     required: true,
   },
-  predefined: {
-    type: Boolean,
-    default: false,
-  },
   mode: {
     type: String,
     enum: ['light', 'dark'],
@@ -70,6 +66,10 @@ export const templateSchema = new Schema(
     lastPublishedAt: {
       type: Date,
       default: Date.now,
+    },
+    predefined: {
+      type: Boolean,
+      default: false,
     },
   },
   { versionKey: false, timestamps: true }
