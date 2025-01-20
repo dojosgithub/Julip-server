@@ -240,11 +240,19 @@ export const CONTROLLER_TEMPLATE = {
     }
 
     const newTemplate = new Template({
-      name: template.name,
-      mode: template.mode || 'light', // Default to 'light' mode if not provided
-      colors: template.colors,
-      fonts: template.fonts,
       userId,
+      draft: {
+        name: template.name,
+        mode: template.mode || 'light', // Default to 'light' mode if not provided
+        colors: template.colors,
+        fonts: template.fonts,
+      },
+      published: {
+        name: template.name,
+        mode: template.mode || 'light', // Default to 'light' mode if not provided
+        colors: template.colors,
+        fonts: template.fonts,
+      },
     })
 
     const savedTemplate = await newTemplate.save()
