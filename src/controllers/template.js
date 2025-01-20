@@ -232,8 +232,7 @@ export const CONTROLLER_TEMPLATE = {
         message: 'Template id not found.',
       })
     }
-    const template = await Template.findById(toObjectId(templateId))
-    console.log('pkkkk', template)
+    const template = await Template.findById(toObjectId(templateId)).lean()
     if (!template) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: 'Template not found.',
@@ -244,43 +243,24 @@ export const CONTROLLER_TEMPLATE = {
     const newTemplate = new Template({
       userId,
       draft: {
-        name: template.name || 'Sand',
-        mode: template.mode || 'light',
+        name: template.name,
+        mode: template.mode,
         colors: {
-          light: {
-            main: template.colors?.light?.main || '#FFFFFF',
-            background: template.colors?.light?.background || '#F4EBD5',
-            buttons: template.colors?.light?.buttons || '#7F5136',
-          },
-          dark: {
-            main: template.colors?.dark?.main || '#161616',
-            background: template.colors?.dark?.background || '#F4EBD5',
-            buttons: template.colors?.dark?.buttons || '#7F5136',
-          },
+          light: template.colors.light,
+          dark: template.colors.dark,
         },
-        fonts: {
-          header: template.fonts?.header || 'Poppins',
-          body: template.fonts?.body || 'Fraunces',
-        },
+        fonts: template.fonts,
       },
       published: {
-        name: template.name || 'Sand',
-        mode: template.mode || 'light',
+        name: template.name,
+        mode: template.mode,
         colors: {
-          light: {
-            main: template.colors?.light?.main || '#FFFFFF',
-            background: template.colors?.light?.background || '#F4EBD5',
-            buttons: template.colors?.light?.buttons || '#7F5136',
-          },
-          dark: {
-            main: template.colors?.dark?.main || '#161616',
-            background: template.colors?.dark?.background || '#F4EBD5',
-            buttons: template.colors?.dark?.buttons || '#7F5136',
-          },
+          light: template.colors.light,
+          dark: template.colors.dark,
         },
         fonts: {
-          header: template.fonts?.header || 'DefaultHeaderFont',
-          body: template.fonts?.body || 'DefaultBodyFont',
+          header: template.fonts.header,
+          body: template.fonts.body,
         },
       },
     })
