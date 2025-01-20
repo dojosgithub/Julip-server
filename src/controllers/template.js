@@ -222,6 +222,7 @@ export const CONTROLLER_TEMPLATE = {
       message: 'Template fetched successfully.',
     })
   }),
+
   selectTemplate: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
     const { templateId } = req.params
@@ -232,26 +233,55 @@ export const CONTROLLER_TEMPLATE = {
       })
     }
     const template = await Template.findById(toObjectId(templateId))
-
+    console.log('pkkkk', template)
     if (!template) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: 'Template not found.',
       })
     }
 
+    // Ensure all required fields are present in draft and published
     const newTemplate = new Template({
       userId,
       draft: {
-        name: template.name,
-        mode: template.mode || 'light', // Default to 'light' mode if not provided
-        colors: template.colors,
-        fonts: template.fonts,
+        name: template.name || 'Sand',
+        mode: template.mode || 'light',
+        colors: {
+          light: {
+            main: template.colors?.light?.main || '#FFFFFF',
+            background: template.colors?.light?.background || '#F4EBD5',
+            buttons: template.colors?.light?.buttons || '#7F5136',
+          },
+          dark: {
+            main: template.colors?.dark?.main || '#161616',
+            background: template.colors?.dark?.background || '#F4EBD5',
+            buttons: template.colors?.dark?.buttons || '#7F5136',
+          },
+        },
+        fonts: {
+          header: template.fonts?.header || 'Poppins',
+          body: template.fonts?.body || 'Fraunces',
+        },
       },
       published: {
-        name: template.name,
-        mode: template.mode || 'light', // Default to 'light' mode if not provided
-        colors: template.colors,
-        fonts: template.fonts,
+        name: template.name || 'Sand',
+        mode: template.mode || 'light',
+        colors: {
+          light: {
+            main: template.colors?.light?.main || '#FFFFFF',
+            background: template.colors?.light?.background || '#F4EBD5',
+            buttons: template.colors?.light?.buttons || '#7F5136',
+          },
+          dark: {
+            main: template.colors?.dark?.main || '#161616',
+            background: template.colors?.dark?.background || '#F4EBD5',
+            buttons: template.colors?.dark?.buttons || '#7F5136',
+          },
+        },
+        fonts: {
+          header: template.fonts?.header || 'DefaultHeaderFont',
+          body: template.fonts?.body || 'DefaultBodyFont',
+        },
       },
     })
 
