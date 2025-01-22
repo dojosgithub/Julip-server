@@ -15,77 +15,6 @@ import { Product, Shop, User } from '../models'
 // * Middlewares
 import { asyncMiddleware } from '../middlewares'
 
-// * Services
-import {
-  addGroup,
-  getGroupsPaginated,
-  getGroupDetails,
-  updateGroupDetails,
-  getGroupMembersPaginated,
-  createPost,
-  getUserPostsPaginated,
-  updatePost,
-  getPostDetails,
-  getgroupsPostsPaginated,
-  getallPostsPaginated,
-  getPostLike,
-  getPostdisLike,
-  createComment,
-  updateComment,
-  getAllComments,
-  createExercise,
-  getAllExercises,
-  createBadge,
-  getABadge,
-  getAllBadge,
-  updateBadge,
-  createChallenge,
-  updateChallenge,
-  getAllZealAdminChallenges,
-  getFriendsChallenges,
-  getCommunityChallenges,
-  getUserProgress,
-  getUserExerciseLog,
-  getChallengeHistory,
-  getUserAllCurrentChallenges,
-  getAllFeaturedChallenges,
-  getUserCreatedChallenges,
-  getSpecificCommunityChallenges,
-  getAllPopularChallenges,
-  getChallengeDetails,
-  retrieveUserChallange,
-  getAllExercisesCategory,
-  getChallengeLeaderboard,
-  getUsersPaginated,
-} from '../services'
-
-// * Utilities
-import {
-  DEALERSHIP_STATUS,
-  DEALERSHIP_STAFF_ROLE,
-  DOC_STATUS,
-  getRoleByValue,
-  getRoleShortName,
-  USER_ROLE,
-  USER_TYPES,
-  AUCTION_STATUS,
-  CAR_STATUS,
-  SYSTEM_STAFF_ROLE,
-  BID_STATUS,
-  getCurrentDayName,
-  getDateForDay,
-  getStartOfDayISO,
-  getDayName,
-  CHALLENGE_STATUS,
-} from '../utils/user'
-import { getLoginLinkByEnv, getSanitizeCompanyName, toObjectId } from '../utils/misc'
-import { stripe } from '../utils/stripe'
-import Email from '../utils/email'
-import { escapeRegex } from '../utils/misc'
-import { comparePassword, generateOTToken, generatePassword, generateToken, verifyTOTPToken } from '../utils'
-import { sendSMS } from '../utils/smsUtil'
-import { getIO } from '../socket'
-
 const { ObjectId } = mongoose.Types
 
 // const CLIENT_ID = process.env.GOOGLE_CLIENT_ID
@@ -201,4 +130,61 @@ export const CONTROLLER_PRODUCT = {
       message: 'All products retrieved successfully.',
     })
   }),
+
+  getFilteredProducts: async (req, res) => {
+    const { _id: userId } = req.decoded
+    const { title } = req.query
+
+    const shop = await Shop.findOne({ userId }).populate({
+      path: 'draft.collections.products',
+      model: 'Product',
+    })
+
+    // Build the search query
+    const query = {}
+    if (title) query.title = { $regex: title, $options: 'i' } // Case-insensitive search
+    // Fetch products based on the query
+    const products = await Product.find(query)
+
+    res.status(200).json({
+      success: true,
+      data: products,
+    })
+  },
+
+  getProductsByCollection: async (req, res) => {
+    const { _id: userId } = req.decoded // Get the user's ID from the token
+    const { collectionName } = req.query // Collection name from URL params
+
+    // Find the shop for the specific user and collection
+    const shop = await Shop.findOne({
+      userId, // Ensure it's for the specific user
+      'draft.collections.name': collectionName, // Look for the collection in the draft version
+    }).populate({
+      path: 'draft.collections.products', // Populate products
+    })
+
+    if (!shop) {
+      return res.status(404).json({
+        success: false,
+        message: 'Shop or collection not found.',
+      })
+    }
+
+    // Get the collection matching the name
+    const collection = shop.draft.collections.find((col) => col.name === collectionName)
+
+    if (!collection) {
+      return res.status(404).json({
+        success: false,
+        message: 'Collection not found in the shop.',
+      })
+    }
+
+    res.status(200).json({
+      success: true,
+      data: collection.products,
+      message: `Products from the collection "${collectionName}" retrieved successfully.`,
+    })
+  },
 }

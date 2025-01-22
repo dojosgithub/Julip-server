@@ -11,9 +11,13 @@ import { totpRateLimiter } from '../utils/rateLimiter'
 import { USER_TYPES } from '../utils'
 
 const router = Router()
-router.get('/get-all-products', CONTROLLER_PRODUCT.getProducts)
+router.get('/get-all-products', Authenticate(), CONTROLLER_PRODUCT.getProducts)
 
-router.get('/get-user-all-products', CONTROLLER_PRODUCT.getUserAllProducts)
+router.get('/get-user-all-products', Authenticate(), CONTROLLER_PRODUCT.getUserAllProducts)
+
+router.get('/search-products', Authenticate(), CONTROLLER_PRODUCT.getFilteredProducts)
+
+router.get('/search-products-by-collection', Authenticate(), CONTROLLER_PRODUCT.getProductsByCollection)
 
 router.post('/create-product', Authenticate(), parser.single('image'), CONTROLLER_PRODUCT.createProduct)
 

@@ -72,6 +72,10 @@ export const userSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'About',
     },
+    services: {
+      type: Schema.Types.ObjectId,
+      ref: 'Services',
+    },
     template: {
       type: Schema.Types.ObjectId,
       ref: 'Template',

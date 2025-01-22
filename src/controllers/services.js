@@ -10,89 +10,12 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 // * Models
-import { Product, Shop, User } from '../models'
+import { Product, Services, Shop, User } from '../models'
 
 // * Middlewares
 import { asyncMiddleware } from '../middlewares'
 
-// * Services
-import {
-  addGroup,
-  getGroupsPaginated,
-  getGroupDetails,
-  updateGroupDetails,
-  getGroupMembersPaginated,
-  createPost,
-  getUserPostsPaginated,
-  updatePost,
-  getPostDetails,
-  getgroupsPostsPaginated,
-  getallPostsPaginated,
-  getPostLike,
-  getPostdisLike,
-  createComment,
-  updateComment,
-  getAllComments,
-  createExercise,
-  getAllExercises,
-  createBadge,
-  getABadge,
-  getAllBadge,
-  updateBadge,
-  createChallenge,
-  updateChallenge,
-  getAllZealAdminChallenges,
-  getFriendsChallenges,
-  getCommunityChallenges,
-  getUserProgress,
-  getUserExerciseLog,
-  getChallengeHistory,
-  getUserAllCurrentChallenges,
-  getAllFeaturedChallenges,
-  getUserCreatedChallenges,
-  getSpecificCommunityChallenges,
-  getAllPopularChallenges,
-  getChallengeDetails,
-  retrieveUserChallange,
-  getAllExercisesCategory,
-  getChallengeLeaderboard,
-  getUsersPaginated,
-} from '../services'
-
-// * Utilities
-import {
-  DEALERSHIP_STATUS,
-  DEALERSHIP_STAFF_ROLE,
-  DOC_STATUS,
-  getRoleByValue,
-  getRoleShortName,
-  USER_ROLE,
-  USER_TYPES,
-  AUCTION_STATUS,
-  CAR_STATUS,
-  SYSTEM_STAFF_ROLE,
-  BID_STATUS,
-  getCurrentDayName,
-  getDateForDay,
-  getStartOfDayISO,
-  getDayName,
-  CHALLENGE_STATUS,
-} from '../utils/user'
-import { getLoginLinkByEnv, getSanitizeCompanyName, toObjectId } from '../utils/misc'
-import { stripe } from '../utils/stripe'
-import Email from '../utils/email'
-import { escapeRegex } from '../utils/misc'
-import { comparePassword, generateOTToken, generatePassword, generateToken, verifyTOTPToken } from '../utils'
-import { sendSMS } from '../utils/smsUtil'
-import { getIO } from '../socket'
-
-const { ObjectId } = mongoose.Types
-
-// const CLIENT_ID = process.env.GOOGLE_CLIENT_ID
-// const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
-// const REDIRECT_URI = 'http://localhost:3000/api/user/auth/google/callback'
-
-export const CONTROLLER_SHOP = {
+export const CONTROLLER_SERVICES = {
   createShop: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
     const { name, collections, pinnedProducts, visibility } = req.body
@@ -136,59 +59,65 @@ export const CONTROLLER_SHOP = {
   }),
 
   // Update a shop
-  updateShop: asyncMiddleware(async (req, res) => {
+  updateServices: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
-
-    const { name, collections, pinnedProducts, visibility } = req.body
+    const { collections, Faqs, testimonials, visibility } = req.body
     const { version = 'draft' } = req.body
+
     if (!userId) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'User ID is required.',
       })
     }
-    let updatedShop
-    const shopData = {
-      name,
+
+    const serviceData = {
       collections,
-      pinnedProducts,
+      Faqs,
+      testimonials,
       visibility,
     }
 
-    if (version === 'draft') {
-      updatedShop = await Shop.findOneAndUpdate(
+    const services = await User.findById(userId).populate('services')
+
+    if (!services) {
+      services = new Services({ userId, draft: serviceData, published: serviceData, lastPublishedAt: Date.now() })
+    }
+    let updatedServices
+    if (version === 'draft' && services) {
+      updatedServices = await Services.findOneAndUpdate(
         { userId: userId },
-        { draft: shopData, lastPublishedAt: Date.now() },
+        { draft: serviceData, lastPublishedAt: Date.now() },
         { new: true }
       )
-    } else if (version === 'published') {
-      updatedShop = await Shop.findOneAndUpdate(
+    } else if (version === 'published' && services) {
+      updatedServices = await Services.findOneAndUpdate(
         { userId: userId },
-        { published: shopData, lastPublishedAt: Date.now() },
+        { published: serviceData, lastPublishedAt: Date.now() },
         { new: true }
       )
     }
 
-    if (!updatedShop) {
+    if (!updatedServices) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: 'Shop not found.',
       })
     }
-    const { draft, published, ...restShop } = updatedShop.toObject()
-    let modifiedShop
+    const { draft, published, ...restShop } = updatedServices.toObject()
+    let modifiedServices
     if (version === 'draft') {
-      modifiedShop = {
+      modifiedServices = {
         ...restShop,
         ...draft,
       }
     } else if (version === 'published') {
-      modifiedShop = {
+      modifiedServices = {
         ...restShop,
         ...published,
       }
     }
 
     res.status(StatusCodes.OK).json({
-      data: modifiedShop,
+      data: modifiedServices,
       message: 'Shop updated successfully.',
     })
   }),

@@ -115,6 +115,7 @@ export const CONTROLLER_PROFILE = {
       Pinterest: 'https://pinterest.com/',
       Spotify: 'https://open.spotify.com/user/',
       Snapchat: 'https://www.snapchat.com/add/',
+      X: 'https://x.com/',
     }
 
     // Validate socialLinks
@@ -227,6 +228,7 @@ export const CONTROLLER_PROFILE = {
       Pinterest: 'https://pinterest.com/',
       Spotify: 'https://open.spotify.com/user/',
       Snapchat: 'https://www.snapchat.com/add/',
+      X: 'https://x.com/',
     }
 
     // Validate and process socialLinks

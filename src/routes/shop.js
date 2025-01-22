@@ -20,9 +20,15 @@ router.get('/get-shops', Authenticate(), CONTROLLER_SHOP.getAllShops)
 
 router.get('/get-shop', Authenticate(), CONTROLLER_SHOP.getShop)
 
+router.post('/create-shop', Authenticate(), CONTROLLER_SHOP.createShop)
+
 router.get('/get-collection', Authenticate(), CONTROLLER_SHOP.getCollections)
 
-router.post('/create-shop', Authenticate(), CONTROLLER_SHOP.createShop)
+router.post('/create-collection', Authenticate(), CONTROLLER_SHOP.createCollection)
+
+router.put('/update-collection', Authenticate(), CONTROLLER_SHOP.updateCollection)
+
+router.delete('/delete-collection/:collectionName', Authenticate(), CONTROLLER_SHOP.deleteCollection)
 
 router.put('/update-shop', Authenticate(), CONTROLLER_SHOP.updateShop)
 

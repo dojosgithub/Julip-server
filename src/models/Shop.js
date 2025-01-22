@@ -10,6 +10,7 @@ const shopContentSchema = {
       name: {
         type: String,
         required: true,
+        unique: true,
       },
       products: [
         {

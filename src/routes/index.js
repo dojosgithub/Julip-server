@@ -11,6 +11,8 @@ import pricingRoutes from './pricing'
 import scrappingRoute from './scrapper'
 import analyticsRoute from './analytics'
 import liveRoute from './live'
+import faqRoute from './faq'
+import testimonialRoute from './testimonial'
 
 const router = Router()
 
@@ -26,5 +28,7 @@ router.use('/pricing', pricingRoutes)
 router.use('/scrape', scrappingRoute)
 router.use('/analytics', analyticsRoute)
 router.use('/live', liveRoute)
+router.use('/faq', faqRoute)
+router.use('/testimonial', testimonialRoute)
 
 export default router
