@@ -179,8 +179,11 @@ export const CONTROLLER_PROFILE = {
       socialLinks: body.socialLinks,
       webLinks: body.webLinks,
       imageStyle: body.imageStyle,
-      image: body.image,
       userId,
+    }
+
+    if (body.image) {
+      profileData.image = body.image
     }
 
     // Create new profile

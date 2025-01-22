@@ -52,7 +52,10 @@ const profileContentSchema = {
       },
     },
   ],
-  image: Object,
+  image: {
+    type: String,
+    default: 'https://res.cloudinary.com/dojo-dev/image/upload/v1737554504/Julip-dev/placeholder_gbwwzr.jpg',
+  },
   imageStyle: {
     type: String,
     enum: ['horizontal', 'vertical'],
