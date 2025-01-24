@@ -6,7 +6,11 @@ export const landingPageSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User',
     },
-    name: {
+    serviceId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Service',
+    },
+    landingPageName: {
       type: String,
       required: true,
     },
@@ -24,7 +28,7 @@ export const landingPageSchema = new Schema(
     },
     currency: {
       type: String,
-      enum: ['usd', 'eur', 'gbp', 'jpy', 'aud'],
+      enum: ['USD', 'EUR', 'GBP', 'JPY', 'AUD'],
     },
     price: {
       type: Number,
@@ -37,6 +41,7 @@ export const landingPageSchema = new Schema(
     ],
     recurrung: {
       type: String,
+      enum: ['monthly', 'yearly'],
     },
     name: {
       type: Number,
@@ -49,17 +54,28 @@ export const landingPageSchema = new Schema(
     },
     isPhoneNumberRequired: {
       type: Number,
+      default: true,
     },
     instagram: {
       type: Number,
     },
     isinstagramNumberRequired: {
       type: Number,
+      default: true,
     },
     buttonTitle: {
       type: String, // Optional field
     },
-
+    textFields: [
+      {
+        text: {
+          type: String,
+        },
+        value: {
+          type: String,
+        },
+      },
+    ],
     visibility: {
       type: Boolean,
       default: true,

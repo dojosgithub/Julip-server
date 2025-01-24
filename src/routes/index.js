@@ -12,6 +12,7 @@ import scrappingRoute from './scrapper'
 import analyticsRoute from './analytics'
 import liveRoute from './live'
 import faqRoute from './faq'
+import servicesRoute from './services'
 import testimonialRoute from './testimonial'
 
 const router = Router()
@@ -29,6 +30,7 @@ router.use('/scrape', scrappingRoute)
 router.use('/analytics', analyticsRoute)
 router.use('/live', liveRoute)
 router.use('/faq', faqRoute)
+router.use('/service', servicesRoute)
 router.use('/testimonial', testimonialRoute)
 
 export default router

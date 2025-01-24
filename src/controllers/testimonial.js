@@ -19,7 +19,7 @@ export const CONTROLLER_TESTIMONIALS = {
     const body = await JSON.parse(req.body.body)
     const { name, testimonial, rating, visibility } = body
     let image
-    if (!name || !testimonial || !rating || !visibility) {
+    if (!name || !testimonial || !rating) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'All required fields must be provided.',
       })

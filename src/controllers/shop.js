@@ -140,7 +140,7 @@ export const CONTROLLER_SHOP = {
     const { _id: userId } = req.decoded
 
     const { name, collections, pinnedProducts, visibility } = req.body
-    const { version = 'draft' } = req.body
+    const { version = 'draft' } = req.query
     if (!userId) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'User ID is required.',
@@ -267,7 +267,7 @@ export const CONTROLLER_SHOP = {
 
   getCollections: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
-    const { version = 'draft' } = req.params
+    const { version = 'draft' } = req.query
 
     const user = await User.findById(userId).populate({
       path: 'shop',
@@ -290,14 +290,14 @@ export const CONTROLLER_SHOP = {
     }
 
     res.status(StatusCodes.OK).json({
-      data: user.shop[version],
+      data: user.shop[version].collections,
       message: 'Collection retrieved successfully.',
     })
   }),
 
   createCollection: async (req, res) => {
     const { _id: userId } = req.decoded // User ID from token
-    const { collectionName, productIds } = req.body // Collection name and product IDs from request body
+    const { collectionName, products } = req.body // Collection name and product IDs from request body
     const { version = 'draft' } = req.query
     // Find the user's shop
     const shop = await Shop.findOne({ userId })
@@ -324,7 +324,7 @@ export const CONTROLLER_SHOP = {
     // Add the new collection with the product IDs
     const newCollection = {
       name: collectionName,
-      products: productIds, // Assume `productIds` is an array of ObjectIds
+      products,
     }
 
     shop[version].collections.push(newCollection)
@@ -338,7 +338,6 @@ export const CONTROLLER_SHOP = {
       data: shop[version].collections,
     })
   },
-
   updateCollection: async (req, res) => {
     const { _id: userId } = req.decoded // User ID from token
     const { version = 'draft', collectionName } = req.query // Collection name to edit
@@ -381,6 +380,61 @@ export const CONTROLLER_SHOP = {
     // Update the products in the collection (if provided)
     if (products && Array.isArray(products)) {
       collection.products = products
+    }
+
+    // Save the updated shop document
+    await shop.save()
+
+    return res.status(200).json({
+      success: true,
+      message: 'Collection updated successfully.',
+      data: collection,
+    })
+  },
+  updateSingleProductCollection: async (req, res) => {
+    const { _id: userId } = req.decoded // User ID from token
+    const { version = 'draft', collectionName } = req.query // Collection name to edit
+    const { newCollectionName, products } = req.body // Updates for the collection
+
+    // Find the user's shop
+    const shop = await Shop.findOne({ userId })
+
+    if (!shop) {
+      return res.status(404).json({
+        success: false,
+        message: 'Shop not found.',
+      })
+    }
+
+    // Locate the collection to edit
+    const collection = shop[version].collections.find((col) => col.name.toLowerCase() === collectionName.toLowerCase())
+
+    if (!collection) {
+      return res.status(404).json({
+        success: false,
+        message: 'Collection not found.',
+      })
+    }
+
+    // Check if the new collection name already exists (if it's being updated)
+    if (newCollectionName && newCollectionName.toLowerCase() !== collectionName.toLowerCase()) {
+      const isDuplicate = shop[version].collections.some(
+        (col) => col.name.toLowerCase() === newCollectionName.toLowerCase()
+      )
+      if (isDuplicate) {
+        return res.status(400).json({
+          success: false,
+          message: 'A collection with the new name already exists.',
+        })
+      }
+      collection.name = newCollectionName // Update the collection name
+    }
+
+    // Update the products in the collection (if provided)
+    if (products) {
+      if (mongoose.Types.ObjectId.isValid(products)) {
+        collection.products.push(mongoose.Types.ObjectId(products)) // Convert to ObjectId before pushing
+      }
     }
 
     // Save the updated shop document
@@ -436,4 +490,29 @@ export const CONTROLLER_SHOP = {
       message: 'Collection and its products deleted successfully.',
     })
   },
+  getPinnedList: asyncMiddleware(async (req, res) => {
+    const { _id: userId } = req.decoded
+    const { version = 'draft' } = req.query
+
+    const user = await User.findById(userId).populate({
+      path: 'shop',
+      populate: [
+        {
+          path: `${version}.pinnedProducts.productsList`,
+          model: 'Product',
+        },
+      ],
+    })
+
+    if (!user || !user.shop) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Shop not found.',
+      })
+    }
+
+    res.status(StatusCodes.OK).json({
+      data: user.shop[version].pinnedProducts.productsList,
+      message: 'Collection retrieved successfully.',
+    })
+  }),
 }

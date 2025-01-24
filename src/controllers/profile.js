@@ -212,7 +212,7 @@ export const CONTROLLER_PROFILE = {
     const body = await JSON.parse(req.body.body)
     // const { version = 'published' } = req.query
     const id = body.userId
-    const { version = 'draft' } = body
+    const { version = 'draft' } = req.query
     if (!id) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'User ID is required.',

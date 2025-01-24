@@ -145,7 +145,8 @@ export const CONTROLLER_TEMPLATE = {
 
   updateTemplate: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
-    const { name, mode, colors, fonts, version = 'draft' } = req.body
+    const { name, mode, colors, fonts } = req.body
+    const { version = 'draft' } = req.query
 
     // Validate user
     const user = await User.findById(userId)
@@ -166,19 +167,27 @@ export const CONTROLLER_TEMPLATE = {
     // Merge the existing template data with the incoming data
     const existingData = version === 'draft' ? template.draft : template.published
     const updatedData = {
-      name: name || existingData.name,
-      mode: mode || existingData.mode,
-      colors: colors || existingData.colors,
-      fonts: fonts || existingData.fonts,
+      ...existingData,
+      name: name,
+      mode: mode,
+      colors: colors,
+      fonts: fonts,
     }
 
-    // Update the template
-    const updateFields =
-      version === 'draft'
-        ? { draft: updatedData, lastPublishedAt: Date.now() }
-        : { published: updatedData, lastPublishedAt: Date.now() }
-
-    const updatedTemplate = await Template.findByIdAndUpdate(user.template, updateFields, { new: true })
+    let updatedTemplate
+    if (version == 'draft') {
+      updatedTemplate = await Template.findByIdAndUpdate(
+        user.template,
+        { draft: updatedData, lastPublishedAt: Date.now() },
+        { new: true }
+      )
+    } else if (version == 'published') {
+      updatedTemplate = await Template.findByIdAndUpdate(
+        user.template,
+        { published: updatedData, lastPublishedAt: Date.now() },
+        { new: true }
+      )
+    }
 
     if (!updatedTemplate) {
       return res.status(StatusCodes.NOT_FOUND).json({

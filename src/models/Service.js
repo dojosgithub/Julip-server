@@ -25,7 +25,7 @@ export const seviceSchema = new Schema(
     },
     currency: {
       type: String,
-      enum: ['usd', 'eur', 'gbp', 'jpy', 'aud'],
+      enum: ['USD', 'EUR', 'GBP', 'JPY', 'AUD'],
     },
     buttonTitle: {
       type: String, // Optional field
@@ -34,7 +34,7 @@ export const seviceSchema = new Schema(
       type: String, // Optional field
     },
     landingPage: {
-      type: mongoose.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'LandingPage',
     },
     visibility: {

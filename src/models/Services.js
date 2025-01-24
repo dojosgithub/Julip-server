@@ -1,10 +1,6 @@
 import { Schema, model } from 'mongoose'
 
 const serviceContentSchema = {
-  name: {
-    type: String,
-    required: true,
-  },
   collections: [
     {
       name: {
@@ -25,37 +21,14 @@ const serviceContentSchema = {
   ],
   testimonials: [
     {
-      name: {
-        type: String,
-        required: true,
-      },
-      servicesObject: [
-        {
-          type: Schema.Types.ObjectId,
-          ref: 'Testimonials',
-        },
-      ],
-      visibility: {
-        type: Boolean,
-        default: true,
-      },
+      type: Schema.Types.ObjectId,
+      ref: 'Testimonials',
     },
   ],
   faqs: [
     {
-      name: {
-        type: String,
-        required: true,
-      },
-      servicesObject: [
-        {
-          type: Schema.Types.ObjectId,
-          ref: 'Faq',
-        },
-      ],
-      visibility: {
-        type: Boolean,
-      },
+      type: Schema.Types.ObjectId,
+      ref: 'Faq',
     },
   ],
   visibility: {
@@ -70,6 +43,10 @@ export const serviceSchema = new Schema(
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
+    },
+    name: {
+      type: String,
+      required: true,
     },
     // Draft version of the profile
     draft: serviceContentSchema,

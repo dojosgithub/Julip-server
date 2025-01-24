@@ -28,10 +28,14 @@ router.post('/create-collection', Authenticate(), CONTROLLER_SHOP.createCollecti
 
 router.put('/update-collection', Authenticate(), CONTROLLER_SHOP.updateCollection)
 
+router.put('/update-single-product-collection', Authenticate(), CONTROLLER_SHOP.updateSingleProductCollection)
+
 router.delete('/delete-collection/:collectionName', Authenticate(), CONTROLLER_SHOP.deleteCollection)
 
 router.put('/update-shop', Authenticate(), CONTROLLER_SHOP.updateShop)
 
 router.delete('/delete-shop', Authenticate(), CONTROLLER_SHOP.deleteShop)
+
+router.get('/get-pinned-products', Authenticate(), CONTROLLER_SHOP.getPinnedList)
 
 export default router
