@@ -10,7 +10,18 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 // * Models
-import { User, TOTP, Group, Post, Comment, Badge, Challenge, UserChallengeProgress, Template } from '../models'
+import {
+  User,
+  TOTP,
+  Group,
+  Post,
+  Comment,
+  Badge,
+  Challenge,
+  UserChallengeProgress,
+  Template,
+  Subscription,
+} from '../models'
 
 // * Middlewares
 import { asyncMiddleware } from '../middlewares'
@@ -98,22 +109,32 @@ export const CONTROLLER_PRICING = {
   }),
   createSubscription: asyncMiddleware(async (req, res) => {
     try {
-      const { customerId, priceId } = req.body
+      const { customerId, priceId, paymentMethodId } = req.body
+      const { _id: userId } = req.decoded
 
-      // Create the subscription in Stripe
+      // Attach payment method to customer
+      await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId })
+
+      // Set the payment method as default
+      await stripe.customers.update(customerId, {
+        invoice_settings: { default_payment_method: paymentMethodId },
+      })
+
+      // Create subscription with a 14-day free trial
       const subscription = await stripe.subscriptions.create({
         customer: customerId,
         items: [{ price: priceId }],
-        payment_behavior: 'default_incomplete',
+        default_payment_method: paymentMethodId,
+        trial_period_days: 14, // Add trial period
         expand: ['latest_invoice.payment_intent'],
       })
 
-      // Save the subscription in the database
+      // Save subscription details to database
       const newSubscription = new Subscription({
-        user: req.user.id, // Assuming the user is authenticated and `req.user.id` contains the user ID
+        user: userId,
         stripeCustomerId: customerId,
         stripeSubscriptionId: subscription.id,
-        plan: subscription.items.data[0].price.nickname, // Use price nickname or ID
+        plan: subscription.items.data[0].price.nickname,
         status: subscription.status,
         trialEndDate: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
         currentPeriodStart: new Date(subscription.current_period_start * 1000),
@@ -124,7 +145,7 @@ export const CONTROLLER_PRICING = {
 
       res.status(200).json({
         subscriptionId: subscription.id,
-        clientSecret: subscription.latest_invoice.payment_intent.client_secret,
+        clientSecret: subscription.latest_invoice.payment_intent?.client_secret,
       })
     } catch (err) {
       console.error('Error creating subscription:', err)

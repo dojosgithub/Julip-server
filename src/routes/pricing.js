@@ -19,4 +19,12 @@ const router = Router()
 
 router.post('/select', Authenticate(), CONTROLLER_PRICING.selectPricing)
 
+router.post('/create-customer', Authenticate(), CONTROLLER_PRICING.createCustomer)
+
+router.post('/create-subscription', Authenticate(), CONTROLLER_PRICING.createSubscription)
+
+// router.post('/select', Authenticate(), CONTROLLER_PRICING.selectPricing)
+
+// router.post('/select', Authenticate(), CONTROLLER_PRICING.selectPricing)
+
 export default router
