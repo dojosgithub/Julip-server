@@ -5,7 +5,6 @@ const serviceContentSchema = {
     {
       name: {
         type: String,
-        required: true,
       },
       services: [
         {
@@ -46,7 +45,6 @@ export const serviceSchema = new Schema(
     },
     name: {
       type: String,
-      required: true,
     },
     // Draft version of the profile
     draft: serviceContentSchema,

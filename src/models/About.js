@@ -9,11 +9,9 @@ const aboutItemSchema = new mongoose.Schema({
   type: {
     type: String,
     enum: ['heading', 'description', 'image'],
-    required: true,
   },
   value: {
     type: String,
-    required: true,
   },
   visibility: {
     type: Boolean,

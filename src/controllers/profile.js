@@ -194,9 +194,9 @@ export const CONTROLLER_PROFILE = {
     user.profile = profile._id
     user.isProfileCreated = true
     const newPages = new Pages({ user: userId })
-    const shop = new Shop({ user: userId })
-    const about = new About({ user: userId })
-    const services = new Services({ user: userId })
+    const shop = new Shop({ userId })
+    const about = new About({ userId })
+    const services = new Services({ userId })
 
     await newPages.save()
     await shop.save()

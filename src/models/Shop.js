@@ -3,7 +3,6 @@ import { Schema, model } from 'mongoose'
 const shopContentSchema = {
   name: {
     type: String,
-    required: true,
   },
   collections: [
     {
