@@ -383,6 +383,38 @@ export const CONTROLLER_SHOP = {
     })
   }),
 
+  getCollectionDetials: asyncMiddleware(async (req, res) => {
+    const { _id: userId } = req.decoded // Extract user ID from the decoded token
+    const { collectionName } = req.params // Extract collection name from the URL parameters
+    const { version = 'draft' } = req.query // Default to 'draft' version if not specified
+
+    // Find the user's shop
+    const shop = await Shop.findOne({ userId }).populate({
+      path: `${version}.collections.products`, // Populate products in the specified version's collections
+      model: 'Product',
+    })
+
+    if (!shop) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Shop not found.',
+      })
+    }
+
+    // Find the specific collection by name
+    const collection = shop[version].collections.find((col) => col.name.toLowerCase() === collectionName.toLowerCase())
+
+    if (!collection) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Collection not found.',
+      })
+    }
+
+    // Return the collection details along with its products
+    res.status(StatusCodes.OK).json({
+      data: collection,
+      message: 'Collection retrieved successfully.',
+    })
+  }),
   createCollection: async (req, res) => {
     const { _id: userId } = req.decoded // User ID from token
     const { collectionName, products } = req.body // Collection name and product IDs from request body

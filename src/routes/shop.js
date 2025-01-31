@@ -24,6 +24,8 @@ router.post('/create-shop', Authenticate(), CONTROLLER_SHOP.createShop)
 
 router.get('/get-collection', Authenticate(), CONTROLLER_SHOP.getCollections)
 
+router.get('/get-collection-details/:collectionName', Authenticate(), CONTROLLER_SHOP.getCollectionDetials)
+
 router.post('/create-collection', Authenticate(), CONTROLLER_SHOP.createCollection)
 
 router.put('/update-collection', Authenticate(), CONTROLLER_SHOP.updateCollection)
