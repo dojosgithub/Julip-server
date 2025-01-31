@@ -4,7 +4,7 @@ import cookieParser from 'cookie-parser'
 import logger from 'morgan'
 import cors from 'cors'
 import routes from './routes'
-import { errorHandler, decodeRoleTokenMiddleware } from './middlewares'
+import { errorHandler, decodeRoleTokenMiddleware, Authenticate } from './middlewares'
 import { connectMongoDB } from './config/dbConnection'
 import { corsConfig } from './config/cors'
 import passport from 'passport'
@@ -12,7 +12,7 @@ import session from 'express-session'
 // import passport.js
 import './utils/passport.js'
 // import sse from './config/sse'
-import { CONTROLLER_PAYMENT } from './controllers'
+import { CONTROLLER_PAYMENT, CONTROLLER_PRICING } from './controllers'
 import fs from 'fs'
 // import secretsManager from './config/secretsManager'
 import dotenv from 'dotenv'
@@ -51,6 +51,48 @@ app.post(
   express.raw({ type: 'application/json' }),
   CONTROLLER_PAYMENT.stripeWebhookSecure
 )
+app.post(
+  '/api/stripe/oauth/callback',
+  express.raw({ type: 'application/json' }),
+  Authenticate(),
+  CONTROLLER_PRICING.stripeCallback
+)
+app.post(
+  '/webhooks/stripe/connect',
+  express.raw({ type: 'application/json' }),
+  Authenticate(),
+  CONTROLLER_PRICING.handleInfluencerWebhook
+)
+app.post('api/stripe-webhook-payment-successful', async (req, res) => {
+  const sig = req.headers['stripe-signature']
+  const payload = req.body
+
+  try {
+    const event = stripe.webhooks.constructEvent(payload, sig, process.env.STRIPE_WEBHOOK_SECRET)
+
+    switch (event.type) {
+      case 'payment_intent.succeeded':
+        const paymentIntent = event.data.object
+        console.log('Payment succeeded:', paymentIntent.id)
+
+        // Update your database or trigger other actions
+        break
+
+      case 'payment_intent.payment_failed':
+        const failedPaymentIntent = event.data.object
+        console.log('Payment failed:', failedPaymentIntent.id)
+        break
+
+      default:
+        console.log(`Unhandled event type: ${event.type}`)
+    }
+
+    res.status(200).send('Webhook received')
+  } catch (err) {
+    console.error('Webhook error:', err)
+    res.status(400).send(`Webhook error: ${err.message}`)
+  }
+})
 app.use(express.json({ limit: '50mb', extended: true }))
 app.use(decodeRoleTokenMiddleware)
 app.use(

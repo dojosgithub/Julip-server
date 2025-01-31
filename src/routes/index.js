@@ -13,6 +13,7 @@ import analyticsRoute from './analytics'
 import liveRoute from './live'
 import faqRoute from './faq'
 import servicesRoute from './services'
+import pagesRoute from './pages'
 import testimonialRoute from './testimonial'
 
 const router = Router()
@@ -31,6 +32,7 @@ router.use('/analytics', analyticsRoute)
 router.use('/live', liveRoute)
 router.use('/faq', faqRoute)
 router.use('/service', servicesRoute)
+router.use('/pages', pagesRoute)
 router.use('/testimonial', testimonialRoute)
 
 export default router

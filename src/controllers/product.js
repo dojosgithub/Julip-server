@@ -24,14 +24,21 @@ const { ObjectId } = mongoose.Types
 export const CONTROLLER_PRODUCT = {
   // Create a product
   createProduct: asyncMiddleware(async (req, res) => {
-    const { url, brandName, price, image, title, description, buttonTitle } = req.body
+    // const { url, brandName, price, image, title, description, buttonTitle } = req.body
+    const parsedbody = JSON.parse(req.body.body)
+    let image
+    const { url, brandName, price, title, description, buttonTitle } = parsedbody
+    image = parsedbody.image
 
-    if (!url || !brandName || !price || !image || !title || !description) {
+    if (!url || !brandName || !price || !title || !description) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'All required fields must be provided.',
       })
     }
-
+    // Add uploaded image if provided
+    if (req.file) {
+      image = req.file.path
+    }
     const product = new Product({ url, brandName, price, image, title, description, buttonTitle })
     await product.save()
 
@@ -44,8 +51,10 @@ export const CONTROLLER_PRODUCT = {
   // Update a product
   updateProduct: asyncMiddleware(async (req, res) => {
     const { id } = req.query
+    let image
     const parsedbody = JSON.parse(req.body.body)
-    const { url, brandName, price, image, title, description, buttonTitle } = parsedbody
+    const { url, brandName, price, title, description, buttonTitle } = parsedbody
+    image = parsedbody.image
     console.log('req.body', parsedbody)
 
     if (!id) {
@@ -54,6 +63,9 @@ export const CONTROLLER_PRODUCT = {
       })
     }
 
+    if (req.file) {
+      image = req.file.path
+    }
     const updatedProduct = await Product.findByIdAndUpdate(
       id,
       { url, brandName, price, image, title, description, buttonTitle },

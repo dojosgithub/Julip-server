@@ -20,6 +20,7 @@ export const userSchema = new Schema(
     resetToken: String, // added
     resetTokenExpiry: Date, // added
     fullName: String, // added
+    stripeAccountId: String, // added
     userName: {
       type: String,
       unique: true,
@@ -83,6 +84,10 @@ export const userSchema = new Schema(
     analytics: {
       type: Schema.Types.ObjectId,
       ref: 'Analytics',
+    },
+    pages: {
+      type: Schema.Types.ObjectId,
+      ref: 'Pages',
     },
   },
   { versionKey: false, timestamps: true }

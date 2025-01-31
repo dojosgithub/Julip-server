@@ -18,6 +18,10 @@ const shopContentSchema = {
           ref: 'Product',
         },
       ],
+      visibility: {
+        type: Boolean,
+        default: true,
+      },
     },
   ],
   pinnedProducts: {

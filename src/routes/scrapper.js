@@ -19,4 +19,6 @@ router.post('/walmart', Authenticate(), CONTROLLER_SCRAPE.scrapeWalmart)
 
 router.post('/shopify', Authenticate(), CONTROLLER_SCRAPE.scrapeShopify)
 
+router.post('/webcrawler', Authenticate(), CONTROLLER_SCRAPE.webCrawler)
+
 export default router

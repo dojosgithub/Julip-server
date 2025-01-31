@@ -334,4 +334,49 @@ export const CONTROLLER_SCRAPE = {
       })
     }
   }),
+
+  webCrawler: asyncMiddleware(async (req, res) => {
+    const { url } = req.body
+    try {
+      // const response = await axios.get('https://app.scrapingbee.com/api/v1', {
+      //   params: {
+      //     api_key: 'MTBXWDECZTSZDXNFUTR8ILAOFU5TNL3VOZNHCV06XOP310QP5UYY8E5ARAENKYOI405PRJMUM9WVKNHK',
+      //     url,
+      //     extract_rules: JSON.stringify({
+      //       title: 'h1',
+      //       price: '.price, .product-price, [itemprop="price"]',
+      //       description: '.description, .product-description, [itemprop="description"]',
+      //       brand: '.brand, [itemprop="brand"], .product-brand',
+      //     }),
+      //   },
+      // })
+
+      const response = await axios.get('https://api.diffbot.com/v3/product', {
+        params: {
+          token: '07d76447f1815e9c5f6adee4e7558574',
+          url: url, // URL of the product page
+        },
+      })
+      // Extract relevant fields from the Diffbot response
+      const productData = response?.data?.objects[0] // Diffbot returns data in `objects` array
+      console.log('response.data', response.data)
+      const extractedData = {
+        title: productData.title || null,
+        price: productData.offerPrice || productData.price || null, // Use `offerPrice` or `price`
+        brand: productData.brand || null,
+        image: productData.images ? productData.images[0]?.url : null, // Use the first image URL
+        description: productData.description || null,
+      }
+
+      res.status(StatusCodes.OK).json({
+        data: extractedData,
+        message: 'Product data fetched successfully.',
+      })
+    } catch (error) {
+      console.error('Error scraping:', error)
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: 'Error scraping: ' + error.message,
+      })
+    }
+  }),
 }

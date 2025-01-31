@@ -10,7 +10,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 // * Models
-import { Product, Shop, User } from '../models'
+import { Pages, Product, Shop, User } from '../models'
 
 // * Middlewares
 import { asyncMiddleware } from '../middlewares'
@@ -190,6 +190,94 @@ export const CONTROLLER_SHOP = {
     res.status(StatusCodes.OK).json({
       data: modifiedShop,
       message: 'Shop updated successfully.',
+    })
+  }),
+  createAndUpdateShop: asyncMiddleware(async (req, res) => {
+    const { _id: userId } = req.decoded
+    const { name, collections, pinnedProducts, visibility } = req.body
+    const { version = 'draft' } = req.query
+
+    if (!name) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'Shop name is required.',
+      })
+    }
+
+    const user = await User.findById(userId)
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'User not found.',
+      })
+    }
+
+    const shopData = {
+      name,
+      collections,
+      pinnedProducts,
+      visibility,
+      userId,
+    }
+
+    let shop = await Shop.findOne({ userId })
+
+    if (!shop) {
+      // Create a new shop if it doesn't exist
+      shop = new Shop({
+        userId,
+        draft: shopData,
+        published: shopData,
+        lastPublishedAt: Date.now(),
+      })
+      await shop.save()
+      user.shop = shop._id
+      await user.save()
+    } else {
+      // Update the existing shop
+      if (version === 'draft') {
+        shop.draft = shopData
+      } else if (version === 'published') {
+        shop.published = shopData
+      }
+      shop.lastPublishedAt = Date.now()
+      await shop.save()
+    }
+
+    const { draft, published, ...restShop } = shop.toObject()
+    let modifiedShop
+
+    if (version === 'draft') {
+      modifiedShop = {
+        ...restShop,
+        ...draft,
+      }
+    } else if (version === 'published') {
+      modifiedShop = {
+        ...restShop,
+        ...published,
+      }
+    }
+    const findPages = await Pages.find({ user: userId })
+    if (!findPages) {
+      // If no existing page, create a new one
+      const newPage = new Pages({
+        user: userId,
+        shop: shop._id,
+      })
+
+      await newPage.save() // Save the new page
+      res.status(201).json({ message: 'Page created successfully', data: newPage })
+    } else {
+      // If page exists, update it
+      Pages.findOneAndUpdate(
+        { user: userId }, // Find criteria
+        { shop: shop._id }, // Update data
+        { new: true } // Return updated document
+      )
+    }
+
+    res.status(StatusCodes.OK).json({
+      data: modifiedShop,
+      message: shop.isNew ? 'Shop created successfully.' : 'Shop updated successfully.',
     })
   }),
 

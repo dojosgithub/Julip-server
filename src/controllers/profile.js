@@ -10,7 +10,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 // * Models
-import { User, Group, Challenge, Profile } from '../models'
+import { User, Group, Challenge, Profile, Pages, Shop, Services } from '../models'
 
 // * Middlewares
 import { asyncMiddleware } from '../middlewares'
@@ -85,6 +85,7 @@ import { escapeRegex } from '../utils/misc'
 import { comparePassword, generateOTToken, generatePassword, generateToken, verifyTOTPToken } from '../utils'
 import { sendSMS } from '../utils/smsUtil'
 import { getIO } from '../socket'
+import { About } from '../models/About'
 
 const { ObjectId } = mongoose.Types
 
@@ -192,6 +193,20 @@ export const CONTROLLER_PROFILE = {
     // Link profile to user
     user.profile = profile._id
     user.isProfileCreated = true
+    const newPages = new Pages({ user: userId })
+    const shop = new Shop({ user: userId })
+    const about = new About({ user: userId })
+    const services = new Services({ user: userId })
+
+    await newPages.save()
+    await shop.save()
+    await about.save()
+    await services.save()
+
+    user.pages = newPages._id
+    user.shop = shop._id
+    user.about = about._id
+    user.services = services._id
     await user.save()
 
     const { draft, published, ...restProfile } = profile.toObject()

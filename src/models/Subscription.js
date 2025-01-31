@@ -17,7 +17,7 @@ const subscriptionSchema = new mongoose.Schema(
     },
     plan: {
       type: String, // Plan nickname or plan ID from Stripe
-      required: true,
+      required: false,
     },
     status: {
       type: String,
