@@ -118,13 +118,15 @@ export const CONTROLLER_PRODUCT = {
   }),
 
   getUserAllProducts: asyncMiddleware(async (req, res) => {
-    const { userId } = req.body
-    console.log('first', userId, 'req', req.body)
+    const { _id: userId } = req.decoded // Extract user ID from the decoded token
+    const { version = 'draft' } = req.params // Default to 'draft' if version is not provided
+
+    // Find the user and populate the shop with the specified version's collections and products
     const user = await User.findById(userId).populate({
       path: 'shop',
       populate: {
-        path: 'collections.products',
-        model: 'Product', // Populating products in collections
+        path: `${version}.collections.products`, // Populate products in the specified version's collections
+        model: 'Product',
       },
     })
 
@@ -134,15 +136,17 @@ export const CONTROLLER_PRODUCT = {
       })
     }
 
-    const collections = user.shop.collections || []
-    const allProducts = collections.flatMap((collection) => collection.products)
+    // Access the collections from the specified version (draft or published)
+    const collections = user.shop[version]?.collections || []
+
+    // Flatten the products from all collections into a single array
+    const allProducts = collections.flatMap((collection) => collection.products || [])
 
     res.status(StatusCodes.OK).json({
       data: allProducts,
       message: 'All products retrieved successfully.',
     })
   }),
-
   getFilteredProducts: async (req, res) => {
     const { _id: userId } = req.decoded
     const { title } = req.query
