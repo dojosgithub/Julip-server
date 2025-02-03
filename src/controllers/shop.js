@@ -461,7 +461,7 @@ export const CONTROLLER_SHOP = {
   updateCollection: async (req, res) => {
     const { _id: userId } = req.decoded // User ID from token
     const { version = 'draft', collectionName } = req.query // Collection name to edit
-    const { newCollectionName, products } = req.body // Updates for the collection
+    const { newCollectionName, products, visibility } = req.body // Updates for the collection
 
     // Find the user's shop
     const shop = await Shop.findOne({ userId })
@@ -501,7 +501,9 @@ export const CONTROLLER_SHOP = {
     if (products && Array.isArray(products)) {
       collection.products = products
     }
-
+    if (visibility !== undefined || visibility !== null) {
+      collection.visibility = visibility // Update the visibility of the collection (if provided)
+    }
     // Save the updated shop document
     await shop.save()
 
