@@ -517,7 +517,7 @@ export const CONTROLLER_SHOP = {
     const { newCollectionName, products } = req.body // Updates for the collection
 
     // Find the user's shop
-    const shop = await Shop.findOne({ userId }).populate({
+    let shop = await Shop.findOne({ userId }).populate({
       path: `${version}.collections.products`,
       model: 'Product',
     })
@@ -556,17 +556,26 @@ export const CONTROLLER_SHOP = {
     // Update the products in the collection (if provided)
     if (products) {
       if (mongoose.Types.ObjectId.isValid(products)) {
-        collection.products.push(mongoose.Types.ObjectId(products)) // Convert to ObjectId before pushing
+        collection.products.push(new mongoose.Types.ObjectId(products)) // Convert to ObjectId before pushing
       }
     }
 
     // Save the updated shop document
     await shop.save()
 
+    // **Repopulate the products after saving**
+    shop = await Shop.findOne({ userId }).populate({
+      path: `${version}.collections.products`,
+      model: 'Product',
+    })
+
+    // Return the updated collection with fresh populated data
     return res.status(200).json({
       success: true,
       message: 'Collection updated successfully.',
-      data: collection,
+      data: shop[version].collections.find(
+        (col) => col.name.toLowerCase() === (newCollectionName || collectionName).toLowerCase()
+      ),
     })
   },
   deleteCollection: async (req, res) => {
