@@ -517,7 +517,10 @@ export const CONTROLLER_SHOP = {
     const { newCollectionName, products } = req.body // Updates for the collection
 
     // Find the user's shop
-    const shop = await Shop.findOne({ userId })
+    const shop = await Shop.findOne({ userId }).populate({
+      path: `${version}.collections.products`,
+      model: 'Product',
+    })
 
     if (!shop) {
       return res.status(404).json({
