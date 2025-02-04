@@ -34,6 +34,7 @@ import { escapeRegex } from '../utils/misc'
 import { comparePassword, generateOTToken, generatePassword, generateToken, verifyTOTPToken } from '../utils'
 import { sendSMS } from '../utils/smsUtil'
 import { getIO } from '../socket'
+import Payment from '../models/Payment'
 
 const { ObjectId } = mongoose.Types
 
@@ -250,46 +251,6 @@ export const CONTROLLER_PRICING = {
       res.status(500).json({ error: err.message })
     }
   }),
-  handleStripeWebhook: asyncMiddleware(async (req, res) => {
-    const sig = req.headers['stripe-signature']
-
-    try {
-      // const event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET)
-      const event = stripe.webhooks.constructEvent(req.body, sig, 'whsec_a4JIY3Ox5kyWXDj3ntLmLd5nJU24lwwM')
-
-      switch (event.type) {
-        case 'customer.subscription.trial_will_end':
-          const subscription = event.data.object
-
-          // Optional: Fetch user details using your database
-          const user = await Subscription.findOne({
-            stripeSubscriptionId: subscription.id,
-          }).populate('user') // Assuming `user` is referenced
-
-          if (user) {
-            // Send a notification/email to the user about the trial ending
-            console.log(`Trial will end soon for user: ${user.user.email}`)
-
-            // Example: Sending an email notification
-            // await sendEmail({
-            //   to: user.user.email,
-            //   subject: 'Your Trial is Ending Soon',
-            //   text: `Hi ${user.user.name}, your trial for the subscription is ending soon. Please update your payment details to avoid interruption.`,
-            // })
-          }
-
-          break
-
-        default:
-          console.log(`Unhandled event type: ${event.type}`)
-      }
-
-      res.status(200).send('Webhook received successfully')
-    } catch (err) {
-      console.error('Error handling Stripe webhook:', err.message)
-      res.status(400).send(`Webhook error: ${err.message}`)
-    }
-  }),
 
   // Stripe Connect APIs
   connectStripeAccount: asyncMiddleware(async (req, res) => {
@@ -331,54 +292,54 @@ export const CONTROLLER_PRICING = {
     })
   }),
 
-  connectStripeAccount: asyncMiddleware(async (req, res) => {
-    const { _id: userId } = req.decoded
+  // connectStripeAccount: asyncMiddleware(async (req, res) => {
+  //   const { _id: userId } = req.decoded
 
-    try {
-      // Create a Stripe Connect account with required capabilities
-      const account = await stripe.accounts.create({
-        type: 'express',
-        country: 'US',
-        email: req.body.email,
-        capabilities: {
-          card_payments: { requested: true },
-          transfers: { requested: true },
-          legacy_payments: { requested: true },
-        },
-        business_type: 'individual',
-        tos_acceptance: {
-          service_agreement: 'recipient',
-        },
-      })
+  //   try {
+  //     // Create a Stripe Connect account with required capabilities
+  //     const account = await stripe.accounts.create({
+  //       type: 'express',
+  //       country: 'US',
+  //       email: req.body.email,
+  //       capabilities: {
+  //         card_payments: { requested: true },
+  //         transfers: { requested: true },
+  //         legacy_payments: { requested: true },
+  //       },
+  //       business_type: 'individual',
+  //       tos_acceptance: {
+  //         service_agreement: 'recipient',
+  //       },
+  //     })
 
-      // Save the Stripe account ID to the influencer's profile
-      const influencer = await User.findByIdAndUpdate(userId, { stripeAccountId: account.id }, { new: true })
+  //     // Save the Stripe account ID to the influencer's profile
+  //     const influencer = await User.findByIdAndUpdate(userId, { stripeAccountId: account.id }, { new: true })
 
-      if (!influencer) {
-        return res.status(StatusCodes.NOT_FOUND).json({
-          message: 'Influencer not found.',
-        })
-      }
+  //     if (!influencer) {
+  //       return res.status(StatusCodes.NOT_FOUND).json({
+  //         message: 'Influencer not found.',
+  //       })
+  //     }
 
-      // Generate an account link for onboarding
-      const accountLink = await stripe.accountLinks.create({
-        account: account.id,
-        refresh_url: 'https://dev.myjulip.com/dashboard/about/',
-        return_url: 'https://dev.myjulip.com/dashboard/pages/',
-        type: 'account_onboarding',
-      })
+  //     // Generate an account link for onboarding
+  //     const accountLink = await stripe.accountLinks.create({
+  //       account: account.id,
+  //       refresh_url: 'https://dev.myjulip.com/dashboard/about/',
+  //       return_url: 'https://dev.myjulip.com/dashboard/pages/',
+  //       type: 'account_onboarding',
+  //     })
 
-      res.status(StatusCodes.OK).json({
-        accountLink: accountLink.url,
-        message: 'Stripe account created successfully. Please complete onboarding.',
-      })
-    } catch (error) {
-      console.error('Error creating Stripe account:', error)
-      res.status(StatusCodes.BAD_REQUEST).json({
-        message: error.message,
-      })
-    }
-  }),
+  //     res.status(StatusCodes.OK).json({
+  //       accountLink: accountLink.url,
+  //       message: 'Stripe account created successfully. Please complete onboarding.',
+  //     })
+  //   } catch (error) {
+  //     console.error('Error creating Stripe account:', error)
+  //     res.status(StatusCodes.BAD_REQUEST).json({
+  //       message: error.message,
+  //     })
+  //   }
+  // }),
 
   // Updated purchase product endpoint
   purchaseProduct: asyncMiddleware(async (req, res) => {
@@ -432,36 +393,295 @@ export const CONTROLLER_PRICING = {
       })
     }
   }),
-  handleInfluencerWebhook: asyncMiddleware(async (req, res) => {
+  // handleStripeWebhook: asyncMiddleware(async (req, res) => {
+  //   const sig = req.headers['stripe-signature']
+
+  //   try {
+  //     // const event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET)
+  //     const event = stripe.webhooks.constructEvent(req.body, sig, 'whsec_a4JIY3Ox5kyWXDj3ntLmLd5nJU24lwwM')
+
+  //     switch (event.type) {
+  //       case 'customer.subscription.trial_will_end':
+  //         const subscription = event.data.object
+
+  //         // Optional: Fetch user details using your database
+  //         const user = await Subscription.findOne({
+  //           stripeSubscriptionId: subscription.id,
+  //         }).populate('user') // Assuming `user` is referenced
+
+  //         if (user) {
+  //           // Send a notification/email to the user about the trial ending
+  //           console.log(`Trial will end soon for user: ${user.user.email}`)
+
+  //           // Example: Sending an email notification
+  //           // await sendEmail({
+  //           //   to: user.user.email,
+  //           //   subject: 'Your Trial is Ending Soon',
+  //           //   text: `Hi ${user.user.name}, your trial for the subscription is ending soon. Please update your payment details to avoid interruption.`,
+  //           // })
+  //         }
+
+  //         break
+
+  //       default:
+  //         console.log(`Unhandled event type: ${event.type}`)
+  //     }
+
+  //     res.status(200).send('Webhook received successfully')
+  //   } catch (err) {
+  //     console.error('Error handling Stripe webhook:', err.message)
+  //     res.status(400).send(`Webhook error: ${err.message}`)
+  //   }
+  // }),
+
+  // Stripe Connect APIs
+  connectStripeAccount: asyncMiddleware(async (req, res) => {
+    const { _id: userId } = req.decoded
+
+    // Create a Stripe Connect account for the influencer
+    const account = await stripe.accounts.create({
+      type: 'express', // Use 'express' for influencers to manage their account via your platform
+      country: 'US', // Set the country code as needed
+      email: req.body.email, // Influencer's email
+      capabilities: {
+        card_payments: { requested: true },
+        transfers: { requested: true },
+      },
+    })
+
+    // Save the Stripe account ID to the influencer's profile in your database
+    const influencer = await User.findByIdAndUpdate(userId, { stripeAccountId: account.id }, { new: true })
+
+    if (!influencer) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Influencer not found.',
+      })
+    }
+
+    // Generate an account link for the influencer to complete onboarding
+    const accountLink = await stripe.accountLinks.create({
+      account: account.id,
+      // refresh_url: 'https://yourplatform.com/reauth', // Redirect URL if onboarding is incomplete
+      // return_url: 'https://yourplatform.com/success', // Redirect URL after successful onboarding
+      refresh_url: 'https://dev.myjulip.com/dashboard/about/', // Redirect URL if onboarding is incomplete
+      return_url: 'https://dev.myjulip.com/dashboard/pages/', // Redirect URL after successful onboarding
+      type: 'account_onboarding',
+    })
+
+    res.status(StatusCodes.OK).json({
+      accountLink: accountLink.url,
+      message: 'Stripe account created successfully. Redirect influencer to the account link.',
+    })
+  }),
+
+  handleStripeWebhook: asyncMiddleware(async (req, res) => {
     const sig = req.headers['stripe-signature']
     const payload = req.body
 
     try {
-      const event = stripe.webhooks.constructEvent(payload, sig, process.env.STRIPE_WEBHOOK_SECRET)
+      // Verify the webhook signature
+      const event = stripe.webhooks.constructEvent(
+        payload,
+        sig,
+        process.env.STRIPE_WEBHOOK_SECRET // Use your webhook secret
+      )
 
+      // Log the event type and data
+      console.log('Received event:', event.type)
+      console.log('Event data:', event.data.object)
+
+      // Handle specific event types
       switch (event.type) {
+        // =================================================================
+        // Subscription Events
+        // =================================================================
+        case 'customer.subscription.created':
+          // New subscription created (e.g., influencer's subscription)
+          const subscriptionCreated = event.data.object
+          console.log('Subscription created:', subscriptionCreated.id)
+          // Update database or trigger actions
+          // Store subscription details in the database
+          await Subscription.create({
+            subscriptionId: subscriptionCreated.id,
+            customerId: subscriptionCreated.customer,
+            status: subscriptionCreated.status,
+            plan: subscriptionCreated.items.data[0].plan.id,
+            startDate: new Date(subscriptionCreated.start_date * 1000),
+            endDate: new Date(subscriptionCreated.current_period_end * 1000),
+          })
+          break
+
+        case 'customer.subscription.updated':
+          // Subscription updated (e.g., plan changed)
+          const subscriptionUpdated = event.data.object
+          console.log('Subscription updated:', subscriptionUpdated.id)
+          // Update database or trigger actions
+          await Subscription.findOneAndUpdate(
+            { subscriptionId: subscriptionUpdated.id },
+            {
+              status: subscriptionUpdated.status,
+              plan: subscriptionUpdated.items.data[0].plan.id,
+              endDate: new Date(subscriptionUpdated.current_period_end * 1000),
+            }
+          )
+          break
+
+        case 'customer.subscription.deleted':
+          // Subscription canceled
+          const subscriptionDeleted = event.data.object
+          console.log('Subscription deleted:', subscriptionDeleted.id)
+          // Update database or trigger actions
+          await Subscription.findOneAndUpdate({ subscriptionId: subscriptionDeleted.id }, { status: 'canceled' })
+          break
+
+        case 'customer.subscription.trial_will_end':
+          // Trial period ending soon
+          const subscriptionTrialEnding = event.data.object
+          console.log('Trial ending for subscription:', subscriptionTrialEnding.id)
+          // Send email/notification to user
+          const userTrial = await User.findOne({ stripeCustomerId: subscriptionTrialEnding.customer })
+          if (userTrial) {
+            // Send an email notification (email service needed)
+            console.log(`Send email to ${userTrial.email} about trial ending`)
+          }
+          break
+
+        // =================================================================
+        // Payment Events
+        // =================================================================
         case 'payment_intent.succeeded':
-          const paymentIntent = event.data.object
-          console.log('Payment succeeded:', paymentIntent.id)
-          // Handle successful payment (e.g., update your database)
+          // Payment succeeded (e.g., third-party purchase)
+          const paymentIntentSucceeded = event.data.object
+          console.log('Payment succeeded:', paymentIntentSucceeded.id)
+          // Update database (e.g., mark product as sold, notify influencer)
+          await Payment.create({
+            paymentId: paymentIntentSucceeded.id,
+            customerId: paymentIntentSucceeded.customer,
+            amount: paymentIntentSucceeded.amount_received / 100,
+            currency: paymentIntentSucceeded.currency,
+            status: 'succeeded',
+            createdAt: new Date(paymentIntentSucceeded.created * 1000),
+          })
           break
 
         case 'payment_intent.payment_failed':
-          const failedPaymentIntent = event.data.object
-          console.log('Payment failed:', failedPaymentIntent.id)
-          // Handle failed payment
+          // Payment failed
+          const paymentIntentFailed = event.data.object
+          console.log('Payment failed:', paymentIntentFailed.id)
+          // Notify user or retry logic
+          await Payment.create({
+            paymentId: paymentIntentFailed.id,
+            customerId: paymentIntentFailed.customer,
+            amount: paymentIntentFailed.amount / 100,
+            currency: paymentIntentFailed.currency,
+            status: 'failed',
+            createdAt: new Date(paymentIntentFailed.created * 1000),
+          })
+          break
+
+        case 'charge.succeeded':
+          // Charge succeeded (supports Stripe Connect transfers)
+          const chargeSucceeded = event.data.object
+          console.log('Charge succeeded:', chargeSucceeded.id)
+          // Update database (e.g., confirm payment to influencer)
+          await Payment.create({
+            paymentId: chargeSucceeded.id,
+            customerId: chargeSucceeded.customer,
+            amount: chargeSucceeded.amount / 100,
+            currency: chargeSucceeded.currency,
+            status: 'succeeded',
+            createdAt: new Date(chargeSucceeded.created * 1000),
+          })
+          break
+
+        case 'charge.failed':
+          // Charge failed
+          const chargeFailed = event.data.object
+          console.log('Charge failed:', chargeFailed.id)
+          // Handle failed charge (e.g., notify user)
+          await Payment.create({
+            paymentId: chargeFailed.id,
+            customerId: chargeFailed.customer,
+            amount: chargeFailed.amount / 100,
+            currency: chargeFailed.currency,
+            status: 'failed',
+            createdAt: new Date(chargeFailed.created * 1000),
+          })
+          break
+
+        // =================================================================
+        // Stripe Connect Events
+        // =================================================================
+        case 'account.updated':
+          // Stripe Connect account updated (e.g., onboarding completed)
+          const accountUpdated = event.data.object
+          console.log('Stripe account updated:', accountUpdated.id)
+          // Update database (e.g., mark account as ready)
+          break
+
+        // =================================================================
+        // Invoice Events (Optional)
+        // =================================================================
+        case 'invoice.payment_succeeded':
+          // Invoice paid (e.g., subscription renewal)
+          const invoicePaid = event.data.object
+          console.log('Invoice paid:', invoicePaid.id)
+          // Update database or trigger actions
+          await Subscription.findOneAndUpdate(
+            { customerId: invoicePaid.customer },
+            { status: 'active', endDate: new Date(invoicePaid.period_end * 1000) }
+          )
+          break
+
+        case 'invoice.payment_failed':
+          // Invoice payment failed
+          const invoiceFailed = event.data.object
+          console.log('Invoice payment failed:', invoiceFailed.id)
+          // Notify user or retry logic
+          await Subscription.findOneAndUpdate({ customerId: invoiceFailed.customer }, { status: 'past_due' })
           break
 
         default:
           console.log(`Unhandled event type: ${event.type}`)
       }
 
-      res.status(200).send('Webhook received successfully')
+      // Acknowledge receipt of the event
+      res.status(200).json({ received: true })
     } catch (err) {
-      console.error('Error handling Stripe webhook:', err.message)
-      res.status(400).send(`Webhook error: ${err.message}`)
+      console.error('Webhook error:', err.message)
+      res.status(400).send(`Webhook Error: ${err.message}`)
     }
   }),
+  // handleInfluencerWebhook: asyncMiddleware(async (req, res) => {
+  //   const sig = req.headers['stripe-signature']
+  //   const payload = req.body
+
+  //   try {
+  //     const event = stripe.webhooks.constructEvent(payload, sig, process.env.STRIPE_WEBHOOK_SECRET)
+
+  //     switch (event.type) {
+  //       case 'payment_intent.succeeded':
+  //         const paymentIntent = event.data.object
+  //         console.log('Payment succeeded:', paymentIntent.id)
+  //         // Handle successful payment (e.g., update your database)
+  //         break
+
+  //       case 'payment_intent.payment_failed':
+  //         const failedPaymentIntent = event.data.object
+  //         console.log('Payment failed:', failedPaymentIntent.id)
+  //         // Handle failed payment
+  //         break
+
+  //       default:
+  //         console.log(`Unhandled event type: ${event.type}`)
+  //     }
+
+  //     res.status(200).send('Webhook received successfully')
+  //   } catch (err) {
+  //     console.error('Error handling Stripe webhook:', err.message)
+  //     res.status(400).send(`Webhook error: ${err.message}`)
+  //   }
+  // }),
   stripeCallback: asyncMiddleware(async (req, res) => {
     const { code } = req.query
     const { _id: userId } = req.decoded
@@ -572,6 +792,44 @@ export const CONTROLLER_PRICING = {
       console.error('Error retrieving users with Stripe accounts:', err)
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         message: 'An error occurred while retrieving users.',
+        error: err.message,
+      })
+    }
+  }),
+  confirmPayment: asyncMiddleware(async (req, res) => {
+    const { clientSecret, paymentMethodId } = req.body
+
+    if (!clientSecret || !paymentMethodId) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'Client secret and payment method ID are required.',
+      })
+    }
+
+    try {
+      // Extract PaymentIntent ID from the client secret
+      const paymentIntentId = clientSecret.split('_secret_')[0]
+
+      // Confirm the PaymentIntent
+      const paymentIntent = await stripe.paymentIntents.confirm(paymentIntentId, {
+        payment_method: paymentMethodId,
+      })
+
+      // Check the payment status
+      if (paymentIntent.status === 'succeeded') {
+        return res.status(StatusCodes.OK).json({
+          message: 'Payment confirmed successfully.',
+          paymentIntent,
+        })
+      } else {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          message: 'Payment failed.',
+          paymentIntent,
+        })
+      }
+    } catch (err) {
+      console.error('Error confirming payment:', err)
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: 'Failed to confirm payment.',
         error: err.message,
       })
     }

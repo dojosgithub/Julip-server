@@ -57,12 +57,12 @@ app.post(
   Authenticate(),
   CONTROLLER_PRICING.stripeCallback
 )
-app.post(
-  '/webhooks/stripe/connect',
-  express.raw({ type: 'application/json' }),
-  Authenticate(),
-  CONTROLLER_PRICING.handleInfluencerWebhook
-)
+// app.post(
+//   '/webhooks/stripe/connect',
+//   express.raw({ type: 'application/json' }),
+//   Authenticate(),
+//   CONTROLLER_PRICING.handleInfluencerWebhook
+// )
 app.post('api/stripe-webhook-payment-successful', async (req, res) => {
   const sig = req.headers['stripe-signature']
   const payload = req.body

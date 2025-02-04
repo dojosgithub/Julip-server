@@ -649,4 +649,53 @@ export const CONTROLLER_SHOP = {
       message: 'Collection retrieved successfully.',
     })
   }),
+
+  updatePinnedProducts: asyncMiddleware(async (req, res) => {
+    const { _id: userId } = req.decoded
+    const { version = 'draft' } = req.params
+    const { name, productsList, visibility } = req.body
+
+    if (!['draft', 'published'].includes(version)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'Invalid version. Choose either "draft" or "published".',
+      })
+    }
+
+    if (productsList && (!Array.isArray(productsList) || !productsList.length)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'productsList must be a non-empty array of profile IDs.',
+      })
+    }
+
+    if (visibility !== undefined && typeof visibility !== 'boolean') {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'visibility must be a boolean value.',
+      })
+    }
+
+    const shop = await Shop.findOne({ userId })
+    if (!shop) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Shop not found.',
+      })
+    }
+
+    // Update pinnedProducts fields if provided
+    if (name) {
+      shop[version].pinnedProducts.name = name
+    }
+    if (productsList) {
+      shop[version].pinnedProducts.productsList = productsList
+    }
+    if (visibility !== undefined) {
+      shop[version].pinnedProducts.visibility = visibility
+    }
+
+    await shop.save()
+
+    res.status(StatusCodes.OK).json({
+      data: shop[version].pinnedProducts,
+      message: 'Pinned products updated successfully.',
+    })
+  }),
 }

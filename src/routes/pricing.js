@@ -39,7 +39,7 @@ router.post('/purchase', Authenticate(), CONTROLLER_PRICING.purchaseProduct)
 
 router.post('/create-stripe', Authenticate(), CONTROLLER_PRICING.connectStripeAccount)
 
-router.post('/webhooks/stripe/connect', Authenticate(), CONTROLLER_PRICING.handleInfluencerWebhook)
+// router.post('/webhooks/stripe/connect', Authenticate(), CONTROLLER_PRICING.handleInfluencerWebhook)
 
 router.post('/stripe/oauth/callback', Authenticate(), CONTROLLER_PRICING.stripeCallback)
 
@@ -48,6 +48,8 @@ router.get('/testing', Authenticate(), CONTROLLER_PRICING.createTestaccount)
 router.post('/details', Authenticate(), CONTROLLER_PRICING.getDetails)
 
 router.get('/stripe-user', Authenticate(), CONTROLLER_PRICING.getUsersWithStripeAccount)
+
+router.post('/confirm-payment', Authenticate(), CONTROLLER_PRICING.confirmPayment)
 
 // router.post('/select', Authenticate(), CONTROLLER_PRICING.selectPricing)
 

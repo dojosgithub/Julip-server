@@ -40,4 +40,6 @@ router.delete('/delete-shop', Authenticate(), CONTROLLER_SHOP.deleteShop)
 
 router.get('/get-pinned-products', Authenticate(), CONTROLLER_SHOP.getPinnedList)
 
+router.post('/update-pinned-products', Authenticate(), CONTROLLER_SHOP.updatePinnedProducts)
+
 export default router
