@@ -24,7 +24,10 @@ const shopContentSchema = {
     },
   ],
   pinnedProducts: {
-    name: String,
+    name: {
+      type: String,
+      default: 'pinned Product',
+    },
     productsList: [
       {
         type: Schema.Types.ObjectId,
