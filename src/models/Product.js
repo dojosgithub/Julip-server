@@ -34,6 +34,10 @@ export const productSchema = new Schema(
     buttonTitle: {
       type: String, // Optional field
     },
+    pinnedProductVisibility: {
+      type: Boolean, // Optional field
+      default: true,
+    },
   },
   { versionKey: false, timestamps: true }
 )

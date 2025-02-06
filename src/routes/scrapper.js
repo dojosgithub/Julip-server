@@ -21,4 +21,8 @@ router.post('/shopify', Authenticate(), CONTROLLER_SCRAPE.scrapeShopify)
 
 router.post('/webcrawler', Authenticate(), CONTROLLER_SCRAPE.webCrawler)
 
+router.post('/webcrawlerApify', Authenticate(), CONTROLLER_SCRAPE.webCrawlerApify)
+
+router.post('/webcrawlerScrapingbee', Authenticate(), CONTROLLER_SCRAPE.webCrawlerScrapingBee)
+
 export default router

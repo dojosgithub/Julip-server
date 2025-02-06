@@ -663,7 +663,7 @@ export const CONTROLLER_SHOP = {
 
     if (productsList && (!Array.isArray(productsList) || !productsList.length)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
-        message: 'productsList must be a non-empty array of profile IDs.',
+        message: 'productsList must be a non-empty array of product objects.',
       })
     }
 
@@ -686,6 +686,17 @@ export const CONTROLLER_SHOP = {
     }
     if (productsList) {
       shop[version].pinnedProducts.productsList = productsList
+
+      // Update each product's pinnedProductVisibility in the Product model
+      await Promise.all(
+        productsList.map(async (product) => {
+          const { _id, pinnedProductVisibility } = product
+
+          if (_id) {
+            await Product.findByIdAndUpdate(_id, { pinnedProductVisibility })
+          }
+        })
+      )
     }
     if (visibility !== undefined) {
       shop[version].pinnedProducts.visibility = visibility

@@ -379,4 +379,120 @@ export const CONTROLLER_SCRAPE = {
       })
     }
   }),
+  webCrawlerApify: asyncMiddleware(async (req, res) => {
+    const { url } = req.body
+    try {
+      // Run an Apify Actor (e.g., "web-scraper")
+      const runResponse = await axios.post(
+        'https://api.apify.com/v2/acts/apify~web-scraper/run-sync-get-dataset-items',
+        {
+          startUrls: [{ url }],
+          extract: {
+            title: 'h1',
+            price: '.price, [itemprop="price"]',
+            description: '.description',
+            brand: '.brand',
+          },
+        },
+        {
+          params: {
+            token: 'apify_api_cPUodr2fbTEZAxo3fEkcYxFbogOlVc0xPjDb', // Replace with your token
+          },
+        }
+      )
+
+      // Apify returns data in `runResponse.data`
+      const productData = runResponse.data[0] || {}
+      const extractedData = {
+        title: productData.title || null,
+        price: productData.price || null,
+        brand: productData.brand || null,
+        image: productData.image || null, // Add CSS selector logic if needed
+        description: productData.description || null,
+      }
+
+      res.status(StatusCodes.OK).json({
+        data: extractedData,
+        message: 'Product data fetched via Apify.',
+      })
+    } catch (error) {
+      console.error('Apify Error:', error)
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: 'Apify Error: ' + error.message,
+      })
+    }
+  }),
+  webCrawlerScrapingBee: asyncMiddleware(async (req, res) => {
+    const { url } = req.body
+    try {
+      const response = await axios.get('https://app.scrapingbee.com/api/v1', {
+        params: {
+          api_key: 'MTBXWDECZTSZDXNFUTR8ILAOFU5TNL3VOZNHCV06XOP310QP5UYY8E5ARAENKYOI405PRJMUM9WVKNHK', // Replace with your key
+          url,
+          extract_rules: JSON.stringify({
+            title: 'h1',
+            price: '.price, .product-price, [itemprop="price"]',
+            description: '.description, [itemprop="description"]',
+            brand: '.brand, [itemprop="brand"]',
+            image: 'img.product-image | src',
+          }),
+        },
+      })
+
+      const extractedData = {
+        title: response.data.title || null,
+        price: response.data.price || null,
+        brand: response.data.brand || null,
+        image: response.data.image || null,
+        description: response.data.description || null,
+      }
+
+      res.status(StatusCodes.OK).json({
+        data: extractedData,
+        message: 'Product data fetched via ScrapingBee.',
+      })
+    } catch (error) {
+      console.error('ScrapingBee Error:', error)
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: 'ScrapingBee Error: ' + error.message,
+      })
+    }
+  }),
+  webCrawlerScrapingBot: asyncMiddleware(async (req, res) => {
+    const { url } = req.body
+    try {
+      const response = await axios.get('https://api.scrapingbot.io/scrape', {
+        params: {
+          api_key: 'YOUR_SCRAPINGBOT_KEY',
+          url,
+          renderJs: 'true', // Render JavaScript
+          extractRules: JSON.stringify({
+            title: 'h1',
+            price: '.price',
+            brand: '.brand',
+            description: '.description',
+            image: 'img.product-image | src',
+          }),
+        },
+      })
+
+      const extractedData = {
+        title: response.data.title || null,
+        price: response.data.price || null,
+        brand: response.data.brand || null,
+        image: response.data.image || null,
+        description: response.data.description || null,
+      }
+
+      res.status(StatusCodes.OK).json({
+        data: extractedData,
+        message: 'Product data fetched via ScrapingBot.',
+      })
+    } catch (error) {
+      console.error('ScrapingBot Error:', error)
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: 'ScrapingBot Error: ' + error.message,
+      })
+    }
+  }),
 }
