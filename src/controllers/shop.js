@@ -652,7 +652,7 @@ export const CONTROLLER_SHOP = {
 
   updatePinnedProducts: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
-    const { version = 'draft' } = req.params
+    const { version = 'draft' } = req.query
     const { name, productsList, visibility } = req.body
 
     if (!['draft', 'published'].includes(version)) {

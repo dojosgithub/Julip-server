@@ -26,7 +26,7 @@ const shopContentSchema = {
   pinnedProducts: {
     name: {
       type: String,
-      default: 'pinned Product',
+      default: 'Pinned Product',
     },
     productsList: [
       {
@@ -34,6 +34,10 @@ const shopContentSchema = {
         ref: 'Profile',
       },
     ],
+    visibility: {
+      type: Boolean,
+      default: true,
+    },
   },
   visibility: {
     type: Boolean,
