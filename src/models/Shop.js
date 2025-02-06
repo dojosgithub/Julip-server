@@ -37,6 +37,7 @@ const shopContentSchema = {
   },
   visibility: {
     type: Boolean,
+    default: true,
   },
 }
 
