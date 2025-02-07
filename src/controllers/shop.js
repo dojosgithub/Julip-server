@@ -655,24 +655,28 @@ export const CONTROLLER_SHOP = {
     const { version = 'draft' } = req.query
     const { name, productsList, visibility } = req.body
 
+    // Validate version
     if (!['draft', 'published'].includes(version)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'Invalid version. Choose either "draft" or "published".',
       })
     }
 
+    // Validate productsList
     if (productsList && (!Array.isArray(productsList) || !productsList.length)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'productsList must be a non-empty array of product objects.',
       })
     }
 
+    // Validate visibility
     if (visibility !== undefined && typeof visibility !== 'boolean') {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'visibility must be a boolean value.',
       })
     }
 
+    // Find the shop
     const shop = await Shop.findOne({ userId })
     if (!shop) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -684,6 +688,7 @@ export const CONTROLLER_SHOP = {
     if (name) {
       shop[version].pinnedProducts.name = name
     }
+
     if (productsList) {
       shop[version].pinnedProducts.productsList = productsList
 
@@ -691,21 +696,32 @@ export const CONTROLLER_SHOP = {
       await Promise.all(
         productsList.map(async (product) => {
           const { _id, pinnedProductVisibility } = product
-
           if (_id) {
             await Product.findByIdAndUpdate(_id, { pinnedProductVisibility })
           }
         })
       )
     }
+
     if (visibility !== undefined) {
       shop[version].pinnedProducts.visibility = visibility
     }
 
+    // Save the updated shop document
     await shop.save()
 
+    // Populate the productsList with actual product details
+    const populatedProducts = await Product.find({
+      _id: { $in: shop[version].pinnedProducts.productsList },
+    })
+
+    // Return the response with populated product details
     res.status(StatusCodes.OK).json({
-      data: shop[version].pinnedProducts,
+      data: {
+        name: shop[version].pinnedProducts.name,
+        visibility: shop[version].pinnedProducts.visibility,
+        productsList: populatedProducts, // Populated product details
+      },
       message: 'Pinned products updated successfully.',
     })
   }),

@@ -313,20 +313,47 @@ export const CONTROLLER_TEMPLATE = {
     })
   }),
   getUsernameTemplate: asyncMiddleware(async (req, res) => {
-    // const { _id: userId } = req.decoded
     const { userName } = req.body
 
+    // Fetch user data with nested population for Shop collections and pinnedProducts
     const data = await User.find({ userName })
-      .populate('template')
-      .populate('profile')
-      .populate('about')
-      .populate('shop')
+      .populate({
+        path: 'template',
+      })
+      .populate({
+        path: 'profile',
+      })
+      .populate({
+        path: 'about',
+      })
+      .populate({
+        path: 'shop',
+        populate: [
+          {
+            path: 'draft.collections.products', // Populate products in draft collections
+            model: 'Product',
+          },
+          {
+            path: 'draft.pinnedProducts.productsList', // Populate productsList in draft pinnedProducts
+            model: 'Profile',
+          },
+          {
+            path: 'published.collections.products', // Populate products in published collections
+            model: 'Product',
+          },
+          {
+            path: 'published.pinnedProducts.productsList', // Populate productsList in published pinnedProducts
+            model: 'Profile',
+          },
+        ],
+      })
 
-    if (!data) {
+    if (!data || data.length === 0) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: 'Data not found.',
       })
     }
+
     res.status(StatusCodes.OK).json({
       data: data,
       message: 'Data fetched successfully.',
