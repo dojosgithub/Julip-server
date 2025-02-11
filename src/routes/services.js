@@ -24,6 +24,10 @@ router.delete('/delete-service/:id', Authenticate(), CONTROLLER_SERVICES.deleteS
 
 router.post('/create-services', Authenticate(), CONTROLLER_SERVICES.createAndupdateServices)
 
+router.put('/update-sigle-service-collection', Authenticate(), CONTROLLER_SERVICES.updateSingleServiceCollection)
+
+router.post('/create-collection', Authenticate(), CONTROLLER_SERVICES.createCollection)
+
 router.get('/get-services', Authenticate(), CONTROLLER_SERVICES.getServices)
 
 export default router

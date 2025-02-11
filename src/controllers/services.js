@@ -233,4 +233,114 @@ export const CONTROLLER_SERVICES = {
       message: 'Services retrieved successfully.',
     })
   }),
+  updateSingleServiceCollection: async (req, res) => {
+    const { _id: userId } = req.decoded // User ID from token
+    const { version = 'draft', serviceName } = req.query // Collection name to edit
+    const { newServiceName, service } = req.body // Updates for the collection
+
+    // Find the user's services
+    let services = await Services.findOne({ userId }).populate({
+      path: `${version}.collections.services`,
+      model: 'Service',
+    })
+
+    if (!services) {
+      return res.status(404).json({
+        success: false,
+        message: 'Services not found.',
+      })
+    }
+
+    // Locate the collection to edit
+    const collection = services[version].collections.find((col) => col.name.toLowerCase() === serviceName.toLowerCase())
+
+    if (!collection) {
+      return res.status(404).json({
+        success: false,
+        message: 'Collection not found.',
+      })
+    }
+
+    // Check if the new collection name already exists (if it's being updated)
+    if (newServiceName && newServiceName.toLowerCase() !== serviceName.toLowerCase()) {
+      const isDuplicate = services[version].collections.some(
+        (col) => col.name.toLowerCase() === newServiceName.toLowerCase()
+      )
+      if (isDuplicate) {
+        return res.status(400).json({
+          success: false,
+          message: 'A collection with the new name already exists.',
+        })
+      }
+      collection.name = newServiceName // Update the collection name
+    }
+
+    // Update the service in the collection (if provided)
+    if (service) {
+      if (mongoose.Types.ObjectId.isValid(service)) {
+        collection.service.push(new mongoose.Types.ObjectId(service)) // Convert to ObjectId before pushing
+      }
+    }
+
+    // Save the updated services document
+    await services.save()
+
+    // **Repopulate the service after saving**
+    services = await Services.findOne({ userId }).populate({
+      path: `${version}.collections.services`,
+      model: 'Service',
+    })
+
+    // Return the updated collection with fresh populated data
+    return res.status(200).json({
+      success: true,
+      message: 'Collection updated successfully.',
+      data: services[version].collections.find(
+        (col) => col.name.toLowerCase() === (newServiceName || serviceName).toLowerCase()
+      ),
+    })
+  },
+  createCollection: async (req, res) => {
+    const { _id: userId } = req.decoded // User ID from token
+    const { collectionName, service } = req.body // Collection name and product IDs from request body
+    const { version = 'draft' } = req.query
+    // Find the user's services
+    const services = await Services.findOne({ userId })
+
+    if (!services) {
+      return res.status(404).json({
+        success: false,
+        message: 'Services not found.',
+      })
+    }
+
+    // Check if the collection name already exists
+    const isCollectionExists = services[version].collections.some(
+      (collection) => collection.name.toLowerCase() === collectionName.toLowerCase()
+    )
+
+    if (isCollectionExists) {
+      return res.status(400).json({
+        success: false,
+        message: 'Collection name already exists.',
+      })
+    }
+
+    // Add the new collection with the product IDs
+    const newCollection = {
+      name: collectionName,
+      service,
+    }
+
+    services[version].collections.push(newCollection)
+
+    // Save the updated services document
+    await services.save()
+
+    return res.status(201).json({
+      success: true,
+      message: 'Collection added successfully.',
+      data: services[version].collections,
+    })
+  },
 }

@@ -193,6 +193,7 @@ export const CONTROLLER_PROFILE = {
     // Link profile to user
     user.profile = profile._id
     user.isProfileCreated = true
+    // Creation of Pages
     const newPages = new Pages({ user: userId })
     const shop = new Shop({ userId })
     const about = new About({ userId })

@@ -20,57 +20,65 @@ export const CONTROLLER_ABOUT = {
   addAboutItems: asyncMiddleware(async (req, res) => {
     const body = JSON.parse(req.body.body)
     const { userId, items = [] } = body
+
+    // Validate required fields
     if (!userId) {
       return res.status(400).json({ message: 'User ID is required.' })
     }
-
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: 'Items array is required and must not be empty.' })
     }
 
     const validTypes = ['heading', 'description', 'image']
-
-    // Index to keep track of image files in req.files
     let imageFileIndex = 0
 
-    // Validate and map items with sequence
+    // Process and validate items
     const processedItems = items.map((item, index) => {
       if (!item.type || !validTypes.includes(item.type)) {
-        throw new Error(`Invalid item type: ${item.type}`)
+        return res.status(400).json({ message: `Invalid item type: ${item.type}` })
+      }
+
+      // Validate common fields
+      if (typeof item.visibility !== 'boolean') {
+        return res.status(400).json({ message: 'Each item must have a visibility property of true or false.' })
       }
 
       if (item.type === 'image') {
         if (!req.files || !req.files[imageFileIndex]) {
-          throw new Error('Image file is missing for an image item.')
+          return res.status(400).json({ message: 'Image file is missing for an image item.' })
         }
 
         const file = req.files[imageFileIndex]
-        imageFileIndex++ // Move to the next file for subsequent images
+        imageFileIndex++
 
         return {
           type: 'image',
-          value: file.path,
-          visibility: item.visibility ?? true, // Default visibility if not provided
-          sequence: item.sequence ?? index, // Use provided sequence or fallback to index
+          value: { url: file.path }, // Store image metadata as an object
+          description: item.description || '', // Optional description
+          imageStyle: item.imageStyle || 'horizontal', // Default style
+          visibility: item.visibility ?? true,
+          descriptionVisibility: item.descriptionVisibility ?? true,
+          sequence: item.sequence ?? index,
         }
       }
 
-      if (!item.value) {
+      // Validate other types
+      if (!item.value && item.type !== 'image') {
         throw new Error('Each item must have a value.')
       }
 
-      if (typeof item.visibility !== 'boolean') {
-        throw new Error('Each item must have a visibility property of true or false.')
-      }
-
       return {
-        ...item,
-        sequence: item.sequence ?? index, // Ensure each item has a sequence
+        type: item.type,
+        value: item.value,
+        description: item.description || '', // Optional description
+        visibility: item.visibility ?? true,
+        descriptionVisibility: item.descriptionVisibility ?? true,
+        sequence: item.sequence ?? index,
       }
     })
 
+    // Find or create the About document
     const about = await About.findOne({ userId })
-
     if (!about) {
       const newAbout = new About({
         userId,
@@ -88,9 +96,10 @@ export const CONTROLLER_ABOUT = {
     about.items.sort((a, b) => a.sequence - b.sequence)
 
     await about.save()
+
+    // Return the updated About document
     const { draft, published, ...restAbout } = about.toObject()
-    let modifiedAbout
-    modifiedAbout = {
+    const modifiedAbout = {
       ...restAbout,
       ...draft,
     }
@@ -105,14 +114,11 @@ export const CONTROLLER_ABOUT = {
     if (!userId) {
       return res.status(400).json({ message: 'User ID is required.' })
     }
-
     if (!Array.isArray(items)) {
       return res.status(400).json({ message: 'Items must be an array.' })
     }
 
     const validTypes = ['heading', 'description', 'image']
-
-    // Index to track image files in req.files
     let imageFileIndex = 0
 
     // Process and validate items
@@ -122,7 +128,7 @@ export const CONTROLLER_ABOUT = {
       }
 
       if (item.type === 'image') {
-        if (item.value && item.value.startsWith('http')) {
+        if (item.value && typeof item.value === 'object' && item.value.url) {
           // Retain existing image URL if provided
           return {
             ...item,
@@ -140,18 +146,22 @@ export const CONTROLLER_ABOUT = {
 
         return {
           type: 'image',
-          value: file.path,
+          value: file.path, // Store image metadata as an object
+          description: item.description || '',
+          imageStyle: item.imageStyle || 'horizontal',
           visibility: item.visibility ?? true,
+          descriptionVisibility: item.descriptionVisibility ?? true,
           sequence: item.sequence ?? index,
         }
       }
 
-      if (!item.value) {
-        throw new Error('Each item must have a value.')
+      // Validate other types
+      if (!item.value && item.type !== 'image') {
+        return res.status(400).json({ message: 'Each item must have a value.' })
       }
 
       if (typeof item.visibility !== 'boolean') {
-        throw new Error('Each item must have a visibility property of true or false.')
+        return res.status(400).json({ message: 'Each item must have a visibility property of true or false.' })
       }
 
       return {
@@ -161,7 +171,6 @@ export const CONTROLLER_ABOUT = {
     })
 
     const about = await About.findOne({ userId })
-
     if (!about) {
       return res.status(404).json({ message: 'About section not found for this user.' })
     }
@@ -173,6 +182,7 @@ export const CONTROLLER_ABOUT = {
     }
 
     await about.save()
+
     const { draft, published, ...restAbout } = about.toObject()
     let modifiedAbout
     if (version === 'draft') {

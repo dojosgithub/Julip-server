@@ -11,18 +11,30 @@ const aboutItemSchema = new mongoose.Schema({
     enum: ['heading', 'description', 'image'],
   },
   value: {
+    type: String, // Changed to Mixed to support both strings and objects (e.g., image metadata)
+  },
+  description: {
     type: String,
+    default: '', // Optional field for descriptions
+  },
+  imageStyle: {
+    type: String,
+    enum: ['horizontal', 'vertical'], // Restrict to specific styles
+    default: 'horizontal',
   },
   visibility: {
     type: Boolean,
     default: true,
   },
+  descriptionVisibility: {
+    type: Boolean,
+    default: true, // Visibility of the description field
+  },
   sequence: {
     type: Number,
-    default: true,
+    default: 0,
   },
 })
-
 const aboutSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
