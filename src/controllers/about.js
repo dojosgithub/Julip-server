@@ -109,7 +109,8 @@ export const CONTROLLER_ABOUT = {
 
   updateAboutItems: asyncMiddleware(async (req, res) => {
     const body = JSON.parse(req.body.body)
-    const { userId, items = [], version = 'draft' } = body
+    const { version = 'draft' } = req.query
+    const { userId, items = [] } = body
 
     if (!userId) {
       return res.status(400).json({ message: 'User ID is required.' })
