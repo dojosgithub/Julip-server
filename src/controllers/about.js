@@ -108,96 +108,117 @@ export const CONTROLLER_ABOUT = {
   }),
 
   updateAboutItems: asyncMiddleware(async (req, res) => {
-    const body = JSON.parse(req.body.body)
-    const { version = 'draft' } = req.query
-    const { userId, items = [] } = body
+    try {
+      // Parse the JSON payload
+      const body = JSON.parse(req.body.body)
+      const { version = 'draft' } = req.query
+      const { userId, items = [] } = body
 
-    if (!userId) {
-      return res.status(400).json({ message: 'User ID is required.' })
-    }
-    if (!Array.isArray(items)) {
-      return res.status(400).json({ message: 'Items must be an array.' })
-    }
-
-    const validTypes = ['heading', 'description', 'image']
-    let imageFileIndex = 0
-
-    // Process and validate items
-    const processedItems = items.map((item, index) => {
-      if (!item.type || !validTypes.includes(item.type)) {
-        throw new Error(`Invalid item type: ${item.type}`)
+      // Validate required fields
+      if (!userId) {
+        return res.status(400).json({ message: 'User ID is required.' })
+      }
+      if (!Array.isArray(items)) {
+        return res.status(400).json({ message: 'Items must be an array.' })
       }
 
-      if (item.type === 'image') {
-        if (item.value && typeof item.value === 'object') {
-          // Retain existing image URL if provided
+      const validTypes = ['heading', 'description', 'image']
+      let imageFileIndex = 0
+
+      // Process and validate items
+      const processedItems = items.map((item, index) => {
+        if (!item.type || !validTypes.includes(item.type)) {
+          throw new Error(`Invalid item type: ${item.type}`)
+        }
+
+        if (item.type === 'image') {
+          // Validate item.value
+          if (item.value && typeof item.value === 'string') {
+            // Retain existing image URL
+            return {
+              type: 'image',
+              value: item.value, // Store the existing URL
+              description: item.description || '',
+              imageStyle: item.imageStyle || 'horizontal',
+              visibility: item.visibility ?? true,
+              descriptionVisibility: item.descriptionVisibility ?? true,
+              sequence: item.sequence ?? index,
+            }
+          }
+
+          // If item.value is an empty object or invalid, require a new file upload
+          if (!req.files || !req.files[imageFileIndex]) {
+            throw new Error('Image file is missing for an image item.')
+          }
+
+          // Use the uploaded file's path
+          const file = req.files[imageFileIndex]
+          imageFileIndex++
+
           return {
-            ...item,
+            type: 'image',
+            value: file.path, // Store the uploaded file's path
+            description: item.description || '',
+            imageStyle: item.imageStyle || 'horizontal',
+            visibility: item.visibility ?? true,
+            descriptionVisibility: item.descriptionVisibility ?? true,
             sequence: item.sequence ?? index,
           }
         }
 
-        // Use the uploaded image for the item
-        const file = req.files[imageFileIndex]
-        imageFileIndex++
+        // Validate other types
+        if (!item.value && item.type !== 'image') {
+          return res.status(400).json({ message: 'Each item must have a value.' })
+        }
+        if (typeof item.visibility !== 'boolean') {
+          return res.status(400).json({ message: 'Each item must have a visibility property of true or false.' })
+        }
 
         return {
-          type: 'image',
-          value: typeof item.value === 'string' ? item.value : file.path, // Store image metadata as an object
-          description: item.description || '',
-          imageStyle: item.imageStyle || 'horizontal',
-          visibility: item.visibility ?? true,
-          descriptionVisibility: item.descriptionVisibility ?? true,
+          ...item,
           sequence: item.sequence ?? index,
+        }
+      })
+
+      // Find the user's About section
+      const about = await About.findOne({ userId })
+      if (!about) {
+        return res.status(404).json({ message: 'About section not found for this user.' })
+      }
+
+      // Update the appropriate version (draft or published)
+      if (version === 'draft') {
+        about.draft.items = processedItems.sort((a, b) => a.sequence - b.sequence)
+      } else if (version === 'published') {
+        about.published.items = processedItems.sort((a, b) => a.sequence - b.sequence)
+      }
+
+      // Save the updated document
+      await about.save()
+
+      // Prepare the response
+      const { draft, published, ...restAbout } = about.toObject()
+      let modifiedAbout
+      if (version === 'draft') {
+        modifiedAbout = {
+          ...restAbout,
+          ...draft,
+        }
+      } else if (version === 'published') {
+        modifiedAbout = {
+          ...restAbout,
+          ...published,
         }
       }
 
-      // Validate other types
-      if (!item.value && item.type !== 'image') {
-        return res.status(400).json({ message: 'Each item must have a value.' })
-      }
-
-      if (typeof item.visibility !== 'boolean') {
-        return res.status(400).json({ message: 'Each item must have a visibility property of true or false.' })
-      }
-
-      return {
-        ...item,
-        sequence: item.sequence ?? index,
-      }
-    })
-
-    const about = await About.findOne({ userId })
-    if (!about) {
-      return res.status(404).json({ message: 'About section not found for this user.' })
+      res.status(200).json({
+        data: modifiedAbout,
+        message: 'About section updated successfully.',
+      })
+    } catch (error) {
+      console.error('Error updating about section:', error)
+      res.status(500).json({ message: error.message })
     }
-
-    if (version === 'draft') {
-      about.draft.items = processedItems.sort((a, b) => a.sequence - b.sequence)
-    } else if (version === 'published') {
-      about.published.items = processedItems.sort((a, b) => a.sequence - b.sequence)
-    }
-
-    await about.save()
-
-    const { draft, published, ...restAbout } = about.toObject()
-    let modifiedAbout
-    if (version === 'draft') {
-      modifiedAbout = {
-        ...restAbout,
-        ...draft,
-      }
-    } else if (version === 'published') {
-      modifiedAbout = {
-        ...restAbout,
-        ...published,
-      }
-    }
-
-    res.status(200).json({
-      data: modifiedAbout,
-      message: 'About section updated successfully.',
-    })
   }),
   createAndUpdateAbout: asyncMiddleware(async (req, res) => {
     const body = JSON.parse(req.body.body)
