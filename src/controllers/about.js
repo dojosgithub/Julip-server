@@ -137,10 +137,6 @@ export const CONTROLLER_ABOUT = {
           }
         }
 
-        if (!req.files || !req.files[imageFileIndex]) {
-          throw new Error('Image file is missing for an image item.')
-        }
-
         // Use the uploaded image for the item
         const file = req.files[imageFileIndex]
         imageFileIndex++
