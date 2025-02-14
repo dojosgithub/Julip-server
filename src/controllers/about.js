@@ -128,7 +128,7 @@ export const CONTROLLER_ABOUT = {
       // Process and validate items
       const processedItems = items.map((item, index) => {
         if (!item.type || !validTypes.includes(item.type)) {
-          throw new Error(`Invalid item type: ${item.type}`)
+          return res.status(400).json({ message: `Invalid item type: ${item.type}` })
         }
 
         if (item.type === 'image') {
@@ -148,7 +148,7 @@ export const CONTROLLER_ABOUT = {
 
           // If item.value is an empty object or invalid, require a new file upload
           if (!req.files || !req.files[imageFileIndex]) {
-            throw new Error('Image file is missing for an image item.')
+            return res.status(400).json({ message: 'Image file is missing for an image item.' })
           }
 
           // Use the uploaded file's path
