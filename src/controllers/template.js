@@ -330,20 +330,12 @@ export const CONTROLLER_TEMPLATE = {
         path: 'shop',
         populate: [
           {
-            path: 'draft.collections.products', // Populate products in draft collections
-            model: 'Product',
-          },
-          {
-            path: 'draft.pinnedProducts.productsList', // Populate productsList in draft pinnedProducts
-            model: 'Profile',
-          },
-          {
             path: 'published.collections.products', // Populate products in published collections
             model: 'Product',
           },
           {
             path: 'published.pinnedProducts.productsList', // Populate productsList in published pinnedProducts
-            model: 'Profile',
+            model: 'Product',
           },
         ],
       })

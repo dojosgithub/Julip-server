@@ -13,6 +13,9 @@ const aboutItemSchema = new mongoose.Schema({
   value: {
     type: String, // Changed to Mixed to support both strings and objects (e.g., image metadata)
   },
+  label: {
+    type: String, // Changed to Mixed to support both strings and objects (e.g., image metadata)
+  },
   description: {
     type: String,
     default: '', // Optional field for descriptions
