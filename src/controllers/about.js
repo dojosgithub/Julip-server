@@ -129,7 +129,7 @@ export const CONTROLLER_ABOUT = {
       }
 
       if (item.type === 'image') {
-        if (item.value && typeof item.value === 'object' && item.value.url) {
+        if (item.value && typeof item.value === 'object') {
           // Retain existing image URL if provided
           return {
             ...item,
@@ -143,7 +143,7 @@ export const CONTROLLER_ABOUT = {
 
         return {
           type: 'image',
-          value: file.path, // Store image metadata as an object
+          value: typeof item.value === 'string' ? item.value : file.path, // Store image metadata as an object
           description: item.description || '',
           imageStyle: item.imageStyle || 'horizontal',
           visibility: item.visibility ?? true,
