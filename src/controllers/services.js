@@ -278,7 +278,7 @@ export const CONTROLLER_SERVICES = {
     // Update the service in the collection (if provided)
     if (service) {
       if (mongoose.Types.ObjectId.isValid(service)) {
-        collection.service.push(new mongoose.Types.ObjectId(service)) // Convert to ObjectId before pushing
+        collection.services.push(new mongoose.Types.ObjectId(service)) // Convert to ObjectId before pushing
       }
     }
 
@@ -340,6 +340,76 @@ export const CONTROLLER_SERVICES = {
     return res.status(201).json({
       success: true,
       message: 'Collection added successfully.',
+      data: services[version].collections,
+    })
+  },
+  deleteCollection: async (req, res) => {
+    const { _id: userId } = req.decoded // User ID from token
+    const { version = 'draft', collectionName } = req.query // Collection name to delete
+
+    // Find the user's services
+    const services = await Services.findOne({ userId })
+    if (!services) {
+      return res.status(404).json({
+        success: false,
+        message: 'Services not found.',
+      })
+    }
+
+    // Locate the collection to delete
+    const collectionIndex = services[version].collections.findIndex(
+      (col) => col.name.toLowerCase() === collectionName.toLowerCase()
+    )
+    if (collectionIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Collection not found.',
+      })
+    }
+
+    // Extract the services array from the collection
+    const collection = services[version].collections[collectionIndex]
+    const serviceIds = collection.services || [] // Array of service IDs
+
+    // Delete the referenced Service documents
+    if (serviceIds.length > 0) {
+      await Service.deleteMany({ _id: { $in: serviceIds } })
+    }
+
+    // Remove the collection
+    services[version].collections.splice(collectionIndex, 1)
+
+    // Save the updated services document
+    await services.save()
+
+    // Return the remaining collections
+    return res.status(200).json({
+      success: true,
+      message: 'Collection and associated services deleted successfully.',
+      data: services[version].collections,
+    })
+  },
+  getAllCollections: async (req, res) => {
+    const { _id: userId } = req.decoded // User ID from token
+    const { version = 'draft' } = req.query // Version to retrieve collections from
+
+    // Find the user's services and populate the collections
+    const services = await Services.findOne({ userId }).populate({
+      path: `${version}.collections.services`,
+      model: 'Service',
+    })
+
+    if (!services) {
+      return res.status(404).json({
+        success: false,
+        message: 'Services not found.',
+      })
+    }
+
+    // Return all collections for the specified version
+    return res.status(200).json({
+      success: true,
+      message: 'Collections retrieved successfully.',
       data: services[version].collections,
     })
   },

@@ -28,6 +28,10 @@ router.put('/update-sigle-service-collection', Authenticate(), CONTROLLER_SERVIC
 
 router.post('/create-collection', Authenticate(), CONTROLLER_SERVICES.createCollection)
 
+router.delete('/delete-collection', Authenticate(), CONTROLLER_SERVICES.deleteCollection)
+
+router.get('/get-all-collections', Authenticate(), CONTROLLER_SERVICES.getAllCollections)
+
 router.get('/get-services', Authenticate(), CONTROLLER_SERVICES.getServices)
 
 export default router
