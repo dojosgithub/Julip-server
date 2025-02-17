@@ -22,7 +22,7 @@ const aboutItemSchema = new mongoose.Schema({
   },
   imageStyle: {
     type: String,
-    enum: ['horizontal', 'vertical'], // Restrict to specific styles
+    enum: ['horizontal', 'vertical', 'square'], // Restrict to specific styles
     default: 'horizontal',
   },
   visibility: {
