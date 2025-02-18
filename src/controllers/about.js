@@ -261,6 +261,7 @@ export const CONTROLLER_ABOUT = {
         imageFileIndex++
 
         return {
+          ...item,
           type: 'image',
           value: file.path,
           visibility: item.visibility ?? true,
