@@ -47,7 +47,17 @@ export const CONTROLLER_SERVICES = {
 
   createLandingPage: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
-    const body = await JSON.parse(req.body.body)
+
+    // Parse the JSON payload
+    let body
+    try {
+      body = JSON.parse(req.body.body)
+    } catch (error) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'Invalid JSON payload.',
+      })
+    }
+
     const {
       serviceId,
       landingPageName,
@@ -65,7 +75,8 @@ export const CONTROLLER_SERVICES = {
       buttonTitle,
       visibility,
     } = body
-    let image
+
+    // Validate required fields
     if (
       !landingPageName ||
       !time ||
@@ -84,21 +95,140 @@ export const CONTROLLER_SERVICES = {
         message: 'All required fields must be provided.',
       })
     }
-    if (req.file) {
-      image = req.file.path
-    }
-    const landingpage = new LandingPage({
-      ...body,
-      image,
-    })
-    const savedLandingPage = await landingpage.save()
-    const service = await Service.findById(serviceId)
-    service.landingPage = savedLandingPage._id
-    service.save()
 
-    res.status(StatusCodes.CREATED).json({
-      data: service,
-      message: 'Testimonial created successfully.',
+    // Handle image upload
+    const image = req.file ? req.file.path : null
+
+    try {
+      // Create a new LandingPage document
+      const landingPage = new LandingPage({
+        ...body,
+        image,
+      })
+
+      // Save the landing page to the database
+      const savedLandingPage = await landingPage.save()
+
+      // Update the associated service's landingPage reference
+      const service = await Service.findById(serviceId)
+      if (!service) {
+        return res.status(StatusCodes.NOT_FOUND).json({
+          message: 'Service not found.',
+        })
+      }
+
+      service.landingPage = savedLandingPage._id
+      await service.save()
+
+      // Return the response
+      res.status(StatusCodes.CREATED).json({
+        data: savedLandingPage,
+        message: 'Landing page created successfully.',
+      })
+    } catch (error) {
+      console.error('Error creating landing page:', error)
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: 'An error occurred while creating the landing page.',
+      })
+    }
+  }),
+
+  updateLandingPage: asyncMiddleware(async (req, res) => {
+    const { _id: userId } = req.decoded
+    const { id: landingPageId } = req.params // ID of the landing page to update
+
+    // Parse the JSON payload
+    let body
+    try {
+      body = JSON.parse(req.body.body)
+    } catch (error) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'Invalid JSON payload.',
+      })
+    }
+
+    const {
+      serviceId,
+      landingPageName,
+      time,
+      timeUnit,
+      currency,
+      price,
+      testimonials,
+      recurrung,
+      name,
+      phoneNumber,
+      instagram,
+      isinstagramNumberRequired,
+      isPhoneNumberRequired,
+      buttonTitle,
+      visibility,
+    } = body
+    // Find the existing landing page
+    const landingPage = await LandingPage.findOne({ _id: landingPageId })
+    console.log('================================', landingPage)
+
+    if (!landingPage) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Landing page not found.',
+      })
+    }
+
+    // Validate required fields
+    if (
+      !landingPageName ||
+      !time ||
+      !timeUnit ||
+      !currency ||
+      !price ||
+      !testimonials ||
+      !recurrung ||
+      !name ||
+      !phoneNumber ||
+      !instagram ||
+      !buttonTitle
+    ) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'All required fields must be provided.',
+      })
+    }
+
+    // Update fields
+    landingPage.landingPageName = landingPageName
+    landingPage.time = time
+    landingPage.timeUnit = timeUnit
+    landingPage.currency = currency
+    landingPage.price = price
+    landingPage.testimonials = testimonials
+    landingPage.recurrung = recurrung
+    landingPage.name = name
+    landingPage.phoneNumber = phoneNumber
+    landingPage.instagram = instagram
+    landingPage.isinstagramNumberRequired = isinstagramNumberRequired
+    landingPage.isPhoneNumberRequired = isPhoneNumberRequired
+    landingPage.buttonTitle = buttonTitle
+    landingPage.visibility = visibility
+
+    // Handle image upload
+    if (req.file) {
+      landingPage.image = req.file.path // Update the image path if a new file is uploaded
+    }
+
+    // Save the updated landing page
+    const updatedLandingPage = await landingPage.save()
+
+    // Update the associated service's landingPage reference if necessary
+    // if (serviceId) {
+    //   const service = await Service.findById(serviceId)
+    //   if (service) {
+    //     service.landingPage = updatedLandingPage._id
+    //     await service.save()
+    //   }
+    // }
+
+    res.status(StatusCodes.OK).json({
+      data: updatedLandingPage,
+      message: 'Landing page updated successfully.',
     })
   }),
 

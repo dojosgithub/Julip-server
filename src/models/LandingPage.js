@@ -19,7 +19,7 @@ export const landingPageSchema = new Schema(
     },
 
     time: {
-      type: String,
+      type: Number,
     },
 
     timeUnit: {
@@ -44,23 +44,23 @@ export const landingPageSchema = new Schema(
       enum: ['monthly', 'yearly'],
     },
     name: {
-      type: Number,
+      type: String,
     },
     email: {
-      type: Number,
+      type: String,
     },
     phoneNumber: {
       type: Number,
     },
     isPhoneNumberRequired: {
-      type: Number,
+      type: Boolean,
       default: true,
     },
     instagram: {
-      type: Number,
+      type: String,
     },
     isinstagramNumberRequired: {
-      type: Number,
+      type: Boolean,
       default: true,
     },
     buttonTitle: {

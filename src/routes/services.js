@@ -18,6 +18,8 @@ router.post('/create-service', Authenticate(), CONTROLLER_SERVICES.createService
 
 router.post('/create-landingpage', Authenticate(), parser.single('image'), CONTROLLER_SERVICES.createLandingPage)
 
+router.put('/update-landingpage/:id', Authenticate(), parser.single('image'), CONTROLLER_SERVICES.updateLandingPage)
+
 router.put('/update-service/:id', Authenticate(), CONTROLLER_SERVICES.updateService)
 
 router.delete('/delete-service/:id', Authenticate(), CONTROLLER_SERVICES.deleteService)
