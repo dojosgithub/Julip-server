@@ -164,6 +164,7 @@ export const CONTROLLER_ABOUT = {
             visibility: item.visibility ?? true,
             descriptionVisibility: item.descriptionVisibility ?? true,
             sequence: item.sequence ?? index,
+            ...item,
           }
         }
 
