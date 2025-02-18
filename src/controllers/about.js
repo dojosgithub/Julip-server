@@ -159,7 +159,7 @@ export const CONTROLLER_ABOUT = {
           return {
             ...item,
             type: 'image',
-            value: file.path, // Store the uploaded file's path
+            value: file.path,
             description: item.description || '',
             imageStyle: item.imageStyle || 'horizontal',
             visibility: item.visibility ?? true,
