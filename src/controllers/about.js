@@ -157,6 +157,7 @@ export const CONTROLLER_ABOUT = {
           imageFileIndex++
 
           return {
+            ...item,
             type: 'image',
             value: file.path, // Store the uploaded file's path
             description: item.description || '',
@@ -164,7 +165,6 @@ export const CONTROLLER_ABOUT = {
             visibility: item.visibility ?? true,
             descriptionVisibility: item.descriptionVisibility ?? true,
             sequence: item.sequence ?? index,
-            ...item,
           }
         }
 
