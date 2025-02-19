@@ -19,7 +19,7 @@ export const CONTROLLER_SERVICES = {
     const body = req.body
     const { title, description, price, time, timeUnit, currency, buttonTitle, buttonUrl, visibility } = body
 
-    if (!title || !description || !buttonTitle || req.file) {
+    if (!title || !description || !buttonTitle) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'All required fields must be provided.',
       })
