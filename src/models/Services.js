@@ -18,18 +18,24 @@ const serviceContentSchema = {
       },
     },
   ],
-  testimonials: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: 'Testimonials',
-    },
-  ],
-  faqs: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: 'Faq',
-    },
-  ],
+  testimonials: {
+    list: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Testimonials',
+      },
+    ],
+    visibility: { type: Boolean, default: true },
+  },
+  faqs: {
+    list: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Faq',
+      },
+    ],
+    visibility: { type: Boolean, default: true },
+  },
   visibility: {
     type: Boolean,
     default: true,
