@@ -14,7 +14,7 @@ const router = Router()
 
 router.get('/get-user-all-service', Authenticate(), CONTROLLER_SERVICES.getListUserService)
 
-router.post('/create-service', Authenticate(), CONTROLLER_SERVICES.createService)
+router.post('/create-service', Authenticate(), parser.single('image'), CONTROLLER_SERVICES.createService)
 
 router.post('/create-landingpage', Authenticate(), parser.single('image'), CONTROLLER_SERVICES.createLandingPage)
 

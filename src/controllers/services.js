@@ -16,7 +16,7 @@ export const CONTROLLER_SERVICES = {
   // Create a Service
   createService: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
-    const body = req.body
+    const body = await JSON.parse(req.body.body)
     const { title, description, price, time, timeUnit, currency, buttonTitle, buttonUrl, visibility } = body
 
     if (!title || !description || !buttonTitle) {
@@ -36,6 +36,7 @@ export const CONTROLLER_SERVICES = {
       buttonTitle,
       buttonUrl,
       visibility,
+      image: req.file ? req.file.path : null,
     })
     await serviceData.save()
 
