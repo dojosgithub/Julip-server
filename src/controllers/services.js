@@ -367,8 +367,8 @@ export const CONTROLLER_SERVICES = {
   }),
   updateSingleServiceCollection: async (req, res) => {
     const { _id: userId } = req.decoded // User ID from token
-    const { version = 'draft', serviceName } = req.query // Collection name to edit
-    const { newServiceName, service } = req.body // Updates for the collection
+    const { version = 'draft' } = req.query // Collection version to edit
+    const { serviceName, service } = req.body // Service name to match and service ID to add
 
     // Find the user's services
     let services = await Services.findOne({ userId }).populate({
@@ -383,7 +383,7 @@ export const CONTROLLER_SERVICES = {
       })
     }
 
-    // Locate the collection to edit
+    // Locate the collection to edit by matching the service name
     const collection = services[version].collections.find((col) => col.name.toLowerCase() === serviceName.toLowerCase())
 
     if (!collection) {
@@ -393,31 +393,31 @@ export const CONTROLLER_SERVICES = {
       })
     }
 
-    // Check if the new collection name already exists (if it's being updated)
-    if (newServiceName && newServiceName.toLowerCase() !== serviceName.toLowerCase()) {
-      const isDuplicate = services[version].collections.some(
-        (col) => col.name.toLowerCase() === newServiceName.toLowerCase()
-      )
-      if (isDuplicate) {
+    // Add the service ID to the collection (if provided)
+    if (service) {
+      if (!mongoose.Types.ObjectId.isValid(service)) {
         return res.status(400).json({
           success: false,
-          message: 'A collection with the new name already exists.',
+          message: 'Invalid service ID.',
         })
       }
-      collection.name = newServiceName // Update the collection name
-    }
 
-    // Update the service in the collection (if provided)
-    if (service) {
-      if (mongoose.Types.ObjectId.isValid(service)) {
-        collection.services.push(new mongoose.Types.ObjectId(service)) // Convert to ObjectId before pushing
+      // Check if the service ID already exists in the collection
+      if (collection.services.some((s) => s.equals(new mongoose.Types.ObjectId(service)))) {
+        return res.status(400).json({
+          success: false,
+          message: 'Service already exists in the collection.',
+        })
       }
+
+      // Add the service ID to the collection
+      collection.services.push(new mongoose.Types.ObjectId(service))
     }
 
     // Save the updated services document
     await services.save()
 
-    // **Repopulate the service after saving**
+    // Repopulate the services after saving
     services = await Services.findOne({ userId }).populate({
       path: `${version}.collections.services`,
       model: 'Service',
@@ -426,10 +426,8 @@ export const CONTROLLER_SERVICES = {
     // Return the updated collection with fresh populated data
     return res.status(200).json({
       success: true,
-      message: 'Collection updated successfully.',
-      data: services[version].collections.find(
-        (col) => col.name.toLowerCase() === (newServiceName || serviceName).toLowerCase()
-      ),
+      message: 'Service added to the collection successfully.',
+      data: services[version].collections.find((col) => col.name.toLowerCase() === serviceName.toLowerCase()),
     })
   },
   createCollection: async (req, res) => {
