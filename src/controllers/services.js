@@ -11,6 +11,7 @@ import { Testimonials, Service, LandingPage, Services } from '../models'
 
 // * Middlewares
 import { asyncMiddleware } from '../middlewares'
+import mongoose from 'mongoose'
 
 export const CONTROLLER_SERVICES = {
   // Create a Service
