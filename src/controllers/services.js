@@ -358,8 +358,36 @@ export const CONTROLLER_SERVICES = {
   }),
   getServices: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
-    const services = await Services.find({ userId })
+    const { version = 'draft' } = req.query
 
+    // Fetch services and populate nested references
+    const services = await Services.find({ userId })
+      .populate({
+        path: `${version}.collections.services`, // Populate services in draft collections
+        model: 'Service',
+      })
+      .populate({
+        path: `${version}.collections.services`, // Populate services in published collections
+        model: 'Service',
+      })
+      .populate({
+        path: `${version}.testimonials.list`, // Populate testimonials in draft
+        model: 'Testimonials',
+      })
+      .populate({
+        path: `${version}.testimonials.list`, // Populate testimonials in published
+        model: 'Testimonials',
+      })
+      .populate({
+        path: `${version}.faqs.list`, // Populate FAQs in draft
+        model: 'Faq',
+      })
+      .populate({
+        path: `${version}.faqs.list`, // Populate FAQs in published
+        model: 'Faq',
+      })
+
+    // Return the populated data
     res.status(StatusCodes.OK).json({
       data: services,
       message: 'Services retrieved successfully.',
