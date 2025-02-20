@@ -43,7 +43,7 @@ export const landingPageSchema = new Schema(
       type: String,
       enum: ['monthly', 'yearly'],
     },
-    name: {
+    body: {
       type: String,
     },
     email: {

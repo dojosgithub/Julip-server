@@ -51,9 +51,9 @@ export const CONTROLLER_SERVICES = {
     const { _id: userId } = req.decoded
 
     // Parse the JSON payload
-    let body
+    let mainBody
     try {
-      body = JSON.parse(req.body.body)
+      mainBody = JSON.parse(req.body.body)
     } catch (error) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'Invalid JSON payload.',
@@ -76,27 +76,7 @@ export const CONTROLLER_SERVICES = {
       isPhoneNumberRequired,
       buttonTitle,
       visibility,
-    } = body
-
-    // Validate required fields
-    if (
-      !landingPageName ||
-      !time ||
-      !timeUnit ||
-      !currency ||
-      !price ||
-      !testimonials ||
-      !recurrung ||
-      !name ||
-      !phoneNumber ||
-      !instagram ||
-      !buttonTitle ||
-      !req.file
-    ) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        message: 'All required fields must be provided.',
-      })
-    }
+    } = mainBody
 
     // Handle image upload
     const image = req.file ? req.file.path : null
@@ -104,7 +84,7 @@ export const CONTROLLER_SERVICES = {
     try {
       // Create a new LandingPage document
       const landingPage = new LandingPage({
-        ...body,
+        ...mainBody,
         image,
       })
 
