@@ -46,6 +46,9 @@ export const landingPageSchema = new Schema(
     body: {
       type: String,
     },
+    name: {
+      type: String,
+    },
     email: {
       type: String,
     },
@@ -66,6 +69,9 @@ export const landingPageSchema = new Schema(
     buttonTitle: {
       type: String, // Optional field
     },
+    buttonUrl: {
+      type: String, // Optional field
+    },
     textFields: [
       {
         text: {
@@ -76,10 +82,6 @@ export const landingPageSchema = new Schema(
         },
       },
     ],
-    visibility: {
-      type: Boolean,
-      default: true,
-    },
   },
   { versionKey: false, timestamps: true }
 )
