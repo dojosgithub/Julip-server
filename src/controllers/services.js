@@ -351,19 +351,11 @@ export const CONTROLLER_SERVICES = {
         model: 'Service',
       })
       .populate({
-        path: `${version}.testimonials.list`, // Populate testimonials in draft
-        model: 'Testimonials',
-      })
-      .populate({
         path: `${version}.testimonials.list`, // Populate testimonials in published
         model: 'Testimonials',
       })
       .populate({
         path: `${version}.faqs.list`, // Populate FAQs in draft
-        model: 'Faq',
-      })
-      .populate({
-        path: `${version}.faqs.list`, // Populate FAQs in published
         model: 'Faq',
       })
 

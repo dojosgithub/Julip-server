@@ -18,21 +18,32 @@ export const CONTROLLER_TESTIMONIALS = {
     const { _id: userId } = req.decoded
     const body = await JSON.parse(req.body.body)
     const { name, testimonial, rating, visibility } = body
-    let image
+
+    // Validate required fields
     if (!name || !testimonial || !rating) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'All required fields must be provided.',
       })
     }
+    // Handle image upload
+    let image
     if (req.file) {
       image = req.file.path
     }
     const testimonialData = new Testimonials({ userId, name, testimonial, rating, image, visibility })
     await testimonialData.save()
+    const services = await Services.findOne({ userId })
+    if (!services) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Services not found for the user.',
+      })
+    }
+    services.draft.testimonials.list.push(testimonialData._id)
+    await services.save()
 
     res.status(StatusCodes.CREATED).json({
       data: testimonialData,
-      message: 'Testimonial created successfully.',
+      message: 'Testimonial created and added to Services successfully.',
     })
   }),
 
