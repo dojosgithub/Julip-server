@@ -19,31 +19,34 @@ export const CONTROLLER_FAQS = {
     const { question, answer, visibility } = req.body
     const { version = 'draft' } = req.query
 
-    if (!(question, answer)) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        message: 'All required fields must be provided.',
-      })
-    }
-
-    const user = await User.findById(userId).populate('services')
-    console.log('user[[[', user)
-    if (!user) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        message: 'User not found.',
-      })
-    }
-
+    // Create the FAQ
     const faqData = new Faq({ userId, question, answer, visibility })
     await faqData.save()
+
+    // Find the services document for the user
     const services = await Services.findOne({ userId })
+
     if (!services) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: 'Services not found for the user.',
       })
     }
-    services.draft.faqs.list.push(services._id)
+
+    // Push the FAQ's _id into the appropriate version's faqs list
+    if (version === 'draft') {
+      services.draft.faqs.list.push(faqData._id)
+    } else if (version === 'published') {
+      services.published.faqs.list.push(faqData._id)
+    } else {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'Invalid version specified. Use "draft" or "published".',
+      })
+    }
+
+    // Save the updated services document
     await services.save()
 
+    // Respond with success
     res.status(StatusCodes.CREATED).json({
       data: faqData,
       message: 'FAQ created successfully.',
