@@ -35,6 +35,14 @@ export const CONTROLLER_FAQS = {
 
     const faqData = new Faq({ userId, question, answer, visibility })
     await faqData.save()
+    const services = await Services.findOne({ userId })
+    if (!services) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Services not found for the user.',
+      })
+    }
+    services.draft.faqs.list.push(services._id)
+    await services.save()
 
     res.status(StatusCodes.CREATED).json({
       data: faqData,
