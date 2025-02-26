@@ -24,6 +24,8 @@ router.put('/update-service/:id', Authenticate(), CONTROLLER_SERVICES.updateServ
 
 router.delete('/delete-service/:id', Authenticate(), CONTROLLER_SERVICES.deleteService)
 
+router.delete('/delete-landingpage/:id', Authenticate(), CONTROLLER_SERVICES.deleteLandingPage)
+
 router.post('/create-services', Authenticate(), CONTROLLER_SERVICES.createAndupdateServices)
 
 router.put('/update-single-service-collection', Authenticate(), CONTROLLER_SERVICES.updateSingleServiceCollection)

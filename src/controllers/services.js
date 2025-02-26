@@ -194,7 +194,7 @@ export const CONTROLLER_SERVICES = {
     const { _id: userId } = req.decoded
     const { id: landingPageId } = req.params // ID of the landing page to update
 
-    const deletedLandingPage = await Service.findByIdAndDelete(landingPageId)
+    const deletedLandingPage = await LandingPage.findByIdAndDelete(landingPageId)
 
     if (!deletedLandingPage) {
       return res.status(StatusCodes.NOT_FOUND).json({
