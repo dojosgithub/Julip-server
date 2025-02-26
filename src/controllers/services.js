@@ -120,14 +120,8 @@ export const CONTROLLER_SERVICES = {
     const { id: landingPageId } = req.params // ID of the landing page to update
 
     // Parse the JSON payload
-    let body
-    try {
-      mainBody = JSON.parse(req.body.body)
-    } catch (error) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        message: 'Invalid JSON payload.',
-      })
-    }
+    let mainBody
+    mainBody = JSON.parse(req.body.body)
 
     const {
       serviceId,
