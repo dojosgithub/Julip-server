@@ -148,30 +148,10 @@ export const CONTROLLER_SERVICES = {
     } = body
     // Find the existing landing page
     const landingPage = await LandingPage.findOne({ _id: landingPageId })
-    console.log('================================', landingPage)
 
     if (!landingPage) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: 'Landing page not found.',
-      })
-    }
-
-    // Validate required fields
-    if (
-      !landingPageName ||
-      !time ||
-      !timeUnit ||
-      !currency ||
-      !price ||
-      !testimonials ||
-      !recurrung ||
-      !name ||
-      !phoneNumber ||
-      !instagram ||
-      !buttonTitle
-    ) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        message: 'All required fields must be provided.',
       })
     }
 
