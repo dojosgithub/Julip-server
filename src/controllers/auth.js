@@ -54,8 +54,8 @@ import { getIO } from '../socket'
 
 const { ObjectId } = mongoose.Types
 
-// const CLIENT_ID = process.env.GOOGLE_CLIENT_ID
-// const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID
+const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
 // const REDIRECT_URI = 'http://localhost:3000/api/user/auth/google/callback'
 
 export const CONTROLLER_AUTH = {
@@ -261,6 +261,70 @@ export const CONTROLLER_AUTH = {
     }
   }),
 
+  googleAuth: asyncMiddleware(async (req, res) => {
+    const { code } = req.query
+
+    try {
+      // Exchange authorization code for tokens
+      const { data } = await axios.post(
+        'https://oauth2.googleapis.com/token',
+        {
+          client_id: GOOGLE_CLIENT_ID,
+          client_secret: GOOGLE_CLIENT_SECRET,
+          code,
+          redirect_uri: REDIRECT_URI,
+          grant_type: 'authorization_code',
+        },
+        {
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        }
+      )
+
+      const { access_token, id_token } = data
+
+      // Fetch user profile using the access token
+      const { data: profile } = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo', {
+        headers: { Authorization: `Bearer ${access_token}` },
+      })
+
+      const { email, name, picture } = profile
+
+      // Check if the user exists in the database
+      let user = await User.findOne({ email })
+
+      if (!user) {
+        // Create a new user if they don't exist
+        user = new User({
+          email,
+          name,
+          avatar: picture,
+          accountType: 'Google-Account',
+        })
+        await user.save()
+      }
+
+      // Generate JWT tokens for the user
+      const tokenPayload = {
+        _id: user._id,
+        email: user.email,
+        name: user.name,
+      }
+
+      const tokens = generateToken(tokenPayload)
+
+      // Return the tokens and user data
+      res.status(StatusCodes.OK).json({
+        data: {
+          user: { ...user._doc },
+          ...tokens,
+        },
+        message: 'Logged in successfully via Google',
+      })
+    } catch (error) {
+      console.error('Error during Google OAuth:', error.response ? error.response.data : error.message)
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'An error occurred during Google OAuth' })
+    }
+  }),
   signIn: asyncMiddleware(async (req, res) => {
     const { email, password } = req.body
     const user = await User.findOne({ email }).select('+password')
@@ -519,40 +583,6 @@ export const CONTROLLER_AUTH = {
     // console.log(`Password updated for ${email}`)
     res.json({ message: 'Password updated successfully' })
   }),
-  //   try {
-  //     const { code } = req.query
-
-  //     console.log('code', code)
-
-  //     // Exchange code for tokens
-  //     const { data } = await axios.post('https://oauth2.googleapis.com/token', {
-  //       client_id: '674934457104-8jbpiopvjbrrba796h7lkl39jnqiv7qt.apps.googleusercontent.com',
-  //       client_secret: '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',
-  //       code,
-  //       redirect_uri: 'YOUR_REDIRECT_URI', // replace with your actual redirect URI
-  //       grant_type: 'authorization_code',
-  //     })
-
-  //     const { access_token } = data
-
-  //     // Fetch user profile using access token
-  //     const { data: profile } = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo', {
-  //       headers: { Authorization: `Bearer ${access_token}` },
-  //     })
-
-  //     console.log('User Profile:', profile)
-
-  //     // Handle user authentication and retrieval using the profile data
-  //     // Example: check if user exists in DB, if not, create a new user
-  //     // Here you would typically interact with your user model to find or create a user
-
-  //     // Redirect to profile or home page after successful login
-  //     res.redirect('/profile')
-  //   } catch (error) {
-  //     console.error('Error during Google login:', error.response ? error.response.data : error.message)
-  //     res.status(500).send('An error occurred during Google login.')
-  //   }
-  // }),
 
   sendNotification: asyncMiddleware(async (req, res) => {
     const { title, body } = req.body

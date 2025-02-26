@@ -345,10 +345,10 @@ export const CONTROLLER_SERVICES = {
       .populate({
         path: `${version}.collections.services`, // Populate services in draft collections
         model: 'Service',
-      })
-      .populate({
-        path: `${version}.collections.services`, // Populate services in published collections
-        model: 'Service',
+        populate: {
+          path: 'landingPage', // Populate landingPage inside each service
+          model: 'LandingPage',
+        },
       })
       .populate({
         path: `${version}.testimonials.list`, // Populate testimonials in published

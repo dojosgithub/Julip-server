@@ -121,6 +121,35 @@ app.use(bodyParser.json())
 //   })
 // )
 
+app.get('/auth/google/callback', async (req, res) => {
+  const { code } = req.query
+
+  try {
+    // Exchange authorization code for tokens
+    const { data } = await axios.post('https://oauth2.googleapis.com/token', {
+      client_id: process.env.GOOGLE_CLIENT_ID,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      code,
+      redirect_uri: process.env.REDIRECT_URI,
+      grant_type: 'authorization_code',
+    })
+
+    const { access_token, id_token } = data
+
+    // Fetch user profile using the access token
+    const { data: profile } = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo', {
+      headers: { Authorization: `Bearer ${access_token}` },
+    })
+
+    console.log('User Profile:', profile)
+
+    // Handle user authentication and redirection
+    res.redirect('/dashboard') // Redirect to your app's dashboard
+  } catch (error) {
+    console.error('Error during Google OAuth:', error.response ? error.response.data : error.message)
+    res.status(500).send('An error occurred during Google login.')
+  }
+})
 // app.get(
 //   '/auth/google/callback',
 //   passport.authenticate('google', {
