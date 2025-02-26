@@ -190,6 +190,23 @@ export const CONTROLLER_SERVICES = {
     })
   }),
 
+  deleteLandingPage: asyncMiddleware(async (req, res) => {
+    const { _id: userId } = req.decoded
+    const { id: landingPageId } = req.params // ID of the landing page to update
+
+    const deletedLandingPage = await Service.findByIdAndDelete(landingPageId)
+
+    if (!deletedLandingPage) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Landing Page not found.',
+      })
+    }
+
+    res.status(StatusCodes.OK).json({
+      message: 'Landing Page successfully.',
+    })
+  }),
+
   // Update a Service
   updateService: asyncMiddleware(async (req, res) => {
     const { id } = req.params
@@ -341,10 +358,77 @@ export const CONTROLLER_SERVICES = {
       message: 'Services retrieved successfully.',
     })
   }),
+  updateCollection: async (req, res) => {
+    const { _id: userId } = req.decoded // User ID from token
+    const { version = 'draft' } = req.query // Version to update the collection
+    const { collectionName, newCollectionName } = req.body // Current collection name and new name
+
+    // Validate required fields
+    if (!collectionName || !newCollectionName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Both collectionName and newCollectionName are required.',
+      })
+    }
+
+    // Find the user's services
+    const services = await Services.findOne({ userId })
+    if (!services) {
+      return res.status(404).json({
+        success: false,
+        message: 'Services not found.',
+      })
+    }
+
+    // Locate the collection to update by matching the current collection name
+    const collectionIndex = services[version].collections.findIndex(
+      (col) => col.name.toLowerCase() === collectionName.toLowerCase()
+    )
+
+    if (collectionIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Collection not found.',
+      })
+    }
+
+    // Check if the new collection name already exists
+    const isDuplicate = services[version].collections.some(
+      (col) => col.name.toLowerCase() === newCollectionName.toLowerCase()
+    )
+
+    if (isDuplicate) {
+      return res.status(400).json({
+        success: false,
+        message: 'A collection with the new name already exists.',
+      })
+    }
+
+    // Update the collection name
+    services[version].collections[collectionIndex].name = newCollectionName
+
+    // Save the updated services document
+    await services.save()
+
+    // Return the updated collection
+    return res.status(200).json({
+      success: true,
+      message: 'Collection name updated successfully.',
+      data: services[version].collections[collectionIndex],
+    })
+  },
   updateSingleServiceCollection: async (req, res) => {
     const { _id: userId } = req.decoded // User ID from token
     const { version = 'draft' } = req.query // Collection version to edit
     const { serviceName, service } = req.body // Service name to match and service ID to add
+
+    // Validate the service ID
+    if (!mongoose.Types.ObjectId.isValid(service)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid service ID.',
+      })
+    }
 
     // Find the user's services
     let services = await Services.findOne({ userId }).populate({
@@ -369,26 +453,27 @@ export const CONTROLLER_SERVICES = {
       })
     }
 
-    // Add the service ID to the collection (if provided)
-    if (service) {
-      if (!mongoose.Types.ObjectId.isValid(service)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid service ID.',
-        })
-      }
+    // Convert the service ID to a Mongoose ObjectId
+    const serviceId = new mongoose.Types.ObjectId(service)
 
-      // Check if the service ID already exists in the collection
-      if (collection.services.some((s) => s.equals(new mongoose.Types.ObjectId(service)))) {
-        return res.status(400).json({
-          success: false,
-          message: 'Service already exists in the collection.',
-        })
-      }
-
-      // Add the service ID to the collection
-      collection.services.push(new mongoose.Types.ObjectId(service))
+    // Check if the service ID already exists in the current collection
+    if (collection.services.some((s) => s.equals(serviceId))) {
+      return res.status(400).json({
+        success: false,
+        message: 'Service already exists in the collection.',
+      })
     }
+
+    // Remove the service from any other collection it might belong to
+    services[version].collections.forEach((col) => {
+      const index = col.services.findIndex((s) => s.equals(serviceId))
+      if (index !== -1) {
+        col.services.splice(index, 1) // Remove the service from the previous collection
+      }
+    })
+
+    // Add the service ID to the target collection
+    collection.services.push(serviceId)
 
     // Save the updated services document
     await services.save()

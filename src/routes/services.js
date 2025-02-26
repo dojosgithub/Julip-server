@@ -28,6 +28,8 @@ router.post('/create-services', Authenticate(), CONTROLLER_SERVICES.createAndupd
 
 router.put('/update-single-service-collection', Authenticate(), CONTROLLER_SERVICES.updateSingleServiceCollection)
 
+router.put('/update-collection', Authenticate(), CONTROLLER_SERVICES.updateCollection)
+
 router.post('/create-collection', Authenticate(), CONTROLLER_SERVICES.createCollection)
 
 router.delete('/delete-collection', Authenticate(), CONTROLLER_SERVICES.deleteCollection)
