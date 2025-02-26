@@ -139,6 +139,7 @@ export const CONTROLLER_SERVICES = {
       isPhoneNumberRequired,
       buttonTitle,
       visibility,
+      body,
     } = mainBody
     // Find the existing landing page
     const landingPage = await LandingPage.findOne({ _id: landingPageId })

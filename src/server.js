@@ -121,7 +121,7 @@ app.use(bodyParser.json())
 //   })
 // )
 
-app.get('/auth/google/callback', async (req, res) => {
+app.get('api//auth/google/callback', async (req, res) => {
   const { code } = req.query
 
   try {
