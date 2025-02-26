@@ -122,7 +122,7 @@ export const CONTROLLER_SERVICES = {
     // Parse the JSON payload
     let body
     try {
-      body = JSON.parse(req.body.body)
+      mainBody = JSON.parse(req.body.body)
     } catch (error) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'Invalid JSON payload.',
@@ -145,7 +145,7 @@ export const CONTROLLER_SERVICES = {
       isPhoneNumberRequired,
       buttonTitle,
       visibility,
-    } = body
+    } = mainBody
     // Find the existing landing page
     const landingPage = await LandingPage.findOne({ _id: landingPageId })
 
@@ -170,6 +170,7 @@ export const CONTROLLER_SERVICES = {
     landingPage.isPhoneNumberRequired = isPhoneNumberRequired
     landingPage.buttonTitle = buttonTitle
     landingPage.visibility = visibility
+    landingPage.body = body
 
     // Handle image upload
     if (req.file) {
