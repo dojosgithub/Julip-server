@@ -210,10 +210,9 @@ export const CONTROLLER_SERVICES = {
   // Update a Service
   updateService: asyncMiddleware(async (req, res) => {
     const { id } = req.params
-    const body = req.body
     console.log('updateService', req.body)
-
-    const { title, description, price, time, timeUnit, currency, buttonTitle, buttonUrl, visibility } = req.body
+    const body = await JSON.parse(req.body.body)
+    const { title, description, price, time, timeUnit, currency, buttonTitle, buttonUrl, visibility, image } = body
 
     if (!id) {
       return res.status(StatusCodes.BAD_REQUEST).json({
@@ -234,6 +233,7 @@ export const CONTROLLER_SERVICES = {
         buttonTitle,
         buttonUrl,
         visibility,
+        image: req.file ? req.file.path : image,
       },
       { new: true }
     )

@@ -20,7 +20,7 @@ router.post('/create-landingpage', Authenticate(), parser.single('image'), CONTR
 
 router.put('/update-landingpage/:id', Authenticate(), parser.single('image'), CONTROLLER_SERVICES.updateLandingPage)
 
-router.put('/update-service/:id', Authenticate(), CONTROLLER_SERVICES.updateService)
+router.put('/update-service/:id', parser.single('image'), Authenticate(), CONTROLLER_SERVICES.updateService)
 
 router.delete('/delete-service/:id', Authenticate(), CONTROLLER_SERVICES.deleteService)
 
