@@ -139,8 +139,7 @@ export const CONTROLLER_SHOP = {
   updateShop: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
 
-    const { name, collections, pinnedProducts, visibility } = req.body
-    const { version = 'draft' } = req.query
+    const { name, collections, pinnedProducts, visibility, version = 'draft' } = req.body
     if (!userId) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'User ID is required.',

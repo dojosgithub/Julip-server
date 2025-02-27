@@ -203,7 +203,7 @@ export const CONTROLLER_SERVICES = {
     }
 
     res.status(StatusCodes.OK).json({
-      message: 'Landing Page successfully.',
+      message: 'Landing Page successfully deleted.',
     })
   }),
 
