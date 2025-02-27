@@ -31,7 +31,7 @@ const shopContentSchema = {
     productsList: [
       {
         type: Schema.Types.ObjectId,
-        ref: 'Profile',
+        ref: 'Product',
       },
     ],
     visibility: {
@@ -45,16 +45,13 @@ const shopContentSchema = {
   },
 }
 
-// Updated profile schema with draft and published versions
 export const shopSchema = new Schema(
   {
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
     },
-    // Draft version of the profile
     draft: shopContentSchema,
-    // Published version of the profile
     published: shopContentSchema,
     lastPublishedAt: {
       type: Date,
