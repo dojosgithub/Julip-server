@@ -339,6 +339,24 @@ export const CONTROLLER_TEMPLATE = {
           },
         ],
       })
+      .populate({
+        path: 'services', // Populate the services field
+        model: 'Services',
+        populate: [
+          {
+            path: 'published.collections.services', // Populate services in published collections
+            model: 'Service',
+          },
+          {
+            path: 'published.testimonials.list', // Populate testimonials in published
+            model: 'Testimonials',
+          },
+          {
+            path: 'published.faqs.list', // Populate FAQs in published
+            model: 'Faq',
+          },
+        ],
+      })
 
     if (!data || data.length === 0) {
       return res.status(StatusCodes.NOT_FOUND).json({
