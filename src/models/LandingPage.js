@@ -39,9 +39,9 @@ export const landingPageSchema = new Schema(
         ref: 'Testimonials',
       },
     ],
-    recurrung: {
+    recurring: {
       type: String,
-      enum: ['monthly', 'yearly'],
+      enum: ['weekly', 'monthly', 'yearly'],
     },
     body: {
       type: String,

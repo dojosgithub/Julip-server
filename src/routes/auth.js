@@ -55,6 +55,6 @@ router.put(
   CONTROLLER_AUTH.changePassword
 )
 
-router.post('/oauth', CONTROLLER_AUTH.OAuth)
+router.post('/google/callback', CONTROLLER_AUTH.OAuth2)
 
 export default router

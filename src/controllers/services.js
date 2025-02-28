@@ -68,7 +68,7 @@ export const CONTROLLER_SERVICES = {
       currency,
       price,
       testimonials,
-      recurrung,
+      recurring,
       name,
       phoneNumber,
       instagram,
@@ -131,13 +131,14 @@ export const CONTROLLER_SERVICES = {
       currency,
       price,
       testimonials,
-      recurrung,
+      recurring,
       name,
       phoneNumber,
       instagram,
       isinstagramNumberRequired,
       isPhoneNumberRequired,
       buttonTitle,
+      buttonUrl,
       visibility,
       body,
     } = mainBody
@@ -157,7 +158,7 @@ export const CONTROLLER_SERVICES = {
     landingPage.currency = currency
     landingPage.price = price
     landingPage.testimonials = testimonials
-    landingPage.recurrung = recurrung
+    landingPage.recurring = recurring
     landingPage.name = name
     landingPage.phoneNumber = phoneNumber
     landingPage.instagram = instagram
@@ -165,6 +166,7 @@ export const CONTROLLER_SERVICES = {
     landingPage.isPhoneNumberRequired = isPhoneNumberRequired
     landingPage.buttonTitle = buttonTitle
     landingPage.visibility = visibility
+    landingPage.buttonUrl = buttonUrl
     landingPage.body = body
 
     // Handle image upload
@@ -341,6 +343,10 @@ export const CONTROLLER_SERVICES = {
         populate: {
           path: 'landingPage', // Populate landingPage inside each service
           model: 'LandingPage',
+          populate: {
+            path: 'testimonials', // Populate testimonials inside landingPage
+            model: 'Testimonials',
+          },
         },
       })
       .populate({

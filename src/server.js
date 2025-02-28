@@ -121,8 +121,8 @@ app.use(bodyParser.json())
 //   })
 // )
 
-app.get('api//auth/google/callback', async (req, res) => {
-  const { code } = req.query
+app.post('api/auth/google/callback', async (req, res) => {
+  const { code } = req.body
 
   try {
     // Exchange authorization code for tokens

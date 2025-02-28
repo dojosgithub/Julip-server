@@ -680,4 +680,109 @@ export const CONTROLLER_AUTH = {
     // await USER_SERVICE.setTokenCookie(res, response.refreshToken)
     res.status(StatusCodes.ACCEPTED).json(response.data)
   }),
+
+  OAuth2: asyncMiddleware(async (req, res) => {
+    const { code } = req.body
+
+    try {
+      // Exchange authorization code for tokens
+      const { data } = await axios.post('https://oauth2.googleapis.com/token', {
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        code,
+        redirect_uri: process.env.REDIRECT_URI,
+        grant_type: 'authorization_code',
+      })
+
+      const { access_token, id_token } = data
+
+      // Fetch user profile using the access token
+      const { data: profile } = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo', {
+        headers: { Authorization: `Bearer ${access_token}` },
+      })
+
+      const { email } = profile
+
+      let userExists = await User.findOne({ email: email })
+      let newUser
+      if (userExists) {
+        newUser = new User({
+          fullName: profile.name,
+          email: profile.email,
+          avatar: profile.picture,
+          accountType: 'Google-Account',
+          userTypes: USER_TYPES.Basic,
+        })
+        newUser.isLoggedIn = true
+        await newUser.save()
+      }
+      console.log('firstttttttttttttttttttttttttttttttttttttt', newUser, userExists)
+      const tokenPayload = {
+        _id: newUser !== undefined ? newUser._id : userExists._id,
+        role: newUser !== undefined ? newUser.role : userExists.role,
+        userTypes: newUser !== undefined ? newUser.userTypes : userExists.userTypes,
+      }
+
+      const tokens = await generateToken(tokenPayload)
+
+      ////// sending verification email ///////////////////////////////////////////////////////////////////
+      if (isEmpty(userExists) || !userExists) {
+        var secret = speakeasy.generateSecret({ length: 20 }).base32
+        var token = speakeasy.totp({
+          digits: 6,
+          secret: secret,
+          encoding: 'base32',
+          window: 6,
+        })
+        const TOTPToken = await generateOTToken({ secret })
+
+        // Find if the document with the phoneNumber exists in the database
+        let totp = await TOTP.findOneAndUpdate({ email }, { token: TOTPToken })
+
+        if (isEmpty(totp)) {
+          new TOTP({
+            email,
+            token: TOTPToken,
+          }).save()
+        }
+        const sendEmail = await new Email({ email })
+        const emailProps = { firstName: token }
+        console.log('emailProps', emailProps)
+        await sendEmail.welcomeToZeal(emailProps)
+      }
+
+      if (userExists) {
+        if (userExists.accountType !== 'Google-Account') {
+          return res.status(StatusCodes.FORBIDDEN).json({
+            message: 'Not a Google account try logging it with Julip account',
+          })
+        }
+        userExists.isLoggedIn = true
+        await userExists.save()
+        res.status(StatusCodes.OK).json({
+          data: {
+            user: { ...userExists._doc },
+            tokens,
+          },
+          message: 'User Signed in successfully',
+        })
+      } else {
+        res.status(StatusCodes.OK).json({
+          data: {
+            user: { ...newUser._doc },
+            tokens,
+          },
+          message: 'User registered successfully',
+        })
+      }
+
+      // const response = await signinOAuthUser(userExists, ipAddress, res)
+
+      // Handle user authentication and redirection
+      // res.redirect('/dashboard') // Redirect to your app's dashboard
+    } catch (error) {
+      console.error('Error during Google OAuth:', error.response ? error.response.data : error.message)
+      res.status(500).send('An error occurred during Google login.')
+    }
+  }),
 }
