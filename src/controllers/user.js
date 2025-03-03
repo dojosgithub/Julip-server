@@ -355,9 +355,18 @@ export const CONTROLLER_USER = {
   }),
   saveUserSettings: asyncMiddleware(async (req, res) => {
     const { _id: id } = req.decoded
-    const { fullName, avatar } = req.body
+    let body = JSON.parse(req.body.body)
 
-    const user = await User.findByIdAndUpdate(id, { fullName, avatar }, { new: true })
+    const modifiedBody = {
+      ...body,
+      avatar: req.file && req.file.path,
+    }
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { avatar: modifiedBody.avatar, fullName: modifiedBody.fullName },
+      { new: true }
+    )
 
     if (!user)
       return res.status(StatusCodes.NOT_FOUND).json({

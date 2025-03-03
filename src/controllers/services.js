@@ -125,6 +125,7 @@ export const CONTROLLER_SERVICES = {
 
     const {
       serviceId,
+      email,
       landingPageName,
       time,
       timeUnit,
@@ -154,6 +155,7 @@ export const CONTROLLER_SERVICES = {
     // Update fields
     landingPage.landingPageName = landingPageName
     landingPage.time = time
+    landingPage.email = email
     landingPage.timeUnit = timeUnit
     landingPage.currency = currency
     landingPage.price = price
@@ -172,6 +174,8 @@ export const CONTROLLER_SERVICES = {
     // Handle image upload
     if (req.file) {
       landingPage.image = req.file.path // Update the image path if a new file is uploaded
+    } else {
+      landingPage.image = null
     }
 
     // Save the updated landing page
