@@ -19,7 +19,6 @@ export const userSchema = new Schema(
     }, // added
     resetToken: String, // added
     resetTokenExpiry: Date, // added
-    fullName: String, // added
     stripeAccountId: String, // added
     userName: {
       type: String,

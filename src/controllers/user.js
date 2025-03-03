@@ -336,4 +336,39 @@ export const CONTROLLER_USER = {
   //     res.status(500).send('An error occurred during Google login.')
   //   }
   // }),
+
+  getUserSettings: asyncMiddleware(async (req, res) => {
+    const { _id: id } = req.decoded
+    const user = await User.findById(id).select('fullName avatar').lean()
+
+    if (!user)
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'User not found.',
+      })
+
+    res.status(StatusCodes.OK).json({
+      data: {
+        user,
+      },
+      message: 'User Details Fetched Successfully',
+    })
+  }),
+  saveUserSettings: asyncMiddleware(async (req, res) => {
+    const { _id: id } = req.decoded
+    const { fullName, avatar } = req.body
+
+    const user = await User.findByIdAndUpdate(id, { fullName, avatar }, { new: true })
+
+    if (!user)
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'User not found.',
+      })
+
+    res.status(StatusCodes.OK).json({
+      // data: {
+      //   user,
+      // },
+      message: 'Settings saved successfully',
+    })
+  }),
 }

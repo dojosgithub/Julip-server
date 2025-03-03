@@ -20,6 +20,10 @@ const router = Router()
 
 router.get('/user-details', Authenticate(), CONTROLLER_USER.getUser)
 
+router.get('/user-settings-details', Authenticate(), CONTROLLER_USER.getUserSettings)
+
+router.post('/user-save-settings', Authenticate(), CONTROLLER_USER.saveUserSettings)
+
 router.put(
   '/user-update',
   Authenticate(),
