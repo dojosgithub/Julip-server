@@ -51,6 +51,10 @@ router.get('/stripe-user', Authenticate(), CONTROLLER_PRICING.getUsersWithStripe
 
 router.post('/confirm-payment', Authenticate(), CONTROLLER_PRICING.confirmPayment)
 
+router.post('/create-checkout-session', Authenticate(), CONTROLLER_PRICING.createPaymentMethodOnBoarding)
+
+router.get('/get-payment-method-details', Authenticate(), CONTROLLER_PRICING.getPaymentMethodDetails)
+
 // router.post('/select', Authenticate(), CONTROLLER_PRICING.selectPricing)
 
 // router.post('/select', Authenticate(), CONTROLLER_PRICING.selectPricing)

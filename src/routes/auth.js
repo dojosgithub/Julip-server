@@ -33,6 +33,8 @@ router.post('/forgot-password-link', CONTROLLER_AUTH.forgotPasswordLink)
 
 router.post('/reset-password', CONTROLLER_AUTH.resetPassword)
 
+router.post('/reset-password-authrnticated', CONTROLLER_AUTH.resetPasswordAuthenticatedUser)
+
 router.post('/verify', Authenticate(), CONTROLLER_AUTH.verifyUpdatePasswordCode)
 
 router.post('/verify-email', Authenticate(), CONTROLLER_AUTH.verifyEmail)

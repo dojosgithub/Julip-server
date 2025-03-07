@@ -134,6 +134,7 @@ export const CONTROLLER_PRICING = {
       // Save subscription details to database
       const newSubscription = new Subscription({
         user: userId,
+        paymentMethodId,
         stripeCustomerId: customerId,
         stripeSubscriptionId: subscription.id,
         plan: subscription.items.data[0].price.nickname,
@@ -173,6 +174,35 @@ export const CONTROLLER_PRICING = {
       res.status(200).json({
         paymentMethod: paymentMethod.id,
       })
+    } catch (err) {
+      console.error('Error creating payment method:', err.message)
+      throw err
+    }
+  }),
+
+  createPaymentMethodOnBoarding: asyncMiddleware(async (req, res) => {
+    try {
+      if (req.method === 'POST') {
+      } else {
+        res.setHeader('Allow', ['POST'])
+        res.status(405).end('Method Not Allowed')
+      }
+      const { priceId } = req.body
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
+        mode: 'subscription',
+        success_url: `${process.env.FRONTEND_URL_DEV}/success`,
+        cancel_url: `${process.env.FRONTEND_URL_DEV}/cancel`,
+      })
+
+      res.status(200).json({ sessionId: session.id })
     } catch (err) {
       console.error('Error creating payment method:', err.message)
       throw err
@@ -832,6 +862,30 @@ export const CONTROLLER_PRICING = {
         message: 'Failed to confirm payment.',
         error: err.message,
       })
+    }
+  }),
+  getPaymentMethodDetails: asyncMiddleware(async (req, res) => {
+    const { _id: userId } = req.decoded
+
+    try {
+      // Fetch the subscription details for the given user
+      const subscription = await Subscription.findOne({ user: userId })
+      if (!subscription) {
+        return res.status(404).json({
+          message: 'Subscription not found for the given user.',
+        })
+      }
+
+      // Retrieve the payment method details from Stripe
+      const paymentMethod = await stripe.paymentMethods.retrieve(subscription.paymentMethodId)
+
+      res.status(200).json({
+        paymentMethod: paymentMethod,
+        message: 'Payment method details retrieved successfully.',
+      })
+    } catch (err) {
+      console.error('Error retrieving payment method details:', err)
+      res.status(500).json({ error: err.message })
     }
   }),
 }

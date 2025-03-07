@@ -380,4 +380,23 @@ export const CONTROLLER_USER = {
       message: 'Settings saved successfully',
     })
   }),
+  resetPasswordAuthenticatedUser: asyncMiddleware(async (req, res) => {
+    const { newPassword } = req.body
+    const { _id: userId } = req.decoded
+
+    // Find the user by the reset token and check token validity
+    const user = await User.findById(userId)
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired reset token.' })
+    }
+
+    // Update the user's password
+    const hashedPassword = await generatePassword(newPassword)
+    user.password = hashedPassword
+
+    await user.save()
+
+    res.json({ message: 'Password updated successfully.', user })
+  }),
 }
