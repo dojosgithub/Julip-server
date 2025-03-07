@@ -47,6 +47,9 @@ export const userSchema = new Schema(
     // username: String,
     accountType: String,
     role: Object,
+    subscriptionId: {
+      type: String,
+    },
     userTypes: {
       type: String,
       enum: ['Premium', 'Basic'],
