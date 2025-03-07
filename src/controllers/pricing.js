@@ -116,7 +116,7 @@ export const CONTROLLER_PRICING = {
 
       // Attach payment method to customer
       await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId })
-      const user = User.findById(userId)
+
       // Set the payment method as default
       await stripe.customers.update(customerId, {
         invoice_settings: { default_payment_method: paymentMethodId },
@@ -145,7 +145,16 @@ export const CONTROLLER_PRICING = {
         metadata: subscription.metadata,
       })
       await newSubscription.save()
+      // Update the user document with the subscription ID
+      const user = await User.findById(userId)
+      if (!user) {
+        return res.status(404).json({
+          message: 'User not found.',
+        })
+      }
       user.subscriptionId = subscription.id
+      await user.save()
+
       await user.save()
       res.status(200).json({
         subscriptionId: subscription.id,
