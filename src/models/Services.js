@@ -1,6 +1,9 @@
 import { Schema, model } from 'mongoose'
 
 const serviceContentSchema = {
+  name: {
+    type: String,
+  },
   collections: [
     {
       name: {
@@ -48,9 +51,6 @@ export const serviceSchema = new Schema(
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-    },
-    name: {
-      type: String,
     },
     // Draft version of the profile
     draft: serviceContentSchema,

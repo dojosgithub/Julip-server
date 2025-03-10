@@ -41,7 +41,7 @@ export const landingPageSchema = new Schema(
     ],
     recurring: {
       type: String,
-      enum: ['weekly', 'monthly', 'yearly'],
+      enum: ['one-time', 'monthly', 'annually'],
     },
     body: {
       type: String,

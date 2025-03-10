@@ -1,6 +1,6 @@
 import mongoose, { Schema, model } from 'mongoose'
 
-export const brandSchema = new Schema(
+export const contactSchema = new Schema(
   {
     name: {
       type: String,
@@ -10,18 +10,21 @@ export const brandSchema = new Schema(
       type: Boolean, // Optional field
       default: true,
     },
-    oneLiner: {
-      type: String,
-    },
-    brandList: [
+    contactList: [
       {
-        name: { type: String },
-        image: { type: String },
-        url: { type: String },
+        title: {
+          type: String,
+        },
+        visibility: {
+          type: Boolean,
+        },
+        url: {
+          type: String,
+        },
       },
     ],
   },
   { versionKey: false, timestamps: true }
 )
 
-export const Brand = model('Brand', brandSchema)
+export const Contact = model('Contact', contactSchema)

@@ -91,6 +91,10 @@ export const userSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'Pages',
     },
+    portfolio: {
+      type: Schema.Types.ObjectId,
+      ref: 'Portfolio',
+    },
   },
   { versionKey: false, timestamps: true }
 )
