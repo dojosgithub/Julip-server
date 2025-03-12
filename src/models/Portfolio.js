@@ -7,7 +7,7 @@ const portfolioContentSchema = {
   speciality: {
     name: {
       type: String,
-      required: true,
+      default: 'speciality',
     },
     visibility: {
       type: Boolean, // Optional field
@@ -18,7 +18,7 @@ const portfolioContentSchema = {
   brand: {
     name: {
       type: String,
-      required: true,
+      default: 'brand',
     },
     visibility: {
       type: Boolean, // Optional field
@@ -47,7 +47,7 @@ const portfolioContentSchema = {
   sample: {
     name: {
       type: String,
-      required: true,
+      default: 'sample',
     },
     visibility: {
       type: Boolean,
@@ -63,7 +63,7 @@ const portfolioContentSchema = {
   contact: {
     name: {
       type: String,
-      required: true,
+      default: 'default',
     },
     visibility: {
       type: Boolean, // Optional field

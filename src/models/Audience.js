@@ -9,9 +9,9 @@ const audienceItemSchema = new mongoose.Schema({
   demographics: {
     type: [
       {
-        key: { type: String, enum: ['gender', 'age', 'location'], required: true },
-        label: { type: String, required: true },
-        visibility: { type: Boolean, default: false },
+        key: { type: String, enum: ['gender', 'age', 'location'] },
+        label: { type: String },
+        visibility: { type: Boolean },
       },
     ],
     default: [
@@ -34,9 +34,8 @@ const audienceItemSchema = new mongoose.Schema({
             'AvgReelsViewsLast10Posts',
             'AvgReelsWatchTimeLast10Posts',
           ],
-          required: true,
         },
-        visibility: { type: Boolean, default: false },
+        visibility: { type: Boolean },
       },
     ],
     default: [
@@ -51,23 +50,20 @@ const audienceItemSchema = new mongoose.Schema({
   },
 })
 
+const platformSchema = new mongoose.Schema({
+  platform: { type: String },
+  username: { type: String },
+  url: { type: String },
+  _id: { type: String },
+  platformVisibility: { type: Boolean, default: true },
+  items: [audienceItemSchema],
+})
+
 const audienceSchema = new mongoose.Schema({
-  instagram: {
-    _id: { type: String },
-    items: [audienceItemSchema],
-  },
-  tiktok: {
-    _id: { type: String },
-    items: [audienceItemSchema],
-  },
-  youtube: {
-    _id: { type: String },
-    items: [audienceItemSchema],
-  },
-  linkedin: {
-    _id: { type: String },
-    items: [audienceItemSchema],
-  },
+  instagram: platformSchema,
+  tiktok: platformSchema,
+  youtube: platformSchema,
+  linkedin: platformSchema,
 })
 
 export const Audience = model('Audience', audienceSchema)

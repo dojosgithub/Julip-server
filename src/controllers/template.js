@@ -346,14 +346,14 @@ export const CONTROLLER_TEMPLATE = {
           {
             path: 'published.collections.services', // Populate services in published collections
             model: 'Service',
-            populate: {
-              path: 'landingPage', // Populate landingPage inside each service
-              model: 'LandingPage',
-            },
           },
           {
             path: 'published.collections.services', // Populate services in published collections
             model: 'Service',
+            populate: {
+              path: 'landingPage', // Populate landingPage inside each service
+              model: 'LandingPage',
+            },
           },
           {
             path: 'published.testimonials.list', // Populate testimonials in published

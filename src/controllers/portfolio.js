@@ -184,30 +184,49 @@ export const CONTROLLER_PORTFOLIO = {
     const { version = 'draft' } = req.query // 'draft' or 'published'
 
     // Fetch the user along with the portfolio data
-    const user = await User.findById(userId).populate({
-      path: 'portfolio',
-      populate: [
-        { path: `${version}.brand`, model: 'Brand' },
-        { path: `${version}.audience`, model: 'Audience' },
-        { path: `${version}.sample`, model: 'Sample' },
-        { path: `${version}.testimonials`, model: 'Testimonials' },
-        { path: `${version}.contact`, model: 'Contact' },
-      ],
-    })
+    const port = await User.findById(userId).populate('portfolio')
 
-    if (!user || !user.portfolio) {
+    const portfolio = await Portfolio.findOne({ userId }).populate([
+      { path: `${version}.brand`, model: 'Brand' },
+      { path: `${version}.audience`, model: 'Audience' },
+      { path: `${version}.sample`, model: 'Sample' },
+      { path: `${version}.testimonials`, model: 'Testimonials' },
+      { path: `${version}.contact`, model: 'Contact' },
+    ])
+    if (!portfolio) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: 'Portfolio not found.',
       })
     }
 
-    const portfolioData = user.portfolio[version] // Access draft or published version of the portfolio
+    res.status(StatusCodes.OK).json({
+      data: {
+        ...portfolio,
+      },
+      message: 'Portfolio retrieved successfully.',
+    })
+  }),
+
+  updatePortfolio: asyncMiddleware(async (req, res) => {
+    const { _id: userId } = req.decoded
+    const { version = 'draft' } = req.query // 'draft' or 'published'
+    const { name, speciality, brand, audience, sample, testimonials, contact, visibility } = req.body
+    let portfolio = await Portfolio.findOneAndUpdate(
+      { userId },
+      { name, speciality, brand, audience, sample, testimonials, contact, visibility },
+      { new: true }
+    )
+    if (!portfolio) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Portfolio not found.',
+      })
+    }
 
     res.status(StatusCodes.OK).json({
       data: {
-        ...portfolioData,
+        ...portfolio,
       },
-      message: 'Portfolio retrieved successfully.',
+      message: 'Portfolio updated successfully.',
     })
   }),
 }
