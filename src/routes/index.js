@@ -15,6 +15,11 @@ import faqRoute from './faq'
 import servicesRoute from './services'
 import pagesRoute from './pages'
 import testimonialRoute from './testimonial'
+import audienceRoute from './audience'
+import brandRoute from './brand'
+import sampleRoute from './sample'
+import contactRoute from './contact'
+import portfolioRoute from './portfolio'
 
 const router = Router()
 
@@ -34,5 +39,10 @@ router.use('/faq', faqRoute)
 router.use('/service', servicesRoute)
 router.use('/pages', pagesRoute)
 router.use('/testimonial', testimonialRoute)
+router.use('/audience', audienceRoute)
+router.use('/brand', brandRoute)
+router.use('/sample', sampleRoute)
+router.use('/contact', contactRoute)
+router.use('/portfolio', portfolioRoute)
 
 export default router

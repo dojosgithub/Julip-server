@@ -10,7 +10,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 // * Models
-import { User, Group, Challenge, Profile, Pages, Shop, Services } from '../models'
+import { User, Group, Challenge, Profile, Pages, Shop, Services, Portfolio } from '../models'
 
 // * Middlewares
 import { asyncMiddleware } from '../middlewares'
@@ -198,16 +198,18 @@ export const CONTROLLER_PROFILE = {
     const shop = new Shop({ userId })
     const about = new About({ userId })
     const services = new Services({ userId })
-
+    const portfolio = new Portfolio({ userId })
     await newPages.save()
     await shop.save()
     await about.save()
     await services.save()
+    await portfolio.save()
 
     user.pages = newPages._id
     user.shop = shop._id
     user.about = about._id
     user.services = services._id
+    user.portfolio = portfolio._id
     await user.save()
 
     const { draft, published, ...restProfile } = profile.toObject()

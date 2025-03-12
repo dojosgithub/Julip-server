@@ -10,7 +10,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 // * Models
-import { Product, Shop, User } from '../models'
+import { Portfolio, Product, Shop, User } from '../models'
 
 // * Middlewares
 import { asyncMiddleware } from '../middlewares'
@@ -41,9 +41,10 @@ export const CONTROLLER_SAMPLE = {
     })
   }),
 
-  addSampleItem: asyncMiddleware(async (req, res) => {
+  // Create and update a sample item by category name and item name
+  createAndUpdateSampleItemByName: asyncMiddleware(async (req, res) => {
     const { id } = req.query
-    const { categoryName, url, tile, buttonTitle, visibility } = req.body
+    const { categoryName, itemName, url, tile, buttonTitle, visibility } = req.body
 
     if (!id) {
       return res.status(StatusCodes.BAD_REQUEST).json({
@@ -51,12 +52,14 @@ export const CONTROLLER_SAMPLE = {
       })
     }
 
-    if (!categoryName) {
+    if (!categoryName || !itemName) {
       return res.status(StatusCodes.BAD_REQUEST).json({
-        message: 'Category name is required.',
+        message: 'Category name and item name are required.',
       })
     }
+
     const sample = await Sample.findById(id)
+
     if (!sample) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: 'Sample not found.',
@@ -64,6 +67,71 @@ export const CONTROLLER_SAMPLE = {
     }
 
     // Find the category by name
+    let category = sample.categoryList.find((cat) => cat.name === categoryName)
+
+    // If the category does not exist, create a new one
+    if (!category) {
+      category = {
+        name: categoryName,
+        sampleList: [],
+      }
+      sample.categoryList.push(category)
+    }
+
+    // Find the item by name
+    let item = category.sampleList.find((item) => item.tile === itemName)
+
+    // If the item does not exist, create a new one
+    if (!item) {
+      item = {
+        url: url || '',
+        tile: tile || '',
+        buttonTitle: buttonTitle || '',
+        visibility: visibility || '',
+      }
+      category.sampleList.push(item)
+    } else {
+      // Update the existing item
+      if (url) item.url = url
+      if (tile) item.tile = tile
+      if (buttonTitle) item.buttonTitle = buttonTitle
+      if (visibility) item.visibility = visibility
+    }
+
+    // Save the updated sample
+    await sample.save()
+
+    res.status(StatusCodes.OK).json({
+      data: sample,
+      message: 'Sample item created/updated successfully.',
+    })
+  }),
+
+  // Delete a sample item by category name and item name
+  deleteSampleItemByName: asyncMiddleware(async (req, res) => {
+    const { id } = req.query
+    const { categoryName, itemName } = req.body
+
+    if (!id) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'Sample ID is required.',
+      })
+    }
+
+    if (!categoryName || !itemName) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'Category name and item name are required.',
+      })
+    }
+
+    const sample = await Sample.findById(id)
+
+    if (!sample) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Sample not found.',
+      })
+    }
+
     const category = sample.categoryList.find((cat) => cat.name === categoryName)
 
     if (!category) {
@@ -72,15 +140,20 @@ export const CONTROLLER_SAMPLE = {
       })
     }
 
-    // Add the new item to the sampleList
-    category.sampleList.push({ url, tile, buttonTitle, visibility })
+    const itemIndex = category.sampleList.findIndex((item) => item.tile === itemName)
 
-    // Save the updated sample
+    if (itemIndex === -1) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Item not found in the category.',
+      })
+    }
+
+    category.sampleList.splice(itemIndex, 1)
+
     await sample.save()
 
     res.status(StatusCodes.OK).json({
-      data: sample,
-      message: 'Item added to sampleList successfully.',
+      message: 'Sample item deleted successfully.',
     })
   }),
 
@@ -128,11 +201,56 @@ export const CONTROLLER_SAMPLE = {
 
     if (!id) {
       return res.status(StatusCodes.BAD_REQUEST).json({
-        message: 'Sample ID is required.',
+        message: 'User ID is required.',
       })
     }
 
-    const updatedSample = await Sample.findByIdAndUpdate(id, { name, visibility, categoryList }, { new: true })
+    // Find the user by ID and populate the portfolio and sample
+    const user = await User.findById(id).populate({
+      path: 'portfolio',
+      populate: {
+        path: 'sample',
+        model: 'Sample',
+      },
+    })
+
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'User not found.',
+      })
+    }
+
+    let updatedSample
+
+    // Check if the user has a portfolio
+    if (!user.portfolio) {
+      // Create a new portfolio for the user
+      const newPortfolio = new Portfolio({ user: user._id })
+      user.portfolio = newPortfolio
+      await user.save()
+      await newPortfolio.save()
+    }
+
+    // Check if the portfolio has a sample
+    if (!user.portfolio.sample) {
+      // Create a new sample for the portfolio
+      const newSample = new Sample({
+        name,
+        visibility,
+        categoryList,
+      })
+      user.portfolio.sample = newSample
+      await user.portfolio.save()
+      await newSample.save()
+      updatedSample = newSample
+    } else {
+      // Update the existing sample
+      updatedSample = await Sample.findByIdAndUpdate(
+        user.portfolio.sample._id,
+        { name, visibility, categoryList },
+        { new: true }
+      )
+    }
 
     if (!updatedSample) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -166,5 +284,102 @@ export const CONTROLLER_SAMPLE = {
     res.status(StatusCodes.OK).json({
       message: 'Sample deleted successfully.',
     })
+  }),
+  createSampleItem: asyncMiddleware(async (req, res) => {
+    try {
+      const { name, sampleList } = req.body
+
+      // Create the sample
+      const newSample = new Sample({
+        name,
+        sampleList,
+      })
+
+      await newSample.save()
+
+      res.status(StatusCodes.CREATED).json({
+        data: newSample,
+        message: 'Sample created successfully.',
+      })
+    } catch (error) {
+      console.error('Error creating sample:', error)
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: 'An error occurred while creating the sample.',
+      })
+    }
+  }),
+  updateSampleItem: async (req, res) => {
+    try {
+      const { id } = req.params
+      const { name, sampleList } = req.body
+
+      // Find the sample by ID
+      const sample = await Sample.findById(id)
+      if (!sample) {
+        return res.status(StatusCodes.NOT_FOUND).json({
+          message: 'Sample not found.',
+        })
+      }
+
+      // Update the sample fields
+      sample.name = name || sample.name
+      sample.sampleList = sampleList || sample.sampleList
+
+      // Save the updated sample
+      await sample.save()
+
+      res.status(StatusCodes.OK).json({
+        data: sample,
+        message: 'Sample updated successfully.',
+      })
+    } catch (error) {
+      console.error('Error updating sample:', error)
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: 'An error occurred while updating the sample.',
+      })
+    }
+  },
+  updatePortfolioSample: asyncMiddleware(async (req, res) => {
+    try {
+      const { _id: userId } = req.decoded
+      const { version = 'draft', name, visibility, categoryList } = req.body
+
+      // Find the portfolio by ID
+      const portfolio = await Portfolio.findOne(userId)
+      if (!portfolio) {
+        return res.status(StatusCodes.NOT_FOUND).json({
+          message: 'Portfolio not found.',
+        })
+      }
+
+      // Validate categoryList references
+      if (categoryList) {
+        const validSamples = await Sample.find({ _id: { $in: categoryList } })
+        if (validSamples.length !== categoryList.length) {
+          return res.status(StatusCodes.BAD_REQUEST).json({
+            message: 'One or more categoryList IDs are invalid.',
+          })
+        }
+      }
+
+      // Update the sample field in the specified version
+      portfolio[version].sample.name = name || portfolio[version].sample.name
+      portfolio[version].sample.visibility =
+        visibility !== undefined ? visibility : portfolio[version].sample.visibility
+      portfolio[version].sample.categoryList = categoryList || portfolio[version].sample.categoryList
+
+      // Save the updated portfolio
+      await portfolio.save()
+
+      res.status(StatusCodes.OK).json({
+        data: portfolio,
+        message: 'Portfolio sample updated successfully.',
+      })
+    } catch (error) {
+      console.error('Error updating portfolio sample:', error)
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: 'An error occurred while updating the portfolio sample.',
+      })
+    }
   }),
 }

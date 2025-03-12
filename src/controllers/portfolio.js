@@ -93,118 +93,7 @@ const { ObjectId } = mongoose.Types
 // const REDIRECT_URI = 'http://localhost:3000/api/user/auth/google/callback'
 
 export const CONTROLLER_PORTFOLIO = {
-  createShop: asyncMiddleware(async (req, res) => {
-    const { _id: userId } = req.decoded
-    const { name, speciality, brand, audience, sample, testimonials, contact, visibility } = req.body
-
-    if (!name) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        message: 'Shop name is required.',
-      })
-    }
-    const user = await User.findById(userId)
-
-    if (!user) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        message: 'User not found.',
-      })
-    }
-    const portfolioData = {
-      name,
-      speciality,
-      brand,
-      audience,
-      sample,
-      testimonials,
-      contact,
-      visibility,
-      userId,
-    }
-    const portfolio = new Portfolio({
-      userId,
-      draft: portfolioData,
-      published: portfolioData,
-      lastPublishedAt: Date.now(),
-    })
-    await portfolio.save()
-    user.portfolio = portfolio._id
-    await user.save()
-
-    const { draft, published, ...restPortfolio } = portfolio.toObject()
-    let modifiedPortfolio
-
-    modifiedPortfolio = {
-      ...restPortfolio,
-      ...draft,
-    }
-
-    res.status(StatusCodes.CREATED).json({
-      data: modifiedPortfolio,
-      message: 'Portfolio created successfully.',
-    })
-  }),
-
-  // Update a shop
-  updateShop: asyncMiddleware(async (req, res) => {
-    const { _id: userId } = req.decoded
-
-    const { name, speciality, brand, audience, sample, testimonials, contact, visibility, version = 'draft' } = req.body
-    if (!userId) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        message: 'User ID is required.',
-      })
-    }
-    let updatedPortfolio
-    const portfolioData = {
-      name,
-      speciality,
-      brand,
-      audience,
-      sample,
-      testimonials,
-      contact,
-      visibility,
-    }
-
-    if (version === 'draft') {
-      updatedPortfolio = await Portfolio.findOneAndUpdate(
-        { userId: userId },
-        { draft: portfolioData, lastPublishedAt: Date.now() },
-        { new: true }
-      )
-    } else if (version === 'published') {
-      updatedPortfolio = await Portfolio.findOneAndUpdate(
-        { userId: userId },
-        { published: portfolioData, lastPublishedAt: Date.now() },
-        { new: true }
-      )
-    }
-
-    if (!updatedPortfolio) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        message: 'Shop not found.',
-      })
-    }
-    const { draft, published, ...restPortfolio } = updatedPortfolio.toObject()
-    let modifiedPorfolio
-    if (version === 'draft') {
-      modifiedPorfolio = {
-        ...restPortfolio,
-        ...draft,
-      }
-    } else if (version === 'published') {
-      modifiedPorfolio = {
-        ...restPortfolio,
-        ...published,
-      }
-    }
-
-    res.status(StatusCodes.OK).json({
-      data: modifiedPorfolio,
-      message: 'Portfolio updated successfully.',
-    })
-  }),
-  createAndUpdateShop: asyncMiddleware(async (req, res) => {
+  createAndUpdatePortfolio: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
     const { name, speciality, brand, audience, sample, testimonials, contact, visibility } = req.body
     const { version = 'draft' } = req.query
@@ -251,7 +140,7 @@ export const CONTROLLER_PORTFOLIO = {
       await portfolio.save()
     }
 
-    const { draft, published, ...restPortfolio } = shop.toObject()
+    const { draft, published, ...restPortfolio } = portfolio.toObject()
     let modifiedPortfolio
 
     if (version === 'draft') {
@@ -294,14 +183,15 @@ export const CONTROLLER_PORTFOLIO = {
     const { _id: userId } = req.decoded
     const { version = 'draft' } = req.query // 'draft' or 'published'
 
-    // Fetch the user along with the shop data
+    // Fetch the user along with the portfolio data
     const user = await User.findById(userId).populate({
-      path: 'shop',
+      path: 'portfolio',
       populate: [
-        {
-          path: `${version}.collections.portfolio`, // Populate products in collections for the requested version
-          model: 'Portfolio',
-        },
+        { path: `${version}.brand`, model: 'Brand' },
+        { path: `${version}.audience`, model: 'Audience' },
+        { path: `${version}.sample`, model: 'Sample' },
+        { path: `${version}.testimonials`, model: 'Testimonials' },
+        { path: `${version}.contact`, model: 'Contact' },
       ],
     })
 
@@ -311,7 +201,7 @@ export const CONTROLLER_PORTFOLIO = {
       })
     }
 
-    const portfolioData = user.portfolio[version] // Access draft or published version of the shop
+    const portfolioData = user.portfolio[version] // Access draft or published version of the portfolio
 
     res.status(StatusCodes.OK).json({
       data: {

@@ -12,14 +12,22 @@ import { USER_TYPES } from '../utils'
 
 const router = Router()
 
-router.get('/get-user-all-sample', Authenticate(), CONTROLLER_SAMPLE.getSamples)
+// router.get('/get-user-all-sample', Authenticate(), CONTROLLER_SAMPLE.getSamples)
 
 router.get('/get-sample/:id', Authenticate(), CONTROLLER_SAMPLE.getSampleById)
 
-router.post('/create-sample', Authenticate(), CONTROLLER_SAMPLE.createSample)
+// router.post('/create-sample', Authenticate(), CONTROLLER_SAMPLE.createSample)
 
-router.put('/update-sample/:id', Authenticate(), CONTROLLER_SAMPLE.updateSample)
+// router.put('/update-sample/:id', Authenticate(), CONTROLLER_SAMPLE.updateSample)
 
-router.delete('/delete-sample/:id', Authenticate(), CONTROLLER_SAMPLE.deleteSample)
+// router.delete('/delete-sample/:id', Authenticate(), CONTROLLER_SAMPLE.deleteSample)
+
+router.delete('/delete-sample-item/:id', Authenticate(), CONTROLLER_SAMPLE.deleteSample)
+
+router.post('/create-sample-item/:id', Authenticate(), CONTROLLER_SAMPLE.createSampleItem)
+
+router.put('/update-sample-item/:id', Authenticate(), CONTROLLER_SAMPLE.updateSampleItem)
+
+router.put('/update-sample/:id', Authenticate(), CONTROLLER_SAMPLE.updatePortfolioSample)
 
 export default router

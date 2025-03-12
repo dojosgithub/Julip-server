@@ -4,27 +4,15 @@ export const sampleSchema = new Schema(
   {
     name: {
       type: String,
-      required: true,
     },
-    visibility: {
-      type: Boolean,
-      default: true,
-    },
-    categoryList: [
+    sampleList: [
       {
-        name: {
+        url: {
           type: String,
         },
-        sampleList: [
-          {
-            url: {
-              type: String,
-            },
-            tile: { type: String },
-            buttonTitle: { type: String },
-            visibility: { type: String },
-          },
-        ],
+        tile: { type: String },
+        buttonTitle: { type: String },
+        visibility: { type: String },
       },
     ],
   },

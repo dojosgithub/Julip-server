@@ -44,4 +44,67 @@ export const CONTROLLER_PAGES = {
       message: 'Pages sequence has been updated.',
     })
   }),
+
+  // GET /api/pages/:id - Fetch a specific page by ID
+  getPagesList: asyncMiddleware(async (req, res) => {
+    try {
+      const { id } = req.params
+
+      // Find the page by ID
+      const page = await Pages.findById(id)
+
+      if (!page) {
+        return res.status(StatusCodes.NOT_FOUND).json({
+          message: 'Page not found.',
+        })
+      }
+
+      // Return the page data
+      res.status(StatusCodes.OK).json({
+        data: page,
+        message: 'Page fetched successfully.',
+      })
+    } catch (error) {
+      console.error('Error fetching page:', error)
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: 'An error occurred while fetching the page.',
+      })
+    }
+  }),
+
+  // PUT /api/pages/:id - Update a specific page by ID
+  updatePages: asyncMiddleware(async (req, res) => {
+    try {
+      const { id } = req.params
+      const { title, content, status } = req.body
+
+      // Find the page by ID
+      const page = await Pages.findById(id)
+
+      if (!page) {
+        return res.status(StatusCodes.NOT_FOUND).json({
+          message: 'Page not found.',
+        })
+      }
+
+      // Update the page fields
+      page.title = title || page.title
+      page.content = content || page.content
+      page.status = status || page.status
+
+      // Save the updated page
+      await page.save()
+
+      // Return the updated page data
+      res.status(StatusCodes.OK).json({
+        data: page,
+        message: 'Page updated successfully.',
+      })
+    } catch (error) {
+      console.error('Error updating page:', error)
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: 'An error occurred while updating the page.',
+      })
+    }
+  }),
 }

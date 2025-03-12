@@ -2,27 +2,15 @@ import mongoose, { Schema, model } from 'mongoose'
 
 export const contactSchema = new Schema(
   {
-    name: {
+    title: {
       type: String,
-      required: true,
     },
     visibility: {
-      type: Boolean, // Optional field
-      default: true,
+      type: Boolean,
     },
-    contactList: [
-      {
-        title: {
-          type: String,
-        },
-        visibility: {
-          type: Boolean,
-        },
-        url: {
-          type: String,
-        },
-      },
-    ],
+    url: {
+      type: String,
+    },
   },
   { versionKey: false, timestamps: true }
 )

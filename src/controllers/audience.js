@@ -10,7 +10,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 // * Models
-import { Audience, Contact, Product, Shop, User } from '../models'
+import { Audience, Contact, Portfolio, Product, Shop, User } from '../models'
 
 // * Middlewares
 import { asyncMiddleware } from '../middlewares'
@@ -51,21 +51,65 @@ export const CONTROLLER_AUDIENCE = {
     })
   }),
 
-  updateAudience: asyncMiddleware(async (req, res) => {
-    const { id } = req.query
+  createAndupdateAudience: asyncMiddleware(async (req, res) => {
+    const { _id: userId } = req.decoded
     const { name, visibility, instagram, tiktok, youtube, linkedin } = req.body
 
     if (!id) {
       return res.status(StatusCodes.BAD_REQUEST).json({
-        message: 'Audience ID is required.',
+        message: 'User ID is required.',
       })
     }
 
-    const updatedAudience = await Audience.findByIdAndUpdate(
-      id,
-      { name, visibility, instagram, tiktok, youtube, linkedin },
-      { new: true }
-    )
+    // Find the user by ID and populate the portfolio and audience
+    const user = await User.findById(userId).populate({
+      path: 'portfolio',
+      populate: {
+        path: 'audience',
+        model: 'Audience',
+      },
+    })
+
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'User not found.',
+      })
+    }
+
+    let updatedAudience
+
+    // Check if the user has a portfolio
+    if (!user.portfolio) {
+      // Create a new portfolio for the user
+      const newPortfolio = new Portfolio({ user: user._id })
+      user.portfolio = newPortfolio
+      await user.save()
+      await newPortfolio.save()
+    }
+
+    // Check if the portfolio has an audience
+    if (!user.portfolio.audience) {
+      // Create a new audience for the portfolio
+      const newAudience = new Audience({
+        name,
+        visibility,
+        instagram,
+        tiktok,
+        youtube,
+        linkedin,
+      })
+      user.portfolio.audience = newAudience
+      await user.portfolio.save()
+      await newAudience.save()
+      updatedAudience = newAudience
+    } else {
+      // Update the existing audience
+      updatedAudience = await Audience.findByIdAndUpdate(
+        user.portfolio.audience._id,
+        { name, visibility, instagram, tiktok, youtube, linkedin },
+        { new: true }
+      )
+    }
 
     if (!updatedAudience) {
       return res.status(StatusCodes.NOT_FOUND).json({

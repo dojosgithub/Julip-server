@@ -16,24 +16,63 @@ const portfolioContentSchema = {
     specialityList: [String],
   },
   brand: {
-    type: Schema.Types.ObjectId,
-    ref: 'Brand',
+    name: {
+      type: String,
+      required: true,
+    },
+    visibility: {
+      type: Boolean, // Optional field
+      default: true,
+    },
+    oneLiner: {
+      type: String,
+    },
+    brandList: {
+      type: Schema.Types.ObjectId,
+      ref: 'Brand',
+    },
   },
   audience: {
-    type: Schema.Types.ObjectId,
-    ref: 'Audience',
+    name: {
+      type: String,
+    },
+    visibility: {
+      type: Boolean,
+    },
+    audienceList: {
+      type: Schema.Types.ObjectId,
+      ref: 'Audience',
+    },
   },
   sample: {
-    type: Schema.Types.ObjectId,
-    ref: 'Sample',
+    name: {
+      type: String,
+      required: true,
+    },
+    visibility: {
+      type: Boolean,
+      default: true,
+    },
+
+    categoryList: [{ type: Schema.Types.ObjectId, ref: 'Sample' }],
   },
   testimonials: {
     type: Schema.Types.ObjectId,
     ref: 'Testimonials',
   },
   contact: {
-    type: Schema.Types.ObjectId,
-    ref: 'Contact',
+    name: {
+      type: String,
+      required: true,
+    },
+    visibility: {
+      type: Boolean, // Optional field
+      default: true,
+    },
+    contactList: {
+      type: Schema.Types.ObjectId,
+      ref: 'Contact',
+    },
   },
   visibility: {
     type: Boolean,

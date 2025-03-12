@@ -9,26 +9,13 @@ const pagesSchema = new mongoose.Schema(
     },
     pagesList: [
       {
-        shop: {
-          name: {
-            type: String,
-            default: 'Shop',
-          },
+        name: {
+          type: String,
+          required: true,
         },
-        about: {
-          name: {
-            type: String,
-            default: 'About',
-          },
-        },
-        services: {
-          name: {
-            type: String,
-            default: 'Services',
-          },
-          sequence: {
-            type: Number,
-          },
+        id: {
+          type: Number,
+          required: true,
         },
       },
     ],
