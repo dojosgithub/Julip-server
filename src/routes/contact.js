@@ -24,7 +24,7 @@ const router = Router()
 
 // ///////////////////////////////////////////////////////////////////////////////////////
 
-router.post('/create-contact', Authenticate(), CONTROLLER_CONTACT.createContact)
+router.post('/create-contact-item', Authenticate(), CONTROLLER_CONTACT.createContact)
 
 router.put('/update-contact', Authenticate(), CONTROLLER_CONTACT.updateContact)
 

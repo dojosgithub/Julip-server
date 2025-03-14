@@ -130,11 +130,7 @@ export const CONTROLLER_BRAND = {
       image = req.file.path
     }
 
-    const updatedBrand = await Brand.findByIdAndUpdate(
-      id,
-      { name, visibility, oneLiner, brandList, image },
-      { new: true }
-    )
+    const updatedBrand = await Brand.findByIdAndUpdate(id, { name, visibility, oneLiner, brandList }, { new: true })
 
     if (!updatedBrand) {
       return res.status(StatusCodes.NOT_FOUND).json({

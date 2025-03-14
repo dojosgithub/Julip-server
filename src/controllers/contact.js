@@ -19,15 +19,15 @@ const { ObjectId } = mongoose.Types
 
 export const CONTROLLER_CONTACT = {
   createContact: asyncMiddleware(async (req, res) => {
-    const { name, visibility, url } = req.body
+    const { title, visibility, url } = req.body
 
-    if (!name) {
+    if (!title) {
       return res.status(StatusCodes.BAD_REQUEST).json({
-        message: 'Name is required.',
+        message: 'title is required.',
       })
     }
 
-    const contact = new Contact({ name, visibility, url })
+    const contact = new Contact({ title, visibility, url })
     await contact.save()
 
     res.status(StatusCodes.CREATED).json({
@@ -38,19 +38,47 @@ export const CONTROLLER_CONTACT = {
 
   getContact: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
+    const { version = 'draft' } = req.query // Extract version from query params (default to 'draft')
+
+    // Validate the version parameter
+    if (!['draft', 'published'].includes(version)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'Invalid version. Use "draft" or "published".',
+      })
+    }
+
+    // Find the user and populate the specified version's contactList
     const user = await User.findById(userId).populate({
       path: 'portfolio',
       populate: {
-        path: 'contact',
+        path: `${version}.contact.contactList`,
         model: 'Contact',
       },
     })
+
+    // Check if the user or portfolio exists
+    if (!user || !user.portfolio) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Portfolio not found.',
+      })
+    }
+
+    // Extract the contact data for the specified version
+    const contactData = user.portfolio[version]?.contact
+
+    // Check if the contact data exists for the specified version
+    if (!contactData) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: `No contact data found in the "${version}" version.`,
+      })
+    }
+
+    // Return the contact data
     res.status(StatusCodes.OK).json({
-      data: user.portfolio.contact,
-      message: 'Audiences retrieved successfully.',
+      data: contactData,
+      message: `Contacts retrieved successfully for the "${version}" version.`,
     })
   }),
-
   getContactById: asyncMiddleware(async (req, res) => {
     const { id } = req.params
 
@@ -99,7 +127,7 @@ export const CONTROLLER_CONTACT = {
 
   updateContactById: asyncMiddleware(async (req, res) => {
     const { id } = req.params
-    const { title, visibility, url } = req.bady
+    const { title, visibility, url } = req.body
     if (!id) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'Contact ID is required.',
@@ -116,36 +144,63 @@ export const CONTROLLER_CONTACT = {
 
     res.status(StatusCodes.OK).json({
       data: contact,
-      message: 'Contact retrieved successfully.',
+      message: 'Contact updated successfully.',
     })
   }),
 
   updateContact: asyncMiddleware(async (req, res) => {
-    const { _id: userId } = req.params
+    const { _id: userId } = req.decoded
+    const { version = 'draft' } = req.query
     const { name, visibility, contactList } = req.body
 
-    if (!id) {
+    // Validate userId
+    if (!userId) {
       return res.status(StatusCodes.BAD_REQUEST).json({
-        message: 'Contact ID is required.',
+        message: 'User ID is required.',
       })
     }
 
-    const portfolio = await Portfolio.findOne(userId)
+    // Find the portfolio and populate the contactList for the specified version
+    const portfolio = await Portfolio.findOne({ userId }).populate({
+      path: `${version}.contact.contactList`,
+      model: 'Contact',
+    })
 
-    portfolio.contact = { name, visibility, contactList }
+    // Check if the portfolio exists
+    if (!portfolio) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Portfolio not found.',
+      })
+    }
+
+    // Update the contact field in the specified version
+    portfolio[version].contact.name = name || portfolio[version].contact.name
+    portfolio[version].contact.visibility =
+      visibility !== undefined ? visibility : portfolio[version].contact.visibility
+    portfolio[version].contact.contactList = contactList || portfolio[version].contact.contactList
+
+    // Save the updated portfolio
     await portfolio.save()
-    if (!updatedContact) {
+
+    // Re-populate the contactList after saving
+    await portfolio.populate({
+      path: `${version}.contact.contactList`,
+      model: 'Contact',
+    })
+
+    // Check if the contact data exists
+    if (!portfolio[version]?.contact) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: 'Contact not found.',
       })
     }
 
+    // Return the populated contact data
     res.status(StatusCodes.OK).json({
-      data: updatedContact,
+      data: portfolio[version].contact,
       message: 'Contact updated successfully.',
     })
   }),
-
   // createAndupdateContact: asyncMiddleware(async (req, res) => {
   //   const { _id: userId } = req.decoded
   //   const { name, visibility, contactList } = req.body

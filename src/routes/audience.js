@@ -14,7 +14,7 @@ const router = Router()
 
 router.get('/get-audience', Authenticate(), CONTROLLER_AUDIENCE.getAudiences)
 
-router.post('/create-and-update-audience', Authenticate(), CONTROLLER_AUDIENCE.createAndupdateAudience)
+router.post('/create-and-update-audience', Authenticate(), CONTROLLER_AUDIENCE.createAndUpdateAudience)
 
 // router.put('/update-faq/:id', Authenticate(), CONTROLLER_AUDIENCE.updateFaq)
 

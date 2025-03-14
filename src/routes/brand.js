@@ -24,6 +24,8 @@ router.put(
   CONTROLLER_BRAND.updateBrandCollection
 )
 
+router.get('/get-brand/:id', Authenticate(), CONTROLLER_BRAND.getBrandById)
+
 router.post('/create-brand', Authenticate(), parser.single('image'), CONTROLLER_BRAND.createBrand)
 
 router.put('/update-brand/:id', Authenticate(), parser.single('image'), CONTROLLER_BRAND.updateBrand)

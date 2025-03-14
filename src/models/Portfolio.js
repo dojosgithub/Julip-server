@@ -27,10 +27,12 @@ const portfolioContentSchema = {
     oneLiner: {
       type: String,
     },
-    brandList: {
-      type: Schema.Types.ObjectId,
-      ref: 'Brand',
-    },
+    brandList: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Brand',
+      },
+    ],
   },
   audience: {
     name: {
@@ -39,10 +41,12 @@ const portfolioContentSchema = {
     visibility: {
       type: Boolean,
     },
-    audienceList: {
-      type: Schema.Types.ObjectId,
-      ref: 'Audience',
-    },
+    audienceList: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Audience',
+      },
+    ],
   },
   sample: {
     name: {
@@ -69,10 +73,12 @@ const portfolioContentSchema = {
       type: Boolean, // Optional field
       default: true,
     },
-    contactList: {
-      type: Schema.Types.ObjectId,
-      ref: 'Contact',
-    },
+    contactList: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Contact',
+      },
+    ],
   },
   visibility: {
     type: Boolean,

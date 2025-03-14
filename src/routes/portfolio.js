@@ -9,6 +9,6 @@ const router = Router()
 
 router.get('/get-portfolio', Authenticate(), CONTROLLER_PORTFOLIO.getPortfolio)
 
-// router.put('/update-portfolio', Authenticate(), CONTROLLER_PORTFOLIO.getPortfolio)
+router.put('/update-portfolio', Authenticate(), CONTROLLER_PORTFOLIO.updatePortfolio)
 
 export default router

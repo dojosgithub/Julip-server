@@ -183,26 +183,26 @@ export const CONTROLLER_PORTFOLIO = {
     const { _id: userId } = req.decoded
     const { version = 'draft' } = req.query // 'draft' or 'published'
 
-    // Fetch the user along with the portfolio data
-    const port = await User.findById(userId).populate('portfolio')
-
+    // Fetch and populate the portfolio data
     const portfolio = await Portfolio.findOne({ userId }).populate([
-      { path: `${version}.brand`, model: 'Brand' },
-      { path: `${version}.audience`, model: 'Audience' },
-      { path: `${version}.sample`, model: 'Sample' },
+      { path: `${version}.brand.brandList`, model: 'Brand' },
+      { path: `${version}.audience.audienceList`, model: 'Audience' },
+      { path: `${version}.sample.categoryList`, model: 'Sample' },
       { path: `${version}.testimonials`, model: 'Testimonials' },
-      { path: `${version}.contact`, model: 'Contact' },
+      { path: `${version}.contact.contactList`, model: 'Contact' },
     ])
+
     if (!portfolio) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: 'Portfolio not found.',
       })
     }
 
+    // Convert the Mongoose document to a plain object
+    const portfolioPlain = portfolio.toObject()
+
     res.status(StatusCodes.OK).json({
-      data: {
-        ...portfolio,
-      },
+      data: portfolioPlain,
       message: 'Portfolio retrieved successfully.',
     })
   }),
@@ -211,11 +211,30 @@ export const CONTROLLER_PORTFOLIO = {
     const { _id: userId } = req.decoded
     const { version = 'draft' } = req.query // 'draft' or 'published'
     const { name, speciality, brand, audience, sample, testimonials, contact, visibility } = req.body
-    let portfolio = await Portfolio.findOneAndUpdate(
-      { userId },
-      { name, speciality, brand, audience, sample, testimonials, contact, visibility },
-      { new: true }
-    )
+
+    // Construct the update object dynamically based on the version
+    const updatePath = `${version}`
+    const updateData = {
+      [`${updatePath}.name`]: name,
+      [`${updatePath}.speciality`]: speciality,
+      [`${updatePath}.audience`]: audience,
+      [`${updatePath}.sample`]: sample,
+      [`${updatePath}.testimonials`]: testimonials,
+      [`${updatePath}.contact`]: contact,
+      [`${updatePath}.visibility`]: visibility,
+    }
+
+    // Update nested fields within the brand object
+    if (brand) {
+      updateData[`${updatePath}.brand.name`] = brand.name
+      updateData[`${updatePath}.brand.visibility`] = brand.visibility
+      updateData[`${updatePath}.brand.oneLiner`] = brand.oneLiner
+      updateData[`${updatePath}.brand.brandList`] = brand.brandList || []
+    }
+
+    // Find and update the portfolio
+    let portfolio = await Portfolio.findOneAndUpdate({ userId }, { $set: updateData }, { new: true, lean: true })
+
     if (!portfolio) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: 'Portfolio not found.',
@@ -223,9 +242,7 @@ export const CONTROLLER_PORTFOLIO = {
     }
 
     res.status(StatusCodes.OK).json({
-      data: {
-        ...portfolio,
-      },
+      data: portfolio,
       message: 'Portfolio updated successfully.',
     })
   }),

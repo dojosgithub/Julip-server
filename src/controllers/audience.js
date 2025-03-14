@@ -38,37 +38,57 @@ export const CONTROLLER_AUDIENCE = {
 
   getAudiences: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
-    const user = await User.find().populate({
-      path: 'portfolio',
-      populate: {
-        path: 'audience',
-        model: 'Audience',
-      },
-    })
-    res.status(StatusCodes.OK).json({
-      data: user,
-      message: 'Audiences retrieved successfully.',
-    })
-  }),
+    const { version = 'draft' } = req.query // Default to "draft" version
 
-  createAndupdateAudience: asyncMiddleware(async (req, res) => {
-    const { _id: userId } = req.decoded
-    const { name, visibility, instagram, tiktok, youtube, linkedin } = req.body
-
-    if (!id) {
+    if (!userId) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'User ID is required.',
       })
     }
 
-    // Find the user by ID and populate the portfolio and audience
-    const user = await User.findById(userId).populate({
-      path: 'portfolio',
-      populate: {
-        path: 'audience',
-        model: 'Audience',
-      },
+    // Find the portfolio for the user and populate the audienceList
+    const portfolio = await Portfolio.findOne({ userId }).populate({
+      path: `${version}.audience.audienceList`,
+      model: 'Audience',
     })
+
+    // Log the portfolio for debugging purposes (remove in production)
+    console.log('Portfolio:', portfolio)
+
+    // Check if the portfolio exists and has an audience in the specified version
+    if (!portfolio || !portfolio[version]?.audience?.audienceList?.length) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Audience not found.',
+      })
+    }
+
+    // Extract the audience data
+    const { audience } = portfolio[version]
+    const { name, visibility, audienceList } = audience
+
+    // Return the audience data
+    res.status(StatusCodes.OK).json({
+      data: {
+        name,
+        visibility,
+        audienceList,
+      },
+      message: 'Audiences retrieved successfully.',
+    })
+  }),
+  createAndUpdateAudience: asyncMiddleware(async (req, res) => {
+    const { _id: userId } = req.decoded
+    const { version = 'draft' } = req.query // Default to "draft" version
+    const { instagram, tiktok, youtube, linkedin } = req.body
+
+    if (!userId) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'User ID is required.',
+      })
+    }
+
+    // Find the user by ID and populate the portfolio
+    const user = await User.findById(userId).populate('portfolio')
 
     if (!user) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -76,50 +96,65 @@ export const CONTROLLER_AUDIENCE = {
       })
     }
 
-    let updatedAudience
-
     // Check if the user has a portfolio
     if (!user.portfolio) {
-      // Create a new portfolio for the user
-      const newPortfolio = new Portfolio({ user: user._id })
-      user.portfolio = newPortfolio
-      await user.save()
-      await newPortfolio.save()
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Portfolio not found for this user.',
+      })
     }
 
-    // Check if the portfolio has an audience
-    if (!user.portfolio.audience) {
-      // Create a new audience for the portfolio
+    // Extract the audience data for the specified version
+    let audience = user.portfolio[version]?.audience
+    let updatedAudience
+
+    if (!audience || !audience.audienceList?.length) {
+      // Create a new audience if it doesn't exist
       const newAudience = new Audience({
-        name,
-        visibility,
         instagram,
         tiktok,
         youtube,
         linkedin,
       })
-      user.portfolio.audience = newAudience
-      await user.portfolio.save()
+
+      // Save the new audience document
       await newAudience.save()
+
+      // Initialize the audience object if it doesn't exist
+      if (!audience) {
+        audience = {
+          name: 'Default Audience Name', // Set a default name
+          visibility: true, // Set default visibility
+          audienceList: [], // Initialize the audienceList array
+        }
+        user.portfolio[version].audience = audience
+      }
+
+      // Append the new audience's _id to the audienceList array
+      audience.audienceList.push(newAudience._id)
+
+      // Save the updated portfolio
+      await user.portfolio.save()
+
       updatedAudience = newAudience
     } else {
       // Update the existing audience
+      const audienceId = audience.audienceList[0] // Assuming only one audience exists in the list
       updatedAudience = await Audience.findByIdAndUpdate(
-        user.portfolio.audience._id,
-        { name, visibility, instagram, tiktok, youtube, linkedin },
+        audienceId,
+        { instagram, tiktok, youtube, linkedin },
         { new: true }
       )
-    }
 
-    if (!updatedAudience) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        message: 'Audience not found.',
-      })
+      if (!updatedAudience) {
+        return res.status(StatusCodes.NOT_FOUND).json({
+          message: 'Failed to update audience.',
+        })
+      }
     }
 
     res.status(StatusCodes.OK).json({
       data: updatedAudience,
-      message: 'Audience updated successfully.',
+      message: audience?.audienceList?.length ? 'Audience updated successfully.' : 'Audience created successfully.',
     })
   }),
 

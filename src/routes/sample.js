@@ -24,10 +24,12 @@ router.get('/get-sample/:id', Authenticate(), CONTROLLER_SAMPLE.getSampleById)
 
 router.delete('/delete-sample-item/:id', Authenticate(), CONTROLLER_SAMPLE.deleteSample)
 
-router.post('/create-sample-item/:id', Authenticate(), CONTROLLER_SAMPLE.createSampleItem)
+router.post('/create-sample-item', Authenticate(), CONTROLLER_SAMPLE.createSampleItem)
 
 router.put('/update-sample-item/:id', Authenticate(), CONTROLLER_SAMPLE.updateSampleItem)
 
-router.put('/update-sample/:id', Authenticate(), CONTROLLER_SAMPLE.updatePortfolioSample)
+router.put('/update-sample', Authenticate(), CONTROLLER_SAMPLE.updatePortfolioSample)
+
+router.get('/get-sample', Authenticate(), CONTROLLER_SAMPLE.getPortfolioSample)
 
 export default router

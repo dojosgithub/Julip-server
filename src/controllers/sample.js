@@ -157,6 +157,21 @@ export const CONTROLLER_SAMPLE = {
     })
   }),
 
+  getSampleCategory: asyncMiddleware(async (req, res) => {
+    const { _id: userId } = req.decoded
+    const user = await User.findById(userId).populate({
+      path: 'portfolio',
+      populate: {
+        path: 'sample',
+        model: 'Sample',
+      },
+    })
+    res.status(StatusCodes.OK).json({
+      data: user,
+      message: 'Sample retrieved successfully.',
+    })
+  }),
+
   getSampleById: asyncMiddleware(async (req, res) => {
     const { id } = req.params
 
@@ -176,21 +191,6 @@ export const CONTROLLER_SAMPLE = {
 
     res.status(StatusCodes.OK).json({
       data: sample,
-      message: 'Sample retrieved successfully.',
-    })
-  }),
-
-  getSampleCategory: asyncMiddleware(async (req, res) => {
-    const { _id: userId } = req.decoded
-    const user = await User.findById(userId).populate({
-      path: 'portfolio',
-      populate: {
-        path: 'sample',
-        model: 'Sample',
-      },
-    })
-    res.status(StatusCodes.OK).json({
-      data: user,
       message: 'Sample retrieved successfully.',
     })
   }),
@@ -342,10 +342,11 @@ export const CONTROLLER_SAMPLE = {
   updatePortfolioSample: asyncMiddleware(async (req, res) => {
     try {
       const { _id: userId } = req.decoded
-      const { version = 'draft', name, visibility, categoryList } = req.body
+      const { version = 'draft' } = req.query
+      const { name, visibility, categoryList } = req.body
 
       // Find the portfolio by ID
-      const portfolio = await Portfolio.findOne(userId)
+      const portfolio = await Portfolio.findOne({ userId })
       if (!portfolio) {
         return res.status(StatusCodes.NOT_FOUND).json({
           message: 'Portfolio not found.',
@@ -379,6 +380,46 @@ export const CONTROLLER_SAMPLE = {
       console.error('Error updating portfolio sample:', error)
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         message: 'An error occurred while updating the portfolio sample.',
+      })
+    }
+  }),
+  getPortfolioSample: asyncMiddleware(async (req, res) => {
+    try {
+      const { _id: userId } = req.decoded
+      const { version = 'draft' } = req.query // Default to "draft" version
+
+      // Find the portfolio by userId and populate the categoryList in the specified version
+      const portfolio = await Portfolio.findOne({ userId }).populate({
+        path: `${version}.sample.categoryList`,
+        model: 'Sample',
+      })
+
+      // Check if the portfolio exists
+      if (!portfolio) {
+        return res.status(StatusCodes.NOT_FOUND).json({
+          message: 'Portfolio not found.',
+        })
+      }
+
+      // Extract the sample data for the specified version
+      const sampleData = portfolio[version]?.sample
+
+      // Check if the sample data exists
+      if (!sampleData) {
+        return res.status(StatusCodes.NOT_FOUND).json({
+          message: 'Sample data not found in the specified version.',
+        })
+      }
+
+      // Return the sample data
+      res.status(StatusCodes.OK).json({
+        data: sampleData,
+        message: 'Portfolio sample retrieved successfully.',
+      })
+    } catch (error) {
+      console.error('Error retrieving portfolio sample:', error)
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: 'An error occurred while retrieving the portfolio sample.',
       })
     }
   }),
