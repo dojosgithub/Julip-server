@@ -31,4 +31,8 @@ router.put(
 
 router.delete('/delete-product', Authenticate(), CONTROLLER_PRODUCT.deleteProduct)
 
+router.put('/cancel-subscription-product', Authenticate(), CONTROLLER_PRODUCT.cancelSubscriptionProduct)
+
+router.get('/resubscribe-subscription-product', Authenticate(), CONTROLLER_PRODUCT.resubscribeProduct)
+
 export default router

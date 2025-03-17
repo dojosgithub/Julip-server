@@ -203,4 +203,60 @@ export const CONTROLLER_PRODUCT = {
       message: `Products from the collection "${collectionName}" retrieved successfully.`,
     })
   },
+  cancelSubscriptionProduct: asyncMiddleware(async (req, res) => {
+    const { _id: userId } = req.decoded
+    const { chosenProducts } = req.body // Array of product IDs the user wants to keep
+
+    if (!chosenProducts || chosenProducts.length > 5) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'You can only choose up to 5 products to keep.',
+      })
+    }
+
+    // Find all products belonging to the user
+    const userProducts = await Product.find({ userId: new ObjectId(userId) })
+
+    // Mark products for deletion
+    const productsToUpdate = userProducts.map((product) => {
+      if (chosenProducts.includes(product._id.toString())) {
+        return { _id: product._id, markedForDeletion: false, deletionTimestamp: null }
+      } else {
+        const deletionTimestamp = new Date()
+        deletionTimestamp.setHours(deletionTimestamp.getHours() + 48) // Set to 48 hours from now
+        return { _id: product._id, markedForDeletion: true, deletionTimestamp }
+      }
+    })
+
+    // Update products in the database
+    await Product.bulkWrite(
+      productsToUpdate.map((update) => ({
+        updateOne: {
+          filter: { _id: update._id },
+          update: {
+            $set: { markedForDeletion: update.markedForDeletion, deletionTimestamp: update.deletionTimestamp },
+          },
+        },
+      }))
+    )
+
+    res.status(StatusCodes.OK).json({
+      message: 'Subscription canceled. Selected products will be kept, others will be deleted after 48 hours.',
+    })
+  }),
+  resubscribeProduct: asyncMiddleware(async (req, res) => {
+    const { _id: userId } = req.decoded
+
+    // Find all products marked for deletion
+    const productsToUpdate = await Product.find({ userId: new ObjectId(userId), markedForDeletion: true })
+
+    // Update products to remove deletion mark
+    await Product.updateMany(
+      { _id: { $in: productsToUpdate.map((product) => product._id) } },
+      { $set: { markedForDeletion: false, deletionTimestamp: null } }
+    )
+
+    res.status(StatusCodes.OK).json({
+      message: 'Subscription resumed. Products marked for deletion have been saved.',
+    })
+  }),
 }

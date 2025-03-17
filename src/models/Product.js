@@ -38,6 +38,14 @@ export const productSchema = new Schema(
       type: Boolean, // Optional field
       default: true,
     },
+    markedForDeletion: {
+      type: Boolean,
+      default: false,
+    },
+    deletionTimestamp: {
+      type: Date,
+      default: null,
+    },
   },
   { versionKey: false, timestamps: true }
 )
