@@ -442,15 +442,18 @@ export const CONTROLLER_AUTH = {
   }),
 
   resetPassword: asyncMiddleware(async (req, res) => {
-    const { token, newPassword } = req.body
+    // console.log('req', req.body)
+    const { token, newPassword, email } = req.body
 
     const decoded = await decodeToken(token)
+    // console.log('decoded', decoded)
 
     // Find the user by the reset token and check token validity
     const user = await User.findOne({
-      email: decoded.email,
+      email: email,
       resetTokenExpiry: { $gt: Date.now() }, // Ensure token hasn't expired
     })
+    // console.log('user', user)
 
     if (!user) {
       return res.status(400).json({ message: 'Invalid or expired reset token.' })
