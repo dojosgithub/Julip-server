@@ -246,7 +246,7 @@ export const CONTROLLER_PORTFOLIO = {
       message: 'Portfolio updated successfully.',
     })
   }),
-  updatePortfolio: asyncMiddleware(async (req, res) => {
+  fbSocialCallback: asyncMiddleware(async (req, res) => {
     const { code } = req.query
     try {
       const tokenResponse = await axios.post(`https://api.instagram.com/oauth/access_token`, {
