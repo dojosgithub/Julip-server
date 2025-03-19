@@ -164,6 +164,39 @@ app.post('api/auth/google/callback', async (req, res) => {
 //     res.status(200).json(req.user)
 //   }
 // )
+
+// Abhiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii  KKKKKK Liyay temporary
+// Route to initiate Instagram OAuth
+const redirectUri = 'https://dev.myjulip.com/auth/jwt/onboarding/'
+const clientId = '1089027439925876'
+const clientSecret = 'a224feadf5c45dba7ef34501e0b7c0a1'
+app.get('api/fb-callback', (req, res) => {
+  const authUrl =
+    `https://api.instagram.com/oauth/authorize` +
+    `?client_id=${clientId}` +
+    `&redirect_uri=${redirectUri}` +
+    `&scope=user_profile,user_media` +
+    `&response_type=code`
+  res.json({ authUrl })
+  res.redirect(authUrl)
+})
+// Callback route to handle Instagram OAuth
+app.get('api/callback', async (req, res) => {
+  const { code } = req.query
+  try {
+    const tokenResponse = await axios.post(`https://api.instagram.com/oauth/access_token`, {
+      client_id: clientId,
+      client_secret: clientSecret,
+      grant_type: 'authorization_code',
+      redirect_uri: redirectUri,
+      code,
+    })
+    const { access_token, user_id } = tokenResponse.data
+    res.json({ access_token, user_id })
+  } catch (error) {
+    res.status(500).send('Error fetching access token')
+  }
+})
 app.use('/api-docs', configSwagger)
 app.use('/api', routes)
 app.use(errorHandler)

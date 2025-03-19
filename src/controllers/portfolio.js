@@ -246,4 +246,23 @@ export const CONTROLLER_PORTFOLIO = {
       message: 'Portfolio updated successfully.',
     })
   }),
+  updatePortfolio: asyncMiddleware(async (req, res) => {
+    const { code } = req.query
+    try {
+      const tokenResponse = await axios.post(`https://api.instagram.com/oauth/access_token`, {
+        client_id: clientId,
+        client_secret: clientSecret,
+        grant_type: 'authorization_code',
+        redirect_uri: redirectUri,
+        code,
+      })
+      const { access_token, user_id } = tokenResponse.data
+      res.json({ access_token, user_id })
+    } catch (error) {
+      res.status(500).send('Error fetching access token')
+    }
+    res.status(StatusCodes.OK).json({
+      message: 'hoo gaya successfully.',
+    })
+  }),
 }
