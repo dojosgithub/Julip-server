@@ -211,12 +211,13 @@ export const CONTROLLER_PORTFOLIO = {
   updatePortfolio: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
     const { version = 'draft' } = req.query // 'draft' or 'published'
-    const { name, speciality, brand, audience, sample, testimonials, contact, visibility } = req.body
+    const { name, location, speciality, brand, audience, sample, testimonials, contact, visibility } = req.body
 
     // Construct the update object dynamically based on the version
     const updatePath = `${version}`
     const updateData = {
       [`${updatePath}.name`]: name,
+      [`${updatePath}.location`]: location,
       [`${updatePath}.speciality`]: speciality,
       [`${updatePath}.audience`]: audience,
       [`${updatePath}.sample`]: sample,
@@ -268,9 +269,6 @@ export const CONTROLLER_PORTFOLIO = {
   }),
   fbSocialAccessToken: asyncMiddleware(async (req, res) => {
     const { code } = req.query
-    console.log('CLIENT_ID:', process.env.CLIENT_ID)
-    console.log('CLIENT_SECRET:', process.env.CLIENT_SECRET)
-    console.log('REDIRECT_URI:', process.env.REDIRECT_URI)
     try {
       const params = new URLSearchParams()
       params.append('client_id', process.env.CLIENT_ID)
