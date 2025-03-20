@@ -177,7 +177,7 @@ app.get('api/fb-callback', (req, res) => {
     `&redirect_uri=${redirectUri}` +
     `&scope=user_profile,user_media` +
     `&response_type=code`
-  res.json({ authUrl })
+
   res.redirect(authUrl)
 })
 // Callback route to handle Instagram OAuth

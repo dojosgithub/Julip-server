@@ -15,6 +15,17 @@ const portfolioContentSchema = {
     },
     specialityList: [String],
   },
+  location: {
+    name: {
+      type: String,
+      default: 'location',
+    },
+    visibility: {
+      type: Boolean, // Optional field
+      default: true,
+    },
+    location: String,
+  },
   brand: {
     name: {
       type: String,

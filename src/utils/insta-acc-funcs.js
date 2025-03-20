@@ -1,22 +1,24 @@
 import axios from 'axios'
 
 // Get Followers Count:
-export const getInstagramFollowers = async () => {
+export const getInstagramFollowers = async (instaId, token) => {
+  console.log('instaId, token', instaId, token)
   try {
     const response = await axios.get(
-      `https://graph.instagram.com/${INSTAGRAM_USER_ID}?fields=followers_count&access_token=${INSTAGRAM_ACCESS_TOKEN}`
+      `https://graph.instagram.com/${instaId}?fields=followers_count&access_token=${token}`
     )
     return response.data.followers_count
+    console.log('cccccccccccccc', response.data)
   } catch (error) {
     console.error('Error fetching Instagram followers:', error)
     throw error
   }
 }
 // Get 30-day Total Impressions and Reach:
-export const getInstagramInsights = async (metric) => {
+export const getInstagramInsights = async (instaId, metric, token) => {
   try {
     const response = await axios.get(
-      `https://graph.instagram.com/${INSTAGRAM_USER_ID}/insights?metric=${metric}&period=days_28&access_token=${INSTAGRAM_ACCESS_TOKEN}`
+      `https://graph.instagram.com/${instaId}/insights?metric=${metric}&period=days_28&access_token=${token}`
     )
     return response.data.data[0].values[0].value
   } catch (error) {
@@ -26,10 +28,10 @@ export const getInstagramInsights = async (metric) => {
 }
 
 //Get Avg Likes, Comments, Reels Views, Reels Watch Time:
-export const getInstagramMedia = async () => {
+export const getInstagramMedia = async (instaId, token) => {
   try {
     const response = await axios.get(
-      `https://graph.instagram.com/${INSTAGRAM_USER_ID}/media?fields=likes_count,comments_count,media_type,media_url,permalink&access_token=${INSTAGRAM_ACCESS_TOKEN}`
+      `https://graph.instagram.com/${instaId}/media?fields=likes_count,comments_count,media_type,media_url,permalink&access_token=${token}`
     )
     return response.data.data
   } catch (error) {

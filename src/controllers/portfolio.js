@@ -85,6 +85,7 @@ import { escapeRegex } from '../utils/misc'
 import { comparePassword, generateOTToken, generatePassword, generateToken, verifyTOTPToken } from '../utils'
 import { sendSMS } from '../utils/smsUtil'
 import { getIO } from '../socket'
+import { getInstagramFollowers } from '../utils/insta-acc-funcs'
 
 const { ObjectId } = mongoose.Types
 
@@ -250,10 +251,10 @@ export const CONTROLLER_PORTFOLIO = {
     const { code } = req.query
     try {
       const tokenResponse = await axios.post(`https://api.instagram.com/oauth/access_token`, {
-        client_id: clientId,
-        client_secret: clientSecret,
+        client_id: process.env.CLIENT_ID,
+        client_secret: process.env.CLIENT_SECRET,
         grant_type: 'authorization_code',
-        redirect_uri: redirectUri,
+        redirect_uri: process.env.REDIRECT_URI,
         code,
       })
       const { access_token, user_id } = tokenResponse.data
@@ -264,5 +265,82 @@ export const CONTROLLER_PORTFOLIO = {
     res.status(StatusCodes.OK).json({
       message: 'hoo gaya successfully.',
     })
+  }),
+  fbSocialAccessToken: asyncMiddleware(async (req, res) => {
+    const { code } = req.query
+    console.log('CLIENT_ID:', process.env.CLIENT_ID)
+    console.log('CLIENT_SECRET:', process.env.CLIENT_SECRET)
+    console.log('REDIRECT_URI:', process.env.REDIRECT_URI)
+    try {
+      const params = new URLSearchParams()
+      params.append('client_id', process.env.CLIENT_ID)
+      params.append('client_secret', process.env.CLIENT_SECRET)
+      params.append('grant_type', 'authorization_code')
+      params.append('redirect_uri', process.env.REDIRECT_URI)
+      params.append('code', code)
+
+      const response = await axios.post('https://api.instagram.com/oauth/access_token', params, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      })
+
+      const { access_token, user_id } = response.data
+      // const followers = await getInstagramFollowers(user_id, access_token)
+      if (access_token && user_id) {
+        const response = await axios.get(
+          `https://graph.instagram.com/${user_id}?fields=followers_count&access_token=${access_token}`
+        )
+        console.log('follllllllllllll', response)
+      }
+      res.json({ data: response.data })
+    } catch (error) {
+      console.error('ttttttttttt', error)
+      res.status(500).json({ error, message: 'Error during authentication' })
+    }
+  }),
+  fbDetails: asyncMiddleware(async (req, res) => {
+    const { user_id, access_token } = req.body
+    try {
+      const followers_response = await axios.get(
+        `https://graph.instagram.com/${user_id}?fields=followers_count&access_token=${access_token}`
+      )
+      const reach = await axios.get(
+        `https://graph.instagram.com/${user_id}/insights?metric=reach&period=days_28&access_token=${access_token}`
+      )
+      // const impressions = await axios.get(
+      //   `https://graph.instagram.com/${user_id}/insights?metric=impressions&period=days_28&access_token=${access_token}`
+      // )
+      const media = await axios.get(
+        `https://graph.instagram.com/${user_id}/media?fields=likes_count,comments_count,media_type,media_url,permalink&access_token=${access_token}`
+      )
+      res.status(StatusCodes.OK).json({
+        followers: followers_response.data,
+        reach: reach.data,
+        // impressions: impressions.data.data[0].values[0].value,
+        media: media.data.data,
+      })
+    } catch (error) {
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: 'Error during authentication',
+        error: error.message,
+      })
+    }
+  }),
+  fbSocialLongLiveAccessToken: asyncMiddleware(async (req, res) => {
+    const { code } = req.query
+    try {
+      const response = await axios.get('https://graph.instagram.com/access_token', {
+        params: {
+          grant_type: 'ig_exchange_token',
+          access_token: code,
+          client_id: process.env.CLIENT_ID,
+        },
+      })
+      console.log('Long-lived token:', response.data.access_token)
+      res.json({ long_live_access_token: response.data.access_token })
+    } catch (error) {
+      res.status(500).send('Error during authentication')
+    }
   }),
 }
