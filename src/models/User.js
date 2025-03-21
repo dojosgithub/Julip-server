@@ -20,6 +20,7 @@ export const userSchema = new Schema(
     resetToken: String, // added
     resetTokenExpiry: Date, // added
     stripeAccountId: String, // added
+    refferalLink: String,
     userName: {
       type: String,
       unique: true,

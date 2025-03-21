@@ -20,6 +20,7 @@ import brandRoute from './brand'
 import sampleRoute from './sample'
 import contactRoute from './contact'
 import portfolioRoute from './portfolio'
+import referralRoute from './referral'
 
 const router = Router()
 
@@ -44,5 +45,6 @@ router.use('/brand', brandRoute)
 router.use('/sample', sampleRoute)
 router.use('/contact', contactRoute)
 router.use('/portfolio', portfolioRoute)
+router.use('/refer', referralRoute)
 
 export default router
