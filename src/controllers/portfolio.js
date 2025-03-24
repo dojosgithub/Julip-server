@@ -248,25 +248,6 @@ export const CONTROLLER_PORTFOLIO = {
       message: 'Portfolio updated successfully.',
     })
   }),
-  fbSocialCallback: asyncMiddleware(async (req, res) => {
-    const { code } = req.query
-    try {
-      const tokenResponse = await axios.post(`https://api.instagram.com/oauth/access_token`, {
-        client_id: process.env.CLIENT_ID,
-        client_secret: process.env.CLIENT_SECRET,
-        grant_type: 'authorization_code',
-        redirect_uri: process.env.REDIRECT_URI,
-        code,
-      })
-      const { access_token, user_id } = tokenResponse.data
-      res.json({ access_token, user_id })
-    } catch (error) {
-      res.status(500).send('Error fetching access token')
-    }
-    res.status(StatusCodes.OK).json({
-      message: 'hoo gaya successfully.',
-    })
-  }),
   fbSocialAccessToken: asyncMiddleware(async (req, res) => {
     const { code } = req.query
     try {
@@ -339,6 +320,260 @@ export const CONTROLLER_PORTFOLIO = {
       res.json({ long_live_access_token: response.data.access_token })
     } catch (error) {
       res.status(500).send('Error during authentication')
+    }
+  }),
+  linkedInAcessToken1: asyncMiddleware(async (req, res) => {
+    const { code } = req.query
+    try {
+      const response = await axios.post('https://www.linkedin.com/oauth/v2/accessToken', null, {
+        params: {
+          grant_type: 'authorization_code',
+          code,
+          redirect_uri: REDIRECT_URI,
+          client_id: CLIENT_ID,
+          client_secret: CLIENT_SECRET,
+        },
+      })
+      const { access_token } = response.data
+      res.json({ access_token })
+    } catch (error) {
+      console.error('Error during authentication:', error)
+      res.status(500).send('Error during authentication')
+    }
+  }),
+  linkedInRedirectUrl: asyncMiddleware(async (req, res) => {
+    const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=r_liteprofile%20r_emailaddress%20w_member_social`
+    res.redirect(authUrl)
+  }),
+
+  linkedInAccessToken: asyncMiddleware(async (req, res) => {
+    const { code } = req.query
+    try {
+      const params = new URLSearchParams()
+      params.append('client_id', process.env.LINKEDIN_CLIENT_ID)
+      params.append('client_secret', process.env.LINKEDIN_CLIENT_SECRET)
+      params.append('grant_type', 'authorization_code')
+      params.append('redirect_uri', process.env.LINKEDIN_REDIRECT_URI)
+      params.append('code', code)
+
+      const response = await axios.post('https://www.linkedin.com/oauth/v2/accessToken', params, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      })
+
+      const response2 = await axios.get(`https://api.linkedin.com/v2/organization/${organizationId}`, {
+        headers: {
+          Authorization: `Bearer ${response.data.access_token}`,
+          'X-RestLi-Protocol-Version': '2.0.0',
+        },
+        params: {
+          projection: '(id,name,followerCount)',
+        },
+      })
+
+      const { access_token } = response.data
+      res.json({ access_token, response2 })
+    } catch (error) {
+      console.error('Error during authentication:', error)
+      res.status(500).send('Error during authentication')
+    }
+  }),
+
+  // Function to get LinkedIn page followers
+  getLinkedInPageFollowers: asyncMiddleware(async (req, res) => {
+    const { organizationId, personId, access_token } = req.body
+
+    try {
+      // Fetch user posts and calculate engagement metrics
+      const postsResponse = await axios.get('https://api.linkedin.com/v2/ugcPosts', {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          'X-RestLi-Protocol-Version': '2.0.0',
+        },
+        params: {
+          q: 'authors',
+          authors: `List(urn:li:person:${personId})`,
+          count: 10,
+        },
+      })
+
+      const posts = postsResponse.data.elements || []
+      let totalLikes = 0,
+        totalComments = 0,
+        totalShares = 0
+
+      posts.forEach((post) => {
+        totalLikes += post.socialDetail?.socialCounts?.likeCount || 0
+        totalComments += post.socialDetail?.socialCounts?.commentCount || 0
+        totalShares += post.socialDetail?.socialCounts?.shareCount || 0
+      })
+
+      const avgLikes = totalLikes / posts.length
+      const avgComments = totalComments / posts.length
+      const avgShares = totalShares / posts.length
+
+      console.log('Average Likes:', avgLikes)
+      console.log('Average Comments:', avgComments)
+      console.log('Average Shares:', avgShares)
+
+      res.status(200).json({ avgLikes, avgComments, avgShares })
+    } catch (error) {
+      console.error('Error fetching LinkedIn data:', error)
+      if (error.response && error.response.status) {
+        res.status(error.response.status).json({ error: error.response.data.message })
+      } else {
+        res.status(500).json({ error })
+      }
+    }
+  }),
+
+  getLinkedInData: asyncMiddleware(async (req, res) => {
+    const { accessToken, organizationId } = req.body
+    try {
+      // Fetch organization followers
+      const followersResponse = await axios.get(`https://api.linkedin.com/v2/organizations/${organizationId}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'X-RestLi-Protocol-Version': '2.0.0',
+        },
+        params: {
+          projection: '(id,name,followerCount)',
+        },
+      })
+
+      const followerCount = followersResponse.data.followerCount
+      console.log('LinkedIn Page Followers:', followerCount)
+
+      // Fetch user posts and calculate engagement metrics
+      const postsResponse = await axios.get('https://api.linkedin.com/v2/ugcPosts', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'X-RestLi-Protocol-Version': '2.0.0',
+        },
+        params: {
+          q: 'authors',
+          authors: 'List(urn:li:person:{personId})',
+          count: 10,
+        },
+      })
+
+      const posts = postsResponse.data.elements
+      let totalLikes = 0,
+        totalComments = 0,
+        totalShares = 0
+
+      posts.forEach((post) => {
+        totalLikes += post.socialDetail?.socialCounts?.likeCount || 0
+        totalComments += post.socialDetail?.socialCounts?.commentCount || 0
+        totalShares += post.socialDetail?.socialCounts?.shareCount || 0
+      })
+
+      const avgLikes = totalLikes / posts.length
+      const avgComments = totalComments / posts.length
+      const avgShares = totalShares / posts.length
+
+      console.log('Average Likes:', avgLikes)
+      console.log('Average Comments:', avgComments)
+      console.log('Average Shares:', avgShares)
+      res.json({
+        avgComments,
+        avgLikes,
+        avgShares,
+        followerCount,
+      })
+    } catch (error) {
+      console.error('Error fetching LinkedIn data:', error)
+      res.json({ error })
+    }
+  }),
+
+  // Youtube
+
+  youtubeAccessToken: asyncMiddleware(async (req, res) => {
+    const { code } = req.query
+    try {
+      const authCode = decodeURIComponent(code)
+      const params = new URLSearchParams()
+      params.append('client_id', process.env.YOUTUBE_CLIENT_ID)
+      params.append('client_secret', process.env.YOUTUBE_CLIENT_SECRET)
+      params.append('grant_type', 'authorization_code')
+      params.append('redirect_uri', process.env.LINKEDIN_REDIRECT_URI)
+      params.append('code', authCode)
+
+      const response = await axios.post('https://oauth2.googleapis.com/token', params, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      })
+
+      res.json({ data: response.data })
+    } catch (error) {
+      console.error('ttttttttttt', error)
+      res.status(500).json({ error, message: 'Error during authentication' })
+    }
+  }),
+
+  youtubeSubscriber: asyncMiddleware(async (req, res) => {
+    const { accessToken, apiKey } = req.body
+    try {
+      const response = await axios.get(
+        `https://www.googleapis.com/youtube/v3/channels?part=statistics&mine=true&key=${apiKey}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+      const subscriberCount = response.data.items[0].statistics.subscriberCount
+      console.log('Subscriber Count:', subscriberCount)
+      return subscriberCount
+    } catch (error) {
+      console.error('Error fetching subscribers count:', error)
+    }
+  }),
+  youtubeAnalytics: asyncMiddleware(async (req, res) => {
+    const { accessToken, apiKey } = req.body
+    try {
+      const endDate = new Date()
+      const startDate = new Date()
+      startDate.setDate(endDate.getDate() - 30)
+
+      const response = await axios.get(
+        `https://www.googleapis.com/youtube/analytics/v1/reports?ids=channel== ${channelId}&start-date=${
+          startDate.toISOString().split('T')[0]
+        }&end-date=${
+          endDate.toISOString().split('T')[0]
+        }&metrics=views,estimatedMinutesWatched,averageViewDuration,subscribersGained&dimensions=day&sort=day&key=${apiKey}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+      console.log('Analytics Data:', response.data)
+      return response.data
+    } catch (error) {
+      console.error('Error fetching analytics:', error)
+    }
+  }),
+  youtubeApiKey: asyncMiddleware(async (req, res) => {
+    const { accessToken, apiKey } = req.body
+    try {
+      const response = await axios.get(
+        `https://www.googleapis.com/youtube/v3/channels?part=id&mine=true&key=${apiKey}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+      const channelId = response.data.items[0].id
+      console.log('Channel ID:', channelId)
+      res.status(200).json({ channelId })
+    } catch (error) {
+      console.error('Error fetching channel ID:', error)
+      res.status(500).json({ error })
     }
   }),
 }

@@ -15,4 +15,16 @@ router.get('/fb-access-token', Authenticate(), CONTROLLER_PORTFOLIO.fbSocialAcce
 
 router.post('/fb-details', Authenticate(), CONTROLLER_PORTFOLIO.fbDetails)
 
+router.get('/linkedin-access-token', Authenticate(), CONTROLLER_PORTFOLIO.linkedInAccessToken)
+
+router.post('/linkedin-details', Authenticate(), CONTROLLER_PORTFOLIO.getLinkedInPageFollowers)
+
+router.post('/linkedin-details2', Authenticate(), CONTROLLER_PORTFOLIO.getLinkedInData)
+
+router.get('/youtube-access-token', Authenticate(), CONTROLLER_PORTFOLIO.youtubeAccessToken)
+
+router.post('/youtube-channel-id', Authenticate(), CONTROLLER_PORTFOLIO.youtubeApiKey)
+
+router.post('/youtube-analytics', Authenticate(), CONTROLLER_PORTFOLIO.youtubeAnalytics)
+
 export default router
