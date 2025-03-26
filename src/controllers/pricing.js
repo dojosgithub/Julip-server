@@ -65,6 +65,40 @@ export const CONTROLLER_PRICING = {
         message: 'User not found.',
       })
     }
+
+    if (!user.referralLink && pricing === 'Premium') {
+      // Generate and save a new referral link only if it doesn't exist
+      const referralLink = `${process.env.FRONTEND_URL_DEV}/auth/jwt/register?ref=${userId}`
+      user.referralLink = referralLink
+    }
+
+    // * Uncomment this to transfer funds to the referrer
+    // if (user.referredBy) {
+    //   console.log('new user is referred by someone.')
+    //   const referrer = await User.findById(user.referredBy)
+
+    //   if (referrer) {
+    //     console.log('the referrer is found in database')
+    //     // Credit $10 to the referrer's Stripe account
+    //     if (referrer.stripeAccountId) {
+    //       console.log('the referrer has stripe account')
+    //       try {
+    //         await stripe.transfers.create({
+    //           amount: 1000, // $10 in cents
+    //           currency: 'usd',
+    //           destination: referrer.stripeAccountId,
+    //         })
+    //         // Update the referrer's referral rewards
+    //         referrer.referralRewards += 10
+    //         await referrer.save()
+    //         console.log('referrer.referralRewards increased')
+    //       } catch (error) {
+    //         console.error('Error transferring funds:', error.message)
+    //       }
+    //     }
+    //   }
+    // }
+
     user.isPricingSelected = true
     user.userTypes = pricing
     await user.save()

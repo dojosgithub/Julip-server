@@ -18,17 +18,9 @@ const router = Router()
 
 // Zeal App User Routes
 
-router.post(
-  '/generate-referral',
-  Authenticate(),
-  CONTROLLER_REFERRAL.generateRefferal
-)
+router.get('/generate-referral', Authenticate(), CONTROLLER_REFERRAL.generateRefferal)
 
-router.get(
-  '/get-referral',
-  Authenticate(),
-  CONTROLLER_REFERRAL.getReferral
-)
+router.get('/get-referral', Authenticate(), CONTROLLER_REFERRAL.getReferral)
 
 // router.put(
 //   '/update-post',

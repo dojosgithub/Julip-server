@@ -12,7 +12,6 @@ import { User } from '../models'
 // * Middlewares
 import { asyncMiddleware } from '../middlewares'
 
-
 export const CONTROLLER_REFERRAL = {
   generateRefferal: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
@@ -38,7 +37,7 @@ export const CONTROLLER_REFERRAL = {
   }),
 
   getReferral: asyncMiddleware(async (req, res) => {
-    const { _id: userId } = req.decoded  
+    const { _id: userId } = req.decoded
 
     const user = await User.findById(userId)
 
@@ -47,6 +46,43 @@ export const CONTROLLER_REFERRAL = {
     }
 
     res.status(StatusCodes.OK).json({ referralLink: user.referralLink })
+  }),
+
+  upgradeToPremium: asyncMiddleware(async (req, res) => {
+    const { userId } = req.body
+    // Find the user
+    const user = await User.findById(userId)
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({ message: 'User not found.' })
+    }
+    // Upgrade the user to Premium
+    user.userTypes = 'Premium'
+    user.isPricingSelected = true
+    // Check if the user was referred by someone
+    if (user.referredBy) {
+      const referrer = await User.findById(user.referredBy)
+      if (referrer) {
+        // Credit $10 to the referrer's Stripe account
+        if (referrer.stripeAccountId) {
+          try {
+            await stripe.transfers.create({
+              amount: 1000, // $10 in cents
+              currency: 'usd',
+              destination: referrer.stripeAccountId,
+            })
+            // Update the referrer's referral rewards
+            referrer.referralRewards += 10
+            await referrer.save()
+          } catch (error) {
+            console.error('Error transferring funds:', error.message)
+          }
+        }
+      }
+    }
+    await user.save()
+    res.status(StatusCodes.OK).json({
+      message: 'User upgraded to Premium successfully.',
+    })
   }),
   // getPortfolio: asyncMiddleware(async (req, res) => {
   //   const { _id: userId } = req.decoded
