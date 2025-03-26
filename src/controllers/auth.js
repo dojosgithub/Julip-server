@@ -135,7 +135,7 @@ export const CONTROLLER_AUTH = {
   }),
 
   signUp: asyncMiddleware(async (req, res) => {
-    let { fullName, email, password } = req.body
+    let { fullName, email, password, referralLink } = req.body
 
     const user = await User.findOne({
       email: email,
@@ -157,6 +157,16 @@ export const CONTROLLER_AUTH = {
       userTypes: USER_TYPES.Basic,
       role: { name: SYSTEM_USER_ROLE.USR, shortName: getRoleShortName(USER_TYPES.USR, SYSTEM_USER_ROLE.USR) },
     })
+
+    // If a referral code is provided, find the referrer
+    if (referralLink) {
+      const referrer = await User.findById(referralLink)
+      if (referrer) {
+        newUser.referredBy = referrer._id
+        referrer.referredUsers.push(newUser._id)
+        await referrer.save()
+      }
+    }
 
     await newUser.save()
 

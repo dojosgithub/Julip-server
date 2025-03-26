@@ -20,7 +20,24 @@ export const userSchema = new Schema(
     resetToken: String, // added
     resetTokenExpiry: Date, // added
     stripeAccountId: String, // added
-    refferalLink: String,
+    referralLink: {
+      type: String,
+      unique: true,
+    }, // Unique referral code for each user
+    referredBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    }, // Reference to the user who referred this user
+    referralRewards: {
+      type: Number,
+      default: 0,
+    }, // Total referral rewards earned by the user
+    referredUsers: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
     userName: {
       type: String,
       unique: true,
