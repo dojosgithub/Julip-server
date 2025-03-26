@@ -27,4 +27,6 @@ router.post('/youtube-channel-id', Authenticate(), CONTROLLER_PORTFOLIO.youtubeA
 
 router.post('/youtube-analytics', Authenticate(), CONTROLLER_PORTFOLIO.youtubeAnalytics)
 
+router.post('/youtube-subscriber', Authenticate(), CONTROLLER_PORTFOLIO.youtubeSubscriber)
+
 export default router

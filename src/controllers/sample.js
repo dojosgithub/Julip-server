@@ -339,6 +339,54 @@ export const CONTROLLER_SAMPLE = {
       })
     }
   },
+  deleteSampleListItem: asyncMiddleware(async (req, res) => {
+    try {
+      const { id } = req.params // Sample document ID
+      const { tile } = req.body // Title of the object to delete
+
+      // Validate input
+      if (!id || !tile) {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          message: 'Both sample ID and tile are required.',
+        })
+      }
+
+      // Find the sample by ID
+      const sample = await Sample.findById(id)
+      if (!sample) {
+        return res.status(StatusCodes.NOT_FOUND).json({
+          message: 'Sample not found.',
+        })
+      }
+
+      // Find the index of the object in sampleList with the matching tile
+      const itemIndex = sample.sampleList.findIndex((item) => item.tile === tile)
+
+      // If no matching item is found, return an error
+      if (itemIndex === -1) {
+        return res.status(StatusCodes.NOT_FOUND).json({
+          message: 'No item found with the specified title.',
+        })
+      }
+
+      // Remove the item from the sampleList array
+      sample.sampleList.splice(itemIndex, 1)
+
+      // Save the updated sample document
+      await sample.save()
+
+      // Respond with success message and updated sample
+      res.status(StatusCodes.OK).json({
+        data: sample,
+        message: 'Item deleted successfully from sampleList.',
+      })
+    } catch (error) {
+      console.error('Error deleting item from sampleList:', error)
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: 'An error occurred while deleting the item.',
+      })
+    }
+  }),
   updatePortfolioSample: asyncMiddleware(async (req, res) => {
     try {
       const { _id: userId } = req.decoded

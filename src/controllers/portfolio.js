@@ -533,44 +533,113 @@ export const CONTROLLER_PORTFOLIO = {
     }
   }),
   youtubeAnalytics: asyncMiddleware(async (req, res) => {
-    const { accessToken, apiKey } = req.body
-    try {
-      const endDate = new Date()
-      const startDate = new Date()
-      startDate.setDate(endDate.getDate() - 30)
+    const { accessToken, apiKey, channelId } = req.body
 
-      const response = await axios.get(
-        `https://www.googleapis.com/youtube/analytics/v1/reports?ids=channel== ${channelId}&start-date=${
-          startDate.toISOString().split('T')[0]
-        }&end-date=${
-          endDate.toISOString().split('T')[0]
-        }&metrics=views,estimatedMinutesWatched,averageViewDuration,subscribersGained&dimensions=day&sort=day&key=${apiKey}`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      )
+    try {
+      // Validate input
+      if (!accessToken || !channelId) {
+        return res.status(400).json({ message: 'Both accessToken and channelId are required.' })
+      }
+
+      // Calculate date range (last 30 days)
+      const today = new Date() // Current date
+      const endDate = new Date(Math.min(today, new Date())) // Cap endDate to today
+      const startDate = new Date(endDate)
+      startDate.setDate(endDate.getDate() - 30) // Last 30 days
+
+      console.log('Today:', today.toISOString())
+      console.log('Calculated Start Date:', startDate.toISOString())
+      console.log('Calculated End Date:', endDate.toISOString())
+
+      // Format dates as YYYY-MM-DD
+      const formatDate = (date) => {
+        return date.toISOString().split('T')[0]
+      }
+
+      const formattedStartDate = formatDate(startDate)
+      const formattedEndDate = formatDate(endDate)
+
+      // const formattedStartDate = '2023-09-01' // Start date (YYYY-MM-DD)
+      // const formattedEndDate = '2023-09-30'
+
+      console.log('Start Date:', formattedStartDate)
+      console.log('End Date:', formattedEndDate)
+
+      // Construct the request URL
+      // const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&start-date=${formattedStartDate}&end-date=${formattedEndDate}&metrics=averageViewDuration&dimensions=day&sort=day&key=${apiKey}`
+      // const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&metrics=views&dimensions=day&sort=day`
+      const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&metrics=views&dimensions=day&sort=day&key=${apiKey}`
+
+      console.log('Request URL:', url)
+      const subscriber = `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${channelId}&key=${apiKey}`
+      const subscriber_response = await axios.get(subscriber, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+      console.log('subscriber_response', subscriber_response)
+
+      // const playlist = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=10&playlistId=UPLOADS_PLAYLIST_ID&key=${apiKey}`
+
+      // const playlist_response = await axios.get(playlist, {
+      //   headers: {
+      //     Authorization: `Bearer ${accessToken}`,
+      //   },
+      // })
+      // console.log('playlist_response', playlist_response)
+
+      // const imressions = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&start-date=${formattedStartDate}&end-date=${formattedEndDate}&metrics=impressions,views&key=${apiKey}`
+      // const imressions_response = await axios.get(imressions, {
+      //   headers: {
+      //     Authorization: `Bearer ${accessToken}`,
+      //   },
+      // })
+      // console.log('imressions_response', imressions_response)
+
+      const watchTimeUrl = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&metrics=estimatedMinutesWatched&dimensions=day&key=${apiKey}`
+      const watchTimeResponse = await axios.get(watchTimeUrl, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+      console.log('Watch Time Response:', watchTimeResponse.data)
+
+      // Fetch analytics data
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+
       console.log('Analytics Data:', response.data)
-      return response.data
+      res.json({ data: response.data })
     } catch (error) {
-      console.error('Error fetching analytics:', error)
+      console.error('Error fetching analytics:', error.response?.data || error.message)
+
+      // Handle 400 Bad Request errors specifically
+      if (error.response?.status === 400) {
+        console.error('Full Error Details:', JSON.stringify(error.response?.data, null, 2))
+        return res.status(400).json({
+          message: 'Invalid request parameters. Please check the channelId, dates, metrics, dimensions, and sort.',
+          details: error.response?.data,
+        })
+      }
+
+      // Handle other errors
+      res.status(error.response?.status || 500).json({
+        error: error.response?.data || error.message,
+      })
     }
   }),
   youtubeApiKey: asyncMiddleware(async (req, res) => {
     const { accessToken, apiKey } = req.body
     try {
-      const response = await axios.get(
-        `https://www.googleapis.com/youtube/v3/channels?part=id&mine=true&key=${apiKey}`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      )
-      const channelId = response.data.items[0].id
+      const response = await axios.get(`https://www.googleapis.com/youtube/v3/channels?part=id&mine=true`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+      const channelId = response.data.items
       console.log('Channel ID:', channelId)
-      res.status(200).json({ channelId })
+      res.status(200).json({ data: response.data.items })
     } catch (error) {
       console.error('Error fetching channel ID:', error)
       res.status(500).json({ error })
