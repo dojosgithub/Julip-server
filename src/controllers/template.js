@@ -365,6 +365,27 @@ export const CONTROLLER_TEMPLATE = {
           },
         ],
       })
+      .populate({
+        path: 'portfolio',
+        populate: [
+          {
+            path: 'published.brand.brandList', // Populate brandList in published brand
+            model: 'Brand',
+          },
+          {
+            path: 'published.contact.contactList', // Populate contactList in published contact
+            model: 'Contact',
+          },
+          {
+            path: 'published.sample.categoryList', // Populate categoryList in published sample
+            model: 'Sample',
+          },
+          {
+            path: 'published.audience.audienceList', // Populate audienceList in published audience
+            model: 'Audience',
+          },
+        ],
+      })
 
     if (!data || data.length === 0) {
       return res.status(StatusCodes.NOT_FOUND).json({
