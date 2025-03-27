@@ -199,6 +199,14 @@ export const CONTROLLER_PROFILE = {
     const about = new About({ userId })
     const services = new Services({ userId })
     const portfolio = new Portfolio({ userId })
+
+    newPages.pagesList = [
+      { name: 'Shop', _id: shop._id },
+      { name: 'About', _id: about._id },
+      { name: 'Services', _id: services._id },
+      { name: 'Portfolio', _id: portfolio._id },
+    ]
+
     await newPages.save()
     await shop.save()
     await about.save()
@@ -211,6 +219,10 @@ export const CONTROLLER_PROFILE = {
     user.services = services._id
     user.portfolio = portfolio._id
     await user.save()
+    const newPage = new Pages({
+      user: userId,
+      portfolio: portfolio._id,
+    })
 
     const { draft, published, ...restProfile } = profile.toObject()
     let modifiedProfile
