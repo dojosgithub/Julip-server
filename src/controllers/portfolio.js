@@ -509,8 +509,16 @@ export const CONTROLLER_PORTFOLIO = {
 
       res.json({ data: response.data })
     } catch (error) {
-      console.error('ttttttttttt', error)
-      res.status(500).json({ error, message: 'Error during authentication' })
+      console.error('Error fetching accessToken:', error.response?.data || error.message)
+
+      // Handle 400 Bad Request errors specifically
+      if (error.response?.status === 400) {
+        console.error('Full Error Details:', JSON.stringify(error.response?.data, null, 2))
+        return res.status(400).json({
+          message: 'Invalid request parameters. Please check the channelId, dates, metrics, dimensions, and sort.',
+          details: error.response?.data,
+        })
+      }
     }
   }),
 
@@ -570,6 +578,15 @@ export const CONTROLLER_PORTFOLIO = {
       // const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&metrics=views&dimensions=day&sort=day`
       const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&metrics=views&dimensions=day&sort=day&key=${apiKey}`
 
+      // Fetch analytics data
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+
+      console.log('Analytics Data:', response.data)
+
       console.log('Request URL:', url)
       const subscriber = `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${channelId}&key=${apiKey}`
       const subscriber_response = await axios.get(subscriber, {
@@ -602,14 +619,6 @@ export const CONTROLLER_PORTFOLIO = {
       })
       console.log('Watch Time Response:', watchTimeResponse.data)
 
-      // Fetch analytics data
-      const response = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-
-      console.log('Analytics Data:', response.data)
       res.json({ data: response.data })
     } catch (error) {
       console.error('Error fetching analytics:', error.response?.data || error.message)

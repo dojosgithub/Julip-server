@@ -34,7 +34,7 @@ import { escapeRegex } from '../utils/misc'
 import { comparePassword, generateOTToken, generatePassword, generateToken, verifyTOTPToken } from '../utils'
 import { sendSMS } from '../utils/smsUtil'
 import { getIO } from '../socket'
-import Payment from '../models/Payment'
+import Payment, { findById, findByIdAndUpdate } from '../models/Payment'
 
 const { ObjectId } = mongoose.Types
 
@@ -237,6 +237,7 @@ export const CONTROLLER_PRICING = {
   }),
   updateSubscription: asyncMiddleware(async (req, res) => {
     try {
+      const { _id: userId } = req.decoded
       const { subscriptionId } = req.params
       const { priceId } = req.body
 
@@ -264,6 +265,7 @@ export const CONTROLLER_PRICING = {
         },
         { new: true }
       )
+      await User.findByIdAndUpdate(userId, { userTypes: 'Premium' }, { new: true })
 
       res.status(200).json({ message: 'Subscription updated successfully', subscription })
     } catch (err) {
@@ -273,6 +275,7 @@ export const CONTROLLER_PRICING = {
   }),
   deleteSubscription: asyncMiddleware(async (req, res) => {
     try {
+      const { _id: userId } = req.decoded
       const { subscriptionId } = req.params
 
       // Cancel the subscription in Stripe
@@ -284,7 +287,7 @@ export const CONTROLLER_PRICING = {
         { status: canceledSubscription.status },
         { new: true }
       )
-
+      await User.findByIdAndUpdate(userId, { userTypes: 'Basic' }, { new: true })
       res.status(200).json({ message: 'Subscription canceled successfully', subscription })
     } catch (err) {
       console.error('Error canceling subscription:', err)
