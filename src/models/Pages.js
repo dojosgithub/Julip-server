@@ -13,7 +13,7 @@ const pagesSchema = new mongoose.Schema(
           type: String,
           required: true,
         },
-        id: {
+        pageId: {
           type: Number,
           required: true,
         },

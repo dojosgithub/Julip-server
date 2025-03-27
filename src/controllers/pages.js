@@ -35,9 +35,10 @@ export const CONTROLLER_PAGES = {
   // Update a PAGES
   updatePages: asyncMiddleware(async (req, res) => {
     const { userId } = req.decoded
+    const { pagesList } = req.body
     const pages = await Pages.findOneAndUpdate(
       { user: userId },
-      { pagesList: updatedPagesList }, // Simply update the array
+      { pagesList }, // Simply update the array
       { new: true }
     )
     return res.status(StatusCodes.OK).json({
@@ -46,65 +47,65 @@ export const CONTROLLER_PAGES = {
   }),
 
   // GET /api/pages/:id - Fetch a specific page by ID
-  getPagesList: asyncMiddleware(async (req, res) => {
-    try {
-      const { id } = req.params
+  // getPagesList: asyncMiddleware(async (req, res) => {
+  //   try {
+  //     const { id } = req.params
 
-      // Find the page by ID
-      const page = await Pages.findById(id)
+  //     // Find the page by ID
+  //     const page = await Pages.findById(id)
 
-      if (!page) {
-        return res.status(StatusCodes.NOT_FOUND).json({
-          message: 'Page not found.',
-        })
-      }
+  //     if (!page) {
+  //       return res.status(StatusCodes.NOT_FOUND).json({
+  //         message: 'Page not found.',
+  //       })
+  //     }
 
-      // Return the page data
-      res.status(StatusCodes.OK).json({
-        data: page,
-        message: 'Page fetched successfully.',
-      })
-    } catch (error) {
-      console.error('Error fetching page:', error)
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-        message: 'An error occurred while fetching the page.',
-      })
-    }
-  }),
+  //     // Return the page data
+  //     res.status(StatusCodes.OK).json({
+  //       data: page,
+  //       message: 'Page fetched successfully.',
+  //     })
+  //   } catch (error) {
+  //     console.error('Error fetching page:', error)
+  //     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+  //       message: 'An error occurred while fetching the page.',
+  //     })
+  //   }
+  // }),
 
   // PUT /api/pages/:id - Update a specific page by ID
-  updatePages: asyncMiddleware(async (req, res) => {
-    try {
-      const { id } = req.params
-      const { title, content, status } = req.body
+  // updatePages: asyncMiddleware(async (req, res) => {
+  //   try {
+  //     const { id } = req.params
+  //     const { title, content, status } = req.body
 
-      // Find the page by ID
-      const page = await Pages.findById(id)
+  //     // Find the page by ID
+  //     const page = await Pages.findById(id)
 
-      if (!page) {
-        return res.status(StatusCodes.NOT_FOUND).json({
-          message: 'Page not found.',
-        })
-      }
+  //     if (!page) {
+  //       return res.status(StatusCodes.NOT_FOUND).json({
+  //         message: 'Page not found.',
+  //       })
+  //     }
 
-      // Update the page fields
-      page.title = title || page.title
-      page.content = content || page.content
-      page.status = status || page.status
+  //     // Update the page fields
+  //     page.title = title || page.title
+  //     page.content = content || page.content
+  //     page.status = status || page.status
 
-      // Save the updated page
-      await page.save()
+  //     // Save the updated page
+  //     await page.save()
 
-      // Return the updated page data
-      res.status(StatusCodes.OK).json({
-        data: page,
-        message: 'Page updated successfully.',
-      })
-    } catch (error) {
-      console.error('Error updating page:', error)
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-        message: 'An error occurred while updating the page.',
-      })
-    }
-  }),
+  //     // Return the updated page data
+  //     res.status(StatusCodes.OK).json({
+  //       data: page,
+  //       message: 'Page updated successfully.',
+  //     })
+  //   } catch (error) {
+  //     console.error('Error updating page:', error)
+  //     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+  //       message: 'An error occurred while updating the page.',
+  //     })
+  //   }
+  // }),
 }
