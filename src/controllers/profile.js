@@ -203,10 +203,10 @@ export const CONTROLLER_PROFILE = {
     const newPages = new Pages({
       user: userId,
       pagesList: [
-        { name: 'Shop', pageId: shop._id },
-        { name: 'About', pageId: about._id },
-        { name: 'Services', pageId: services._id },
-        { name: 'Portfolio', pageId: portfolio._id },
+        { name: 'Shop', pageId: shop._id, identity: 'Shop' },
+        { name: 'About', pageId: about._id, identity: 'About' },
+        { name: 'Services', pageId: services._id, identity: 'Services' },
+        { name: 'Portfolio', pageId: portfolio._id, identity: 'Portfolio' },
       ],
     })
 

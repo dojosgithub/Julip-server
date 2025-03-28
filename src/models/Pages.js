@@ -7,6 +7,9 @@ const pagesSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    identity: {
+      type: String,
+    },
     pagesList: [
       {
         name: {
