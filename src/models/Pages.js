@@ -14,8 +14,7 @@ const pagesSchema = new mongoose.Schema(
           required: true,
         },
         pageId: {
-          type: Number,
-          required: true,
+          type: mongoose.Schema.Types.ObjectId,
         },
       },
     ],
