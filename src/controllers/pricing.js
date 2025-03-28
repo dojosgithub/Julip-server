@@ -22,6 +22,7 @@ import {
   Template,
   Subscription,
   Product,
+  Service,
 } from '../models'
 
 // * Middlewares
@@ -423,7 +424,7 @@ export const CONTROLLER_PRICING = {
     const { productId, paymentMethodId, influencerId } = req.body
 
     // Fetch the product details
-    const product = await Product.findById(productId)
+    const product = await Service.findById(productId)
     if (!product) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: 'Product not found.',
