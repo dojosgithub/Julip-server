@@ -201,10 +201,10 @@ export const CONTROLLER_PROFILE = {
     const portfolio = new Portfolio({ userId })
 
     newPages.pagesList = [
-      { name: 'Shop', _id: shop._id },
-      { name: 'About', _id: about._id },
-      { name: 'Services', _id: services._id },
-      { name: 'Portfolio', _id: portfolio._id },
+      { name: 'Shop', pageId: shop._id },
+      { name: 'About', pageId: about._id },
+      { name: 'Services', pageId: services._id },
+      { name: 'Portfolio', pageId: portfolio._id },
     ]
 
     await newPages.save()
