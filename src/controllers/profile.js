@@ -194,18 +194,21 @@ export const CONTROLLER_PROFILE = {
     user.profile = profile._id
     user.isProfileCreated = true
     // Creation of Pages
-    const newPages = new Pages({ user: userId })
+
     const shop = new Shop({ userId })
     const about = new About({ userId })
     const services = new Services({ userId })
     const portfolio = new Portfolio({ userId })
 
-    newPages.pagesList = [
-      { name: 'Shop', pageId: shop._id },
-      { name: 'About', pageId: about._id },
-      { name: 'Services', pageId: services._id },
-      { name: 'Portfolio', pageId: portfolio._id },
-    ]
+    const newPages = new Pages({
+      user: userId,
+      pagesList: [
+        { name: 'Shop', pageId: shop._id },
+        { name: 'About', pageId: about._id },
+        { name: 'Services', pageId: services._id },
+        { name: 'Portfolio', pageId: portfolio._id },
+      ],
+    })
 
     await newPages.save()
     await shop.save()

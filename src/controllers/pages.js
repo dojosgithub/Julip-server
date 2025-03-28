@@ -24,8 +24,8 @@ const { ObjectId } = mongoose.Types
 export const CONTROLLER_PAGES = {
   // Create a PAGES
   getPagesList: asyncMiddleware(async (req, res) => {
-    const { userId } = req.decoded
-    const pages = Pages.findOne({ user: userId })
+    const { _id: userId } = req.decoded
+    const pages = await Pages.findOne({ user: userId }).lean()
     res.status(StatusCodes.CREATED).json({
       data: pages,
       message: 'Pages list successfully fetched.',
