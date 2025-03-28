@@ -19,7 +19,7 @@ const router = Router()
 
 router.post('/select', Authenticate(), CONTROLLER_PRICING.selectPricing)
 
-router.post('/create-customer', Authenticate(), CONTROLLER_PRICING.createCustomer)
+router.post('/create-customer', CONTROLLER_PRICING.createCustomer)
 
 router.post('/create-subscription', Authenticate(), CONTROLLER_PRICING.createSubscription)
 
@@ -27,7 +27,7 @@ router.put('/update-subscription/:subscriptionId', Authenticate(), CONTROLLER_PR
 
 router.delete('/delete-subscription/:subscriptionId', Authenticate(), CONTROLLER_PRICING.deleteSubscription)
 
-router.post('/payment-method', Authenticate(), CONTROLLER_PRICING.createPaymentMethod)
+router.post('/payment-method', CONTROLLER_PRICING.createPaymentMethod)
 
 router.post('/webhooks/stripe', express.raw({ type: 'application/json' }), CONTROLLER_PRICING.handleStripeWebhook)
 
@@ -49,7 +49,7 @@ router.post('/details', Authenticate(), CONTROLLER_PRICING.getDetails)
 
 router.get('/stripe-user', Authenticate(), CONTROLLER_PRICING.getUsersWithStripeAccount)
 
-router.post('/confirm-payment', Authenticate(), CONTROLLER_PRICING.confirmPayment)
+router.post('/confirm-payment', CONTROLLER_PRICING.confirmPayment)
 
 router.post('/create-checkout-session', Authenticate(), CONTROLLER_PRICING.createPaymentMethodOnBoarding)
 
