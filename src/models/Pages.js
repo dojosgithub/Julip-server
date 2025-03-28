@@ -16,6 +16,10 @@ const pagesSchema = new mongoose.Schema(
         pageId: {
           type: mongoose.Schema.Types.ObjectId,
         },
+        visibility: {
+          type: Boolean,
+          default: true,
+        },
       },
     ],
     // mediaKit: {

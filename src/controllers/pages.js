@@ -35,10 +35,10 @@ export const CONTROLLER_PAGES = {
   // Update a PAGES
   updatePages: asyncMiddleware(async (req, res) => {
     const { userId } = req.decoded
-    const { pagesList } = req.body
+    const { pagesList, visibility } = req.body
     const pages = await Pages.findOneAndUpdate(
       { user: userId },
-      { pagesList }, // Simply update the array
+      { pagesList, visibility }, // Simply update the array
       { new: true }
     )
     return res.status(StatusCodes.OK).json({
