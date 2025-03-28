@@ -35,7 +35,7 @@ router.get('/retrieve-subscription/:subscriptionId', Authenticate(), CONTROLLER_
 
 // Stripe Connect
 
-router.post('/purchase', Authenticate(), CONTROLLER_PRICING.purchaseProduct)
+router.post('/purchase', CONTROLLER_PRICING.purchaseProduct)
 
 router.post('/create-stripe', Authenticate(), CONTROLLER_PRICING.connectStripeAccount)
 
