@@ -329,6 +329,100 @@ export const CONTROLLER_PRICING = {
       res.status(500).json({ error: err.message })
     }
   }),
+  // POST /api/subscription/resubscribe
+  resubscribe: asyncMiddleware(async (req, res) => {
+    try {
+      const { _id: userId } = req.decoded
+      const { priceId, paymentMethodId } = req.body
+
+      // Find the user
+      const user = await User.findById(userId)
+      if (!user) {
+        return res.status(StatusCodes.NOT_FOUND).json({
+          message: 'User not found.',
+        })
+      }
+
+      // Check if the user already has a Stripe customer ID
+      let customerId = user.stripeCustomerId
+      if (!customerId) {
+        // If no customer ID exists, create a new Stripe customer
+        const customer = await stripe.customers.create({
+          email: user.email,
+          name: user.fullName,
+        })
+        customerId = customer.id
+
+        // Save the Stripe customer ID to the user document
+        user.stripeCustomerId = customerId
+        await user.save()
+      }
+
+      // Get the payment method ID
+      let finalPaymentMethodId = paymentMethodId // Default to the one provided in the request body
+      if (!finalPaymentMethodId) {
+        // If no paymentMethodId is provided, fetch it from the user's existing subscription
+        const existingSubscription = await Subscription.findOne({ user: userId }).sort({ createdAt: -1 }) // Get the most recent subscription
+        if (!existingSubscription || !existingSubscription.paymentMethodId) {
+          return res.status(StatusCodes.BAD_REQUEST).json({
+            message: 'No saved payment method found. Please provide a new payment method.',
+          })
+        }
+        finalPaymentMethodId = existingSubscription.paymentMethodId
+      }
+
+      // Attach the payment method to the customer (if not already attached)
+      try {
+        await stripe.paymentMethods.attach(finalPaymentMethodId, { customer: customerId })
+      } catch (error) {
+        // If the payment method cannot be attached, prompt the user to provide a new one
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          message: 'Saved payment method is invalid. Please provide a new payment method.',
+        })
+      }
+
+      // Set the payment method as default
+      await stripe.customers.update(customerId, {
+        invoice_settings: { default_payment_method: finalPaymentMethodId },
+      })
+
+      // Create a new subscription
+      const subscription = await stripe.subscriptions.create({
+        customer: customerId,
+        items: [{ price: priceId }],
+        default_payment_method: finalPaymentMethodId,
+        expand: ['latest_invoice.payment_intent'], // Optional: Include payment intent details
+      })
+
+      // Save subscription details to the database
+      const newSubscription = new Subscription({
+        user: userId,
+        paymentMethodId: finalPaymentMethodId,
+        stripeCustomerId: customerId,
+        stripeSubscriptionId: subscription.id,
+        plan: subscription.items.data[0].price.nickname,
+        status: subscription.status,
+        currentPeriodStart: new Date(subscription.current_period_start * 1000),
+        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        metadata: subscription.metadata,
+      })
+      await newSubscription.save()
+
+      // Update the user document with the subscription ID and user type
+      user.subscriptionId = subscription.id
+      user.userTypes = 'Premium'
+      await user.save()
+
+      res.status(StatusCodes.OK).json({
+        subscriptionId: subscription.id,
+        clientSecret: subscription.latest_invoice.payment_intent?.client_secret,
+        message: 'Resubscribed successfully.',
+      })
+    } catch (err) {
+      console.error('Error during resubscription:', err)
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: err.message })
+    }
+  }),
 
   // Stripe Connect APIs
   connectStripeAccount: asyncMiddleware(async (req, res) => {
@@ -779,29 +873,6 @@ export const CONTROLLER_PRICING = {
       res.status(200).json({
         message: 'Stripe account connected successfully!',
         stripeAccountId: stripeAccountId,
-      })
-    } catch (err) {
-      console.error('Error during Stripe OAuth:', err)
-      res.status(500).json({ error: err.message })
-    }
-  }),
-  createTestaccount: asyncMiddleware(async (req, res) => {
-    try {
-      const account = await stripe.accounts.create({
-        type: 'express',
-        country: 'US',
-        email: 'test-influencer@example.com',
-        capabilities: {
-          card_payments: { requested: true },
-          transfers: { requested: true },
-        },
-      })
-
-      const accountLink = await stripe.accountLinks.create({
-        account: account.id,
-        refresh_url: 'https://dev.myjulip.com/dashboard/about/',
-        return_url: 'https://dev.myjulip.com/dashboard/pages/',
-        type: 'account_onboarding',
       })
     } catch (err) {
       console.error('Error during Stripe OAuth:', err)

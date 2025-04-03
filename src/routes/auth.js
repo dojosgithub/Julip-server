@@ -59,4 +59,6 @@ router.put(
 
 router.post('/google/callback', CONTROLLER_AUTH.OAuth2)
 
+router.post('/sendemail', CONTROLLER_AUTH.checkemail)
+
 export default router

@@ -39,11 +39,11 @@ router.post('/purchase', CONTROLLER_PRICING.purchaseProduct)
 
 router.post('/create-stripe', Authenticate(), CONTROLLER_PRICING.connectStripeAccount)
 
+router.post('/resubscribe', Authenticate(), CONTROLLER_PRICING.resubscribe)
+
 // router.post('/webhooks/stripe/connect', Authenticate(), CONTROLLER_PRICING.handleInfluencerWebhook)
 
 router.post('/stripe/oauth/callback', Authenticate(), CONTROLLER_PRICING.stripeCallback)
-
-router.get('/testing', Authenticate(), CONTROLLER_PRICING.createTestaccount)
 
 router.post('/details', Authenticate(), CONTROLLER_PRICING.getDetails)
 

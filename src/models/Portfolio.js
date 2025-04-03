@@ -72,8 +72,16 @@ const portfolioContentSchema = {
     categoryList: [{ type: Schema.Types.ObjectId, ref: 'Sample' }],
   },
   testimonials: {
-    type: Schema.Types.ObjectId,
-    ref: 'Testimonials',
+    name: {
+      type: String,
+      default: 'testimonials',
+    },
+    visibility: {
+      type: Boolean,
+      default: true,
+    },
+
+    testimonialList: [{ type: Schema.Types.ObjectId, ref: 'Testimonials' }],
   },
   contact: {
     name: {

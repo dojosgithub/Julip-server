@@ -201,7 +201,8 @@ export const CONTROLLER_AUTH = {
     const sendEmail = await new Email({ email })
     const emailProps = { firstName: token }
     console.log('emailProps', emailProps)
-    await sendEmail.welcomeToZeal(emailProps)
+    // await sendEmail.welcomeToZeal(emailProps)
+    await sendEmail.confirmEmail(emailProps)
 
     res.status(StatusCodes.OK).json({
       data: {
@@ -212,6 +213,19 @@ export const CONTROLLER_AUTH = {
     })
   }),
 
+  checkemail: asyncMiddleware(async (req, res) => {
+    const { email } = req.body
+    const sendEmail = await new Email({ email })
+    const emailProps = { firstName: 123 }
+    console.log('emailProps', emailProps)
+    // await sendEmail.welcomeToZeal(emailProps)
+    await sendEmail.downgrade(emailProps)
+    await sendEmail.upgrade(emailProps)
+    await sendEmail.confirmPassword(emailProps)
+    await sendEmail.confirmEmail(emailProps)
+    await sendEmail.welcomeToZeal(emailProps)
+    res.status(StatusCodes.OK).json({ email: emailProps })
+  }),
   resendEmailVerificationCode: asyncMiddleware(async (req, res) => {
     const { email } = req.body
 
@@ -237,7 +251,8 @@ export const CONTROLLER_AUTH = {
     }
     const sendEmail = await new Email({ email })
     const emailProps = { firstName: token }
-    await sendEmail.welcomeToZeal(emailProps)
+    // await sendEmail.welcomeToZeal(emailProps)
+    await sendEmail.confirmEmail(emailProps)
     res.status(StatusCodes.OK).json({
       message: 'Code sent',
     })
