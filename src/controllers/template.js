@@ -324,6 +324,9 @@ export const CONTROLLER_TEMPLATE = {
         path: 'profile',
       })
       .populate({
+        path: 'pages',
+      })
+      .populate({
         path: 'about',
       })
       .populate({
