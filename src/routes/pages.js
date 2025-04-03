@@ -7,7 +7,7 @@ import { Authenticate } from '../middlewares'
 
 const router = Router()
 
-router.put('/update-pages', CONTROLLER_PAGES.updatePages)
+router.put('/update-pages', Authenticate(), CONTROLLER_PAGES.updatePages)
 
 router.get('/get-pages', Authenticate(), CONTROLLER_PAGES.getPagesList)
 
