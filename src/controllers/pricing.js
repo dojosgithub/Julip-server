@@ -201,59 +201,6 @@ export const CONTROLLER_PRICING = {
     }
   }),
 
-  createPaymentMethod: asyncMiddleware(async (req, res) => {
-    try {
-      // Using a pre-generated test card token (for example, "tok_visa")
-      const paymentMethod = await stripe.paymentMethods.create({
-        type: 'card',
-        card: {
-          token: 'tok_visa', // Example token for Visa test card
-        },
-        billing_details: {
-          name: 'Test User',
-          email: 'test@example.com',
-        },
-      })
-
-      console.log('PaymentMethod created successfully:', paymentMethod.id)
-      res.status(200).json({
-        paymentMethod: paymentMethod.id,
-      })
-    } catch (err) {
-      console.error('Error creating payment method:', err.message)
-      throw err
-    }
-  }),
-
-  createPaymentMethodOnBoarding: asyncMiddleware(async (req, res) => {
-    try {
-      if (req.method === 'POST') {
-      } else {
-        res.setHeader('Allow', ['POST'])
-        res.status(405).end('Method Not Allowed')
-      }
-      const { priceId } = req.body
-
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: [
-          {
-            price: priceId,
-            quantity: 1,
-          },
-        ],
-        mode: 'subscription',
-        success_url: `${process.env.FRONTEND_URL_DEV}/success`,
-        cancel_url: `${process.env.FRONTEND_URL_DEV}/cancel`,
-      })
-
-      res.status(200).json({ sessionId: session.id })
-    } catch (err) {
-      console.error('Error creating payment method:', err.message)
-      throw err
-    }
-  }),
-
   retrieveSubscription: asyncMiddleware(async (req, res) => {
     try {
       const { subscriptionId } = req.params
@@ -370,7 +317,7 @@ export const CONTROLLER_PRICING = {
         }
         finalPaymentMethodId = existingSubscription.paymentMethodId
       }
-
+      console.log('finalPaymentMethodId', finalPaymentMethodId)
       // Attach the payment method to the customer (if not already attached)
       try {
         await stripe.paymentMethods.attach(finalPaymentMethodId, { customer: customerId })
