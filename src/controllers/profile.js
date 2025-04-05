@@ -335,6 +335,7 @@ export const CONTROLLER_PROFILE = {
       profileName: body.profileName,
       socialLinks: body.socialLinks,
       webLinks: body.webLinks,
+      featuredLink: body.featuredLink,
       imageStyle: body.imageStyle,
       image: body.image,
     }
