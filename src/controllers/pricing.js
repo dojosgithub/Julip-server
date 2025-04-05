@@ -73,32 +73,34 @@ export const CONTROLLER_PRICING = {
       user.referralLink = referralLink
     }
 
-    // * Uncomment this to transfer funds to the referrer
-    // if (user.referredBy) {
-    //   console.log('new user is referred by someone.')
-    //   const referrer = await User.findById(user.referredBy)
+    // To transfer funds to the referrer
+    if (user.referredBy) {
+      const referrer = await User.findById(user.referredBy)
+      if (!referrer) return
 
-    //   if (referrer) {
-    //     console.log('the referrer is found in database')
-    //     // Credit $10 to the referrer's Stripe account
-    //     if (referrer.stripeAccountId) {
-    //       console.log('the referrer has stripe account')
-    //       try {
-    //         await stripe.transfers.create({
-    //           amount: 1000, // $10 in cents
-    //           currency: 'usd',
-    //           destination: referrer.stripeAccountId,
-    //         })
-    //         // Update the referrer's referral rewards
-    //         referrer.referralRewards += 10
-    //         await referrer.save()
-    //         console.log('referrer.referralRewards increased')
-    //       } catch (error) {
-    //         console.error('Error transferring funds:', error.message)
-    //       }
-    //     }
-    //   }
-    // }
+      if (!referrer.stripeAccountId) {
+        console.log('Referrer does not have a stripeAccountId', referrer?.stripeAccountId)
+        return
+      }
+
+      try {
+        const account = await stripe.accounts.retrieve(referrer.stripeAccountId)
+        if (account.capabilities?.transfers !== 'active') {
+          console.log('Transfers capability is not active for referrer.')
+        }
+        await stripe.transfers.create({
+          amount: 1000, // $10 in cents
+          currency: 'usd',
+          destination: referrer.stripeAccountId,
+        })
+        // Update the referrer's referral rewards
+        referrer.referralRewards += 10
+        referrer.successfulReferrals += 1
+        await referrer.save()
+      } catch (error) {
+        console.error('Error transferring funds:', error.message)
+      }
+    }
 
     user.isPricingSelected = true
     user.userTypes = pricing
