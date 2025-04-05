@@ -30,11 +30,11 @@ const aboutItemSchema = new mongoose.Schema({
   },
   visibility: {
     type: Boolean,
-    default: true,
+    default: false,
   },
   descriptionVisibility: {
     type: Boolean,
-    default: true, // Visibility of the description field
+    default: false, // Visibility of the description field
   },
   sequence: {
     type: Number,
