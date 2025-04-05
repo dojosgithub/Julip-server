@@ -11,7 +11,7 @@ const portfolioContentSchema = {
     },
     visibility: {
       type: Boolean, // Optional field
-      default: true,
+      default: false,
     },
     specialityList: [String],
   },
@@ -22,7 +22,7 @@ const portfolioContentSchema = {
     },
     visibility: {
       type: Boolean, // Optional field
-      default: true,
+      default: false,
     },
     location: String,
   },
@@ -33,7 +33,7 @@ const portfolioContentSchema = {
     },
     visibility: {
       type: Boolean, // Optional field
-      default: true,
+      default: false,
     },
     oneLiner: {
       type: String,
@@ -51,6 +51,7 @@ const portfolioContentSchema = {
     },
     visibility: {
       type: Boolean,
+      default: false,
     },
     audienceList: [
       {
@@ -66,7 +67,7 @@ const portfolioContentSchema = {
     },
     visibility: {
       type: Boolean,
-      default: true,
+      default: false,
     },
 
     categoryList: [{ type: Schema.Types.ObjectId, ref: 'Sample' }],
@@ -78,7 +79,7 @@ const portfolioContentSchema = {
     },
     visibility: {
       type: Boolean,
-      default: true,
+      default: false,
     },
 
     testimonialList: [{ type: Schema.Types.ObjectId, ref: 'Testimonials' }],
@@ -90,7 +91,7 @@ const portfolioContentSchema = {
     },
     visibility: {
       type: Boolean, // Optional field
-      default: true,
+      default: false,
     },
     contactList: [
       {
@@ -98,6 +99,10 @@ const portfolioContentSchema = {
         ref: 'Contact',
       },
     ],
+    featuredContact: {
+      type: Schema.Types.ObjectId,
+      ref: 'Contact',
+    },
   },
   visibility: {
     type: Boolean,

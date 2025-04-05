@@ -52,6 +52,16 @@ const profileContentSchema = {
       },
     },
   ],
+  featuredLink: {
+    title: {
+      type: String,
+      required: true,
+    },
+    url: {
+      type: String,
+      required: true,
+    },
+  },
   image: {
     type: String,
     default: 'https://res.cloudinary.com/dojo-dev/image/upload/v1737554504/Julip-dev/placeholder_gbwwzr.jpg',
