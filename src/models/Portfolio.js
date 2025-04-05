@@ -7,7 +7,7 @@ const portfolioContentSchema = {
   speciality: {
     name: {
       type: String,
-      default: 'speciality',
+      default: 'Speciality',
     },
     visibility: {
       type: Boolean, // Optional field
@@ -18,7 +18,7 @@ const portfolioContentSchema = {
   location: {
     name: {
       type: String,
-      default: 'location',
+      default: 'Location',
     },
     visibility: {
       type: Boolean, // Optional field
@@ -32,7 +32,7 @@ const portfolioContentSchema = {
   brand: {
     name: {
       type: String,
-      default: 'brand',
+      default: 'Brand',
     },
     visibility: {
       type: Boolean, // Optional field
@@ -52,7 +52,7 @@ const portfolioContentSchema = {
   audience: {
     name: {
       type: String,
-      default: 'audience',
+      default: 'Audience',
     },
     visibility: {
       type: Boolean,
@@ -68,7 +68,7 @@ const portfolioContentSchema = {
   sample: {
     name: {
       type: String,
-      default: 'sample',
+      default: 'Sample',
     },
     visibility: {
       type: Boolean,
@@ -80,7 +80,7 @@ const portfolioContentSchema = {
   testimonials: {
     name: {
       type: String,
-      default: 'testimonials',
+      default: 'Testimonials',
     },
     visibility: {
       type: Boolean,
@@ -92,7 +92,7 @@ const portfolioContentSchema = {
   contact: {
     name: {
       type: String,
-      default: 'contact',
+      default: 'Contact Me',
     },
     visibility: {
       type: Boolean, // Optional field
