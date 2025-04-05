@@ -24,7 +24,10 @@ const portfolioContentSchema = {
       type: Boolean, // Optional field
       default: false,
     },
-    location: String,
+    location: {
+      type: String,
+      default: '',
+    },
   },
   brand: {
     name: {
@@ -37,6 +40,7 @@ const portfolioContentSchema = {
     },
     oneLiner: {
       type: String,
+      default: '',
     },
     brandList: [
       {
@@ -48,6 +52,7 @@ const portfolioContentSchema = {
   audience: {
     name: {
       type: String,
+      default: 'audience',
     },
     visibility: {
       type: Boolean,
@@ -97,11 +102,13 @@ const portfolioContentSchema = {
       {
         type: Schema.Types.ObjectId,
         ref: 'Contact',
+        default: [],
       },
     ],
     featuredContact: {
       type: Schema.Types.ObjectId,
       ref: 'Contact',
+      default: null,
     },
   },
   visibility: {
