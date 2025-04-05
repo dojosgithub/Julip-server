@@ -86,7 +86,7 @@ const portfolioContentSchema = {
   contact: {
     name: {
       type: String,
-      default: 'default',
+      default: 'contact',
     },
     visibility: {
       type: Boolean, // Optional field

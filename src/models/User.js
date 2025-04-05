@@ -32,6 +32,11 @@ export const userSchema = new Schema(
       type: Number,
       default: 0,
     }, // Total referral rewards earned by the user
+    successfulReferrals: {
+      type: Number,
+      default: 0,
+    },
+
     referredUsers: [
       {
         type: Schema.Types.ObjectId,
