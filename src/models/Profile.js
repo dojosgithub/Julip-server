@@ -55,11 +55,9 @@ const profileContentSchema = {
   featuredLink: {
     title: {
       type: String,
-      required: true,
     },
     url: {
       type: String,
-      required: true,
     },
   },
   image: {
