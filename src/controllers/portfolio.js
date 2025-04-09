@@ -189,7 +189,7 @@ export const CONTROLLER_PORTFOLIO = {
       { path: `${version}.brand.brandList`, model: 'Brand' },
       { path: `${version}.audience.audienceList`, model: 'Audience' },
       { path: `${version}.sample.categoryList`, model: 'Sample' },
-      { path: `${version}.testimonials`, model: 'Testimonials' },
+      { path: `${version}.testimonials.testimonialList`, model: 'Testimonials' },
       { path: `${version}.contact.contactList`, model: 'Contact' },
     ])
 
