@@ -387,6 +387,10 @@ export const CONTROLLER_TEMPLATE = {
             path: 'published.audience.audienceList', // Populate audienceList in published audience
             model: 'Audience',
           },
+          {
+            path: 'published.testimonials.testimonialList', // Populate testimonialList in published testimonials
+            model: 'Testimonials',
+          },
         ],
       })
 
