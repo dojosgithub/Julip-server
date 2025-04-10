@@ -86,6 +86,7 @@ import { comparePassword, generateOTToken, generatePassword, generateToken, veri
 import { sendSMS } from '../utils/smsUtil'
 import { getIO } from '../socket'
 import { getInstagramFollowers } from '../utils/insta-acc-funcs'
+import { access } from 'fs/promises'
 
 const { ObjectId } = mongoose.Types
 
@@ -250,13 +251,14 @@ export const CONTROLLER_PORTFOLIO = {
   }),
   fbSocialAccessToken: asyncMiddleware(async (req, res) => {
     const { code } = req.query
+    const authCode = decodeURIComponent(code || '').replace(/#_$/, '')
     try {
       const params = new URLSearchParams()
       params.append('client_id', process.env.CLIENT_ID)
       params.append('client_secret', process.env.CLIENT_SECRET)
       params.append('grant_type', 'authorization_code')
       params.append('redirect_uri', process.env.REDIRECT_URI)
-      params.append('code', code)
+      params.append('code', authCode)
 
       const response = await axios.post('https://api.instagram.com/oauth/access_token', params, {
         headers: {
@@ -266,19 +268,19 @@ export const CONTROLLER_PORTFOLIO = {
 
       const { access_token, user_id } = response.data
       // const followers = await getInstagramFollowers(user_id, access_token)
-      if (access_token && user_id) {
-        const response = await axios.get(
-          `https://graph.instagram.com/${user_id}?fields=followers_count&access_token=${access_token}`
-        )
-        console.log('follllllllllllll', response)
-      }
+      // if (access_token && user_id) {
+      //   const response = await axios.get(
+      //     `https://graph.instagram.com/${user_id}?fields=followers_count&access_token=${access_token}`
+      //   )
+      //   console.log('follllllllllllll', response)
+      // }
       res.json({ data: response.data })
     } catch (error) {
       console.error('ttttttttttt', error)
       res.status(500).json({ error, message: 'Error during authentication' })
     }
   }),
-  fbDetails: asyncMiddleware(async (req, res) => {
+  InstaDetails: asyncMiddleware(async (req, res) => {
     const { user_id, access_token } = req.body
     try {
       const followers_response = await axios.get(
@@ -291,13 +293,34 @@ export const CONTROLLER_PORTFOLIO = {
       //   `https://graph.instagram.com/${user_id}/insights?metric=impressions&period=days_28&access_token=${access_token}`
       // )
       const media = await axios.get(
-        `https://graph.instagram.com/${user_id}/media?fields=likes_count,comments_count,media_type,media_url,permalink&access_token=${access_token}`
+        `https://graph.instagram.com/${user_id}/media?fields=likes_count,comments_count,media_type,media_url,permalink,like_count,share_count&access_token=${access_token}`
       )
+
+      // Calculating total and average for likes, comments, and shares
+      const totalLikes = media.data.data.reduce((sum, post) => sum + post.like_count, 0)
+      const totalComments = media.data.data.reduce((sum, post) => sum + post.comments_count, 0)
+      const totalShares = media.data.data.reduce((sum, post) => sum + (post.share_count || 0), 0) // Ensure share_count exists
+      const totalPosts = media.data.data.length
+
+      const avgLikes = totalLikes / totalPosts
+      const avgComments = totalComments / totalPosts
+      const avgShares = totalShares / totalPosts
+
+      // Calculating total views (reach) if applicable
+      const totalViews = reach.data.data.reduce((sum, insight) => sum + insight.values[0].value, 0)
+
       res.status(StatusCodes.OK).json({
         followers: followers_response.data,
         reach: reach.data,
         // impressions: impressions.data.data[0].values[0].value,
         media: media.data.data,
+        totalLikes,
+        avgLikes,
+        totalComments,
+        avgComments,
+        totalShares,
+        avgShares,
+        totalViews,
       })
     } catch (error) {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
@@ -306,6 +329,79 @@ export const CONTROLLER_PORTFOLIO = {
       })
     }
   }),
+
+  fbDetails: asyncMiddleware(async (req, res) => {
+    const { access_token, ig_user_id, fb_page_id } = req.body
+
+    try {
+      // 1. Follower Count
+      const followersRes = await axios.get(
+        `https://graph.facebook.com/v19.0/${ig_user_id}?fields=followers_count&access_token=${access_token}`
+      )
+      const followersCount = followersRes.data.followers_count
+
+      // 2. Audience Demographics (Age, Gender, Location)
+      const demographicsRes = await axios.get(
+        `https://graph.facebook.com/v19.0/${fb_page_id}/insights?metric=page_fans_gender_age,page_fans_country&access_token=${access_token}`
+      )
+      const genderAge = demographicsRes.data.data.find((d) => d.name === 'page_fans_gender_age')?.values[0]?.value || {}
+      const country = demographicsRes.data.data.find((d) => d.name === 'page_fans_country')?.values[0]?.value || {}
+
+      // 3. Reach (last 28 days)
+      const reachRes = await axios.get(
+        `https://graph.facebook.com/v19.0/${ig_user_id}/insights?metric=reach&period=days_28&access_token=${access_token}`
+      )
+      const reach = reachRes.data.data[0]?.values[0]?.value || 0
+
+      // 4. Get last 10 media
+      const mediaRes = await axios.get(
+        `https://graph.facebook.com/v19.0/${ig_user_id}/media?fields=id,media_type,like_count,comments_count,media_product_type&limit=10&access_token=${access_token}`
+      )
+      const posts = mediaRes.data.data
+
+      let totalLikes = 0
+      let totalComments = 0
+      let reelsViews = 0
+      let reelsWatchTime = 0
+      let reelCount = 0
+
+      for (const post of posts) {
+        totalLikes += post.like_count || 0
+        totalComments += post.comments_count || 0
+
+        if (post.media_product_type === 'REELS') {
+          // Fetch insights for Reels
+          const insightsRes = await axios.get(
+            `https://graph.facebook.com/v19.0/${post.id}/insights?metric=impressions,reach,engagement&access_token=${access_token}`
+          )
+          const data = insightsRes.data.data
+          reelsViews += parseInt(data.find((d) => d.name === 'impressions')?.values[0]?.value || 0)
+          reelsWatchTime += parseFloat(data.find((d) => d.name === 'engagement')?.values[0]?.value || 0)
+          reelCount++
+        }
+      }
+
+      // Calculate engagement rate
+      const avgLikes = totalLikes / posts.length
+      const avgComments = totalComments / posts.length
+      const engagementRate = ((avgLikes + avgComments) / followersCount) * 100
+
+      res.json({
+        followersCount,
+        demographics: { genderAge, country },
+        reach,
+        engagementRate: engagementRate.toFixed(2) + '%',
+        avgLikes,
+        avgComments,
+        avgReelsViews: reelCount ? (reelsViews / reelCount).toFixed(2) : 0,
+        avgWatchTime: reelCount ? (reelsWatchTime / reelCount).toFixed(2) : 0,
+      })
+    } catch (error) {
+      console.error(error?.response?.data || error.message)
+      res.status(500).json({ error: error?.response?.data || error.message })
+    }
+  }),
+
   fbSocialLongLiveAccessToken: asyncMiddleware(async (req, res) => {
     const { code } = req.query
     try {
@@ -494,20 +590,26 @@ export const CONTROLLER_PORTFOLIO = {
     const { code } = req.query
     try {
       const authCode = decodeURIComponent(code)
+
       const params = new URLSearchParams()
       params.append('client_id', process.env.YOUTUBE_CLIENT_ID)
       params.append('client_secret', process.env.YOUTUBE_CLIENT_SECRET)
       params.append('grant_type', 'authorization_code')
       params.append('redirect_uri', process.env.LINKEDIN_REDIRECT_URI)
       params.append('code', authCode)
+      params.append('access_type', 'offline')
 
+      // Make the POST request to exchange the authorization code for an access token and refresh token
       const response = await axios.post('https://oauth2.googleapis.com/token', params, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       })
 
-      res.json({ data: response.data })
+      // You will receive both access_token and refresh_token in the response
+      res.json({
+        data: response.data, // This includes access_token, refresh_token, expires_in, token_type
+      })
     } catch (error) {
       console.error('Error fetching accessToken:', error.response?.data || error.message)
 
@@ -519,6 +621,11 @@ export const CONTROLLER_PORTFOLIO = {
           details: error.response?.data,
         })
       }
+
+      // Handle other errors
+      res.status(error.response?.status || 500).json({
+        error: error.response?.data || error.message,
+      })
     }
   }),
 
@@ -540,12 +647,34 @@ export const CONTROLLER_PORTFOLIO = {
       console.error('Error fetching subscribers count:', error)
     }
   }),
+
   youtubeAnalytics: asyncMiddleware(async (req, res) => {
-    const { accessToken, apiKey, channelId } = req.body
+    const { refreshToken, accessToken, apiKey, channelId } = req.body
 
     try {
+      let token = accessToken
+
+      // If refreshToken is provided, exchange it for a new accessToken
+      if (refreshToken) {
+        const params = new URLSearchParams()
+        params.append('client_id', process.env.YOUTUBE_CLIENT_ID)
+        params.append('client_secret', process.env.YOUTUBE_CLIENT_SECRET)
+        params.append('grant_type', 'refresh_token')
+        params.append('refresh_token', refreshToken)
+
+        // Request a new access token using the refresh token
+        const response = await axios.post('https://oauth2.googleapis.com/token', params, {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        })
+
+        token = response.data.access_token // Use the newly acquired access token
+        console.log('New Access Token:', token)
+      }
+
       // Validate input
-      if (!accessToken || !channelId) {
+      if (!token || !channelId) {
         return res.status(400).json({ message: 'Both accessToken and channelId are required.' })
       }
 
@@ -567,59 +696,77 @@ export const CONTROLLER_PORTFOLIO = {
       const formattedStartDate = formatDate(startDate)
       const formattedEndDate = formatDate(endDate)
 
-      // const formattedStartDate = '2023-09-01' // Start date (YYYY-MM-DD)
-      // const formattedEndDate = '2023-09-30'
-
-      console.log('Start Date:', formattedStartDate)
-      console.log('End Date:', formattedEndDate)
-
-      // Construct the request URL
-      // const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&start-date=${formattedStartDate}&end-date=${formattedEndDate}&metrics=averageViewDuration&dimensions=day&sort=day&key=${apiKey}`
-      // const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&metrics=views&dimensions=day&sort=day`
       const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&metrics=views&dimensions=day&sort=day&key=${apiKey}`
 
       // Fetch analytics data
-      const response = await axios.get(url, {
+      const analyticsResponse = await axios.get(url, {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${token}`,
         },
       })
+      console.log('Analytics Data:', analyticsResponse.data)
 
-      console.log('Analytics Data:', response.data)
-
-      console.log('Request URL:', url)
-      const subscriber = `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${channelId}&key=${apiKey}`
-      const subscriber_response = await axios.get(subscriber, {
+      const subscriberUrl = `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${channelId}&key=${apiKey}`
+      const subscriberResponse = await axios.get(subscriberUrl, {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${token}`,
         },
       })
-      console.log('subscriber_response', subscriber_response)
+      console.log('Subscriber Data:', subscriberResponse.data)
 
-      // const playlist = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=10&playlistId=UPLOADS_PLAYLIST_ID&key=${apiKey}`
+      const impressionsUrl = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&metrics=views,estimatedMinutesWatched,likes,comments,shares&dimensions=day`
 
-      // const playlist_response = await axios.get(playlist, {
-      //   headers: {
-      //     Authorization: `Bearer ${accessToken}`,
-      //   },
-      // })
-      // console.log('playlist_response', playlist_response)
+      const impressionsResponse = await axios.get(impressionsUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      console.log('Impressions Data:', impressionsResponse.data)
 
-      // const imressions = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&start-date=${formattedStartDate}&end-date=${formattedEndDate}&metrics=impressions,views&key=${apiKey}`
-      // const imressions_response = await axios.get(imressions, {
-      //   headers: {
-      //     Authorization: `Bearer ${accessToken}`,
-      //   },
-      // })
-      // console.log('imressions_response', imressions_response)
+      // Aggregating the data (Total Reach and Engagements)
+      let totalViews = 0
+      let totalLikes = 0
+      let totalComments = 0
+      let totalShares = 0
+      let estimatedWatchTime = 0
+
+      // Loop through the rows and sum the values
+      impressionsResponse.data.rows.forEach((row) => {
+        totalViews += row[1] // views
+        estimatedWatchTime += row[2] // estimatedMinutesWatched
+        totalLikes += row[3] // likes
+        totalComments += row[4] // comments
+        totalShares += row[5] // shares
+      })
+
+      // Calculate averages for engagements (likes, comments, shares)
+      const totalDays = impressionsResponse.data.rows.length
+      const averageLikes = totalLikes / totalDays
+      const averageComments = totalComments / totalDays
+      const averageShares = totalShares / totalDays
+      const averageWatchTime = estimatedWatchTime / totalDays
 
       const watchTimeUrl = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&metrics=estimatedMinutesWatched&dimensions=day&key=${apiKey}`
       const watchTimeResponse = await axios.get(watchTimeUrl, {
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: { Authorization: `Bearer ${token}` },
       })
       console.log('Watch Time Response:', watchTimeResponse.data)
 
-      res.json({ data: response.data })
+      res.json({
+        data: analyticsResponse.data,
+        impressions: impressionsResponse.data,
+        totalReach: totalViews,
+        totalLikes,
+        totalComments,
+        totalShares,
+        totalEngagements: totalLikes + totalComments + totalShares,
+        totalWatchTime: estimatedWatchTime,
+        averageLikes,
+        averageComments,
+        averageShares,
+        averageWatchTime,
+        duration: `${impressionsResponse.data.rows.length}days`,
+      })
     } catch (error) {
       console.error('Error fetching analytics:', error.response?.data || error.message)
 
@@ -638,6 +785,7 @@ export const CONTROLLER_PORTFOLIO = {
       })
     }
   }),
+
   youtubeApiKey: asyncMiddleware(async (req, res) => {
     const { accessToken, apiKey } = req.body
     try {
@@ -652,6 +800,108 @@ export const CONTROLLER_PORTFOLIO = {
     } catch (error) {
       console.error('Error fetching channel ID:', error)
       res.status(500).json({ error })
+    }
+  }),
+
+  // TIKTOK
+  fetchTikTokData: asyncMiddleware(async (req, res) => {
+    const { code } = req.query
+    const cleanCode = code.split('&')[0]
+    const accessToken = 'act.YRB3VcJdCmUupAX1iMIcBxjoI4O0kqFaXmuP3YXHVSDeE3QrnR6NnuufDDT7!5878.va'
+
+    try {
+      // Step 1: Fetch user profile
+      const userProfileResponse = await axios.get('https://open.tiktokapis.com/v2/user/info/', {
+        params: {
+          fields: 'follower_count,display_name,open_id,avatar_url', // fields as a query string
+        },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const userProfile = userProfileResponse.data.data
+
+      // Step 2: Fetch user's videos
+      const videoListResponse = await axios.post(
+        'https://open.tiktokapis.com/v2/video/list/?fields=cover_image_url,id,title',
+        {
+          max_count: 20, // You can adjust the max_count as needed
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      const videos = videoListResponse.data.data.videos || []
+      const videoIds = videos
+        .filter((video) => video.id) // Filter out videos without an 'id'
+        .map((video) => String(video.id)) // Ensure all video ids are strings
+
+      if (videoIds.length === 0) {
+        return res.status(StatusCodes.OK).json({
+          message: 'No videos found',
+          followers: userProfile.follower_count,
+        })
+      }
+
+      // Step 3: Fetch insights for each video
+      const insightsResponse = await axios.post(
+        'https://open.tiktokapis.com/v2/video/query/?fields=id,title,view_count,like_count,comment_count,share_count',
+        {
+          filters: {
+            video_ids: videoIds, // Ensure videoIds is an array like ["1234123412345678567", "1010102020203030303"]
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      const insights = insightsResponse.data.data.videos
+      console.log(insightsResponse, 'insights', insights, 'insightsResponse')
+
+      // Step 4: Aggregate metrics (Example: Total likes, views, etc.)
+      // Uncomment and adjust based on your requirements
+
+      const totalLikes = insights.reduce((sum, v) => sum + (v.like_count || 0), 0)
+      const totalComments = insights.reduce((sum, v) => sum + (v.comment_count || 0), 0)
+      const totalViews = insights.reduce((sum, v) => sum + (v.view_count || 0), 0)
+      const totalShares = insights.reduce((sum, v) => sum + (v.share_count || 0), 0)
+
+      const count = insights.length
+      const avgLikes = totalLikes / count || 0
+      const avgComments = totalComments / count || 0
+      const avgViews = totalViews / count || 0
+      const avgShares = totalShares / count || 0
+
+      // Step 5: Respond with the aggregated data
+      res.status(StatusCodes.OK).json({
+        followers: userProfile.follower_count,
+        // Include other aggregated metrics if needed
+        totalLikes,
+        totalComments,
+        totalShares,
+        totalViews,
+        avgLikes,
+        avgComments,
+        avgShares,
+        avgViews,
+        videos: insights, // Include insights data in the response
+      })
+    } catch (error) {
+      console.error('Error fetching TikTok data:', error.response?.data || error.message)
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: 'Error fetching TikTok data',
+        error: error.response?.data || error.message,
+      })
     }
   }),
 }

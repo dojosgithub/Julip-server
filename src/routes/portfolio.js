@@ -13,6 +13,8 @@ router.put('/update-portfolio', Authenticate(), CONTROLLER_PORTFOLIO.updatePortf
 
 router.get('/fb-access-token', Authenticate(), CONTROLLER_PORTFOLIO.fbSocialAccessToken)
 
+router.post('/insta-details', Authenticate(), CONTROLLER_PORTFOLIO.InstaDetails)
+
 router.post('/fb-details', Authenticate(), CONTROLLER_PORTFOLIO.fbDetails)
 
 router.get('/linkedin-access-token', Authenticate(), CONTROLLER_PORTFOLIO.linkedInAccessToken)
@@ -28,5 +30,7 @@ router.post('/youtube-channel-id', Authenticate(), CONTROLLER_PORTFOLIO.youtubeA
 router.post('/youtube-analytics', Authenticate(), CONTROLLER_PORTFOLIO.youtubeAnalytics)
 
 router.post('/youtube-subscriber', Authenticate(), CONTROLLER_PORTFOLIO.youtubeSubscriber)
+
+router.post('/tiktok-details', CONTROLLER_PORTFOLIO.fetchTikTokData)
 
 export default router
