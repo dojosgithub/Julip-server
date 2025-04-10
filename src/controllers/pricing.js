@@ -76,29 +76,28 @@ export const CONTROLLER_PRICING = {
     // To transfer funds to the referrer
     if (user.referredBy) {
       const referrer = await User.findById(user.referredBy)
-      if (!referrer) return
-
-      if (!referrer.stripeAccountId) {
-        console.log('Referrer does not have a stripeAccountId', referrer?.stripeAccountId)
-        return
-      }
-
-      try {
-        const account = await stripe.accounts.retrieve(referrer.stripeAccountId)
-        if (account.capabilities?.transfers !== 'active') {
-          console.log('Transfers capability is not active for referrer.')
+      if (referrer) {
+        if (!referrer.stripeAccountId) {
+          console.log('Referrer does not have a stripeAccountId', referrer?.stripeAccountId)
+        } else {
+          try {
+            const account = await stripe.accounts.retrieve(referrer.stripeAccountId)
+            if (account.capabilities?.transfers !== 'active') {
+              console.log('Transfers capability is not active for referrer.')
+            }
+            await stripe.transfers.create({
+              amount: 1000, // $10 in cents
+              currency: 'usd',
+              destination: referrer.stripeAccountId,
+            })
+            // Update the referrer's referral rewards
+            referrer.referralRewards += 10
+            referrer.successfulReferrals += 1
+            await referrer.save()
+          } catch (error) {
+            console.error('Error transferring funds:', error.message)
+          }
         }
-        await stripe.transfers.create({
-          amount: 1000, // $10 in cents
-          currency: 'usd',
-          destination: referrer.stripeAccountId,
-        })
-        // Update the referrer's referral rewards
-        referrer.referralRewards += 10
-        referrer.successfulReferrals += 1
-        await referrer.save()
-      } catch (error) {
-        console.error('Error transferring funds:', error.message)
       }
     }
 

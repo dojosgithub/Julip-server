@@ -7,36 +7,40 @@ const portfolioContentSchema = {
   speciality: {
     name: {
       type: String,
-      default: 'speciality',
+      default: 'Speciality',
     },
     visibility: {
       type: Boolean, // Optional field
-      default: true,
+      default: false,
     },
     specialityList: [String],
   },
   location: {
     name: {
       type: String,
-      default: 'location',
+      default: 'Location',
     },
     visibility: {
       type: Boolean, // Optional field
-      default: true,
+      default: false,
     },
-    location: String,
+    location: {
+      type: String,
+      default: '',
+    },
   },
   brand: {
     name: {
       type: String,
-      default: 'brand',
+      default: 'Brand',
     },
     visibility: {
       type: Boolean, // Optional field
-      default: true,
+      default: false,
     },
     oneLiner: {
       type: String,
+      default: '',
     },
     brandList: [
       {
@@ -48,9 +52,11 @@ const portfolioContentSchema = {
   audience: {
     name: {
       type: String,
+      default: 'Audience',
     },
     visibility: {
       type: Boolean,
+      default: false,
     },
     audienceList: [
       {
@@ -62,11 +68,11 @@ const portfolioContentSchema = {
   sample: {
     name: {
       type: String,
-      default: 'sample',
+      default: 'Sample',
     },
     visibility: {
       type: Boolean,
-      default: true,
+      default: false,
     },
 
     categoryList: [{ type: Schema.Types.ObjectId, ref: 'Sample' }],
@@ -74,11 +80,11 @@ const portfolioContentSchema = {
   testimonials: {
     name: {
       type: String,
-      default: 'testimonials',
+      default: 'Testimonials',
     },
     visibility: {
       type: Boolean,
-      default: true,
+      default: false,
     },
 
     testimonialList: [{ type: Schema.Types.ObjectId, ref: 'Testimonials' }],
@@ -86,18 +92,24 @@ const portfolioContentSchema = {
   contact: {
     name: {
       type: String,
-      default: 'contact',
+      default: 'Contact Me',
     },
     visibility: {
       type: Boolean, // Optional field
-      default: true,
+      default: false,
     },
     contactList: [
       {
         type: Schema.Types.ObjectId,
         ref: 'Contact',
+        default: [],
       },
     ],
+    featuredContact: {
+      type: Schema.Types.ObjectId,
+      ref: 'Contact',
+      default: null,
+    },
   },
   visibility: {
     type: Boolean,
