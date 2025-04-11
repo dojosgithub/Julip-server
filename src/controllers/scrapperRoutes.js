@@ -353,7 +353,7 @@ export const CONTROLLER_SCRAPE = {
 
       const response = await axios.get('https://api.diffbot.com/v3/product', {
         params: {
-          token: '07d76447f1815e9c5f6adee4e7558574',
+          token: 'e27411d975d8692c44ba04748233a7fd',
           url: url, // URL of the product page
         },
       })

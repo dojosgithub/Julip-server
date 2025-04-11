@@ -33,4 +33,6 @@ router.post('/youtube-subscriber', Authenticate(), CONTROLLER_PORTFOLIO.youtubeS
 
 router.post('/tiktok-details', CONTROLLER_PORTFOLIO.fetchTikTokData)
 
+router.get('/tiktok-demo', CONTROLLER_PORTFOLIO.fetchDemographics)
+
 export default router
