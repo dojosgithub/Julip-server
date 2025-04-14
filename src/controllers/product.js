@@ -53,7 +53,7 @@ export const CONTROLLER_PRODUCT = {
     const { id } = req.query
     let image
     const parsedbody = JSON.parse(req.body.body)
-    const { url, brandName, price, title, description, buttonTitle } = parsedbody
+    const { url, brandName, price, currency, title, description, buttonTitle } = parsedbody
     image = parsedbody.image
     console.log('req.body', parsedbody)
 
@@ -68,7 +68,7 @@ export const CONTROLLER_PRODUCT = {
     }
     const updatedProduct = await Product.findByIdAndUpdate(
       id,
-      { url, brandName, price, image, title, description, buttonTitle },
+      { url, brandName, price, image, currency, title, description, buttonTitle },
       { new: true }
     )
     console.log('updated product', updatedProduct)
