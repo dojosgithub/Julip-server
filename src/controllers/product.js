@@ -27,7 +27,7 @@ export const CONTROLLER_PRODUCT = {
     // const { url, brandName, price, image, title, description, buttonTitle } = req.body
     const parsedbody = JSON.parse(req.body.body)
     let image
-    const { url, brandName, price, title, description, buttonTitle } = parsedbody
+    const { url, brandName, price, title, currency, description, buttonTitle } = parsedbody
     image = parsedbody.image
 
     if (!url || !brandName || !price || !title || !description) {
@@ -39,7 +39,7 @@ export const CONTROLLER_PRODUCT = {
     if (req.file) {
       image = req.file.path
     }
-    const product = new Product({ url, brandName, price, image, title, description, buttonTitle })
+    const product = new Product({ url, brandName, price, image, title, currency, description, buttonTitle })
     await product.save()
 
     res.status(StatusCodes.CREATED).json({
