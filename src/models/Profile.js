@@ -62,7 +62,7 @@ const profileContentSchema = {
   },
   image: {
     type: String,
-    default: 'https://res.cloudinary.com/dojo-dev/image/upload/v1737554504/Julip-dev/placeholder_gbwwzr.jpg',
+    default: 'https://res.cloudinary.com/dxniq2tzt/image/upload/v1744634009/avatar_hrhww5.svg',
   },
   imageStyle: {
     type: String,
