@@ -152,7 +152,7 @@ export const CONTROLLER_AUTH = {
       fullName,
       email,
       password: hasedPassword,
-      avatar: 'https://res.cloudinary.com/dojo-dev/image/upload/v1721912391/biddi-cars-dev/1721912406433.png',
+      avatar: 'https://res.cloudinary.com/dxniq2tzt/image/upload/v1744634009/avatar_hrhww5.svg',
       accountType: 'Julip-Account',
       userTypes: USER_TYPES.Basic,
       role: { name: SYSTEM_USER_ROLE.USR, shortName: getRoleShortName(USER_TYPES.USR, SYSTEM_USER_ROLE.USR) },
