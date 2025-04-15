@@ -5,10 +5,15 @@ import Joi, { boolean } from 'joi'
 import mongoosePaginate from 'mongoose-paginate-v2'
 import mongooseAggregatePaginate from 'mongoose-aggregate-paginate-v2'
 
-const audienceItemSchema = new mongoose.Schema({
+const audienceSchema = new mongoose.Schema({
+  platform: { type: String },
+  username: { type: String },
+  url: { type: String },
+  platformVisibility: { type: Boolean, default: true },
   demographics: {
     type: [
       {
+        _id: { type: String }, // String ID for subdocuments
         key: { type: String, enum: ['gender', 'age', 'location'] },
         label: { type: String },
         visibility: { type: Boolean },
@@ -23,6 +28,7 @@ const audienceItemSchema = new mongoose.Schema({
   engagements: {
     type: [
       {
+        _id: { type: String }, // String ID for subdocuments
         label: {
           type: String,
           enum: [
@@ -48,22 +54,6 @@ const audienceItemSchema = new mongoose.Schema({
       { label: 'AvgReelsWatchTimeLast10Posts', visibility: false },
     ],
   },
-})
-
-const platformSchema = new mongoose.Schema({
-  platform: { type: String },
-  username: { type: String },
-  url: { type: String },
-  _id: { type: String },
-  platformVisibility: { type: Boolean, default: true },
-  items: [audienceItemSchema],
-})
-
-const audienceSchema = new mongoose.Schema({
-  instagram: platformSchema,
-  tiktok: platformSchema,
-  youtube: platformSchema,
-  linkedin: platformSchema,
 })
 
 export const Audience = model('Audience', audienceSchema)

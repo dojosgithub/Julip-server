@@ -7,7 +7,7 @@ const portfolioContentSchema = {
   speciality: {
     name: {
       type: String,
-      default: 'Speciality',
+      default: 'My Speciality',
     },
     visibility: {
       type: Boolean, // Optional field
@@ -52,7 +52,7 @@ const portfolioContentSchema = {
   audience: {
     name: {
       type: String,
-      default: 'Audience',
+      default: 'My Audience',
     },
     visibility: {
       type: Boolean,
@@ -68,7 +68,7 @@ const portfolioContentSchema = {
   sample: {
     name: {
       type: String,
-      default: 'Sample',
+      default: 'Content Sample',
     },
     visibility: {
       type: Boolean,
