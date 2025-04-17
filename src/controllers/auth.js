@@ -759,78 +759,70 @@ export const CONTROLLER_AUTH = {
       const { email } = profile
 
       let userExists = await User.findOne({ email: email })
-      let newUser
-      if (userExists) {
-        newUser = new User({
+
+      let userToLogin
+
+      if (!userExists) {
+        // Register new user
+        const newUser = new User({
           fullName: profile.name,
           email: profile.email,
           avatar: profile.picture,
           accountType: 'Google-Account',
           userTypes: USER_TYPES.Basic,
+          isLoggedIn: true,
         })
-        newUser.isLoggedIn = true
         await newUser.save()
-      }
-      console.log('firstttttttttttttttttttttttttttttttttttttt', newUser, userExists)
-      const tokenPayload = {
-        _id: newUser !== undefined ? newUser._id : userExists._id,
-        role: newUser !== undefined ? newUser.role : userExists.role,
-        userTypes: newUser !== undefined ? newUser.userTypes : userExists.userTypes,
-      }
+        userToLogin = newUser
 
-      const tokens = await generateToken(tokenPayload)
-
-      ////// sending verification email ///////////////////////////////////////////////////////////////////
-      if (isEmpty(userExists) || !userExists) {
-        var secret = speakeasy.generateSecret({ length: 20 }).base32
-        var token = speakeasy.totp({
+        // Send welcome email with OTP
+        const secret = speakeasy.generateSecret({ length: 20 }).base32
+        const token = speakeasy.totp({
           digits: 6,
           secret: secret,
           encoding: 'base32',
           window: 6,
         })
+
         const TOTPToken = await generateOTToken({ secret })
 
-        // Find if the document with the phoneNumber exists in the database
         let totp = await TOTP.findOneAndUpdate({ email }, { token: TOTPToken })
-
         if (isEmpty(totp)) {
-          new TOTP({
+          await new TOTP({
             email,
             token: TOTPToken,
           }).save()
         }
-        const sendEmail = await new Email({ email })
-        const emailProps = { firstName: token }
-        console.log('emailProps', emailProps)
-        await sendEmail.welcomeToZeal(emailProps)
-      }
 
-      if (userExists) {
+        const sendEmail = new Email({ email })
+        await sendEmail.welcomeToZeal({ firstName: token })
+      } else {
+        // User exists, log them in
         if (userExists.accountType !== 'Google-Account') {
           return res.status(StatusCodes.FORBIDDEN).json({
-            message: 'Not a Google account try logging it with Julip account',
+            message: 'Not a Google account, try logging in with your Zeal account',
           })
         }
         userExists.isLoggedIn = true
         await userExists.save()
-        res.status(StatusCodes.OK).json({
-          data: {
-            user: { ...userExists._doc },
-            tokens,
-          },
-          message: 'User Signed in successfully',
-        })
-      } else {
-        res.status(StatusCodes.OK).json({
-          data: {
-            user: { ...newUser._doc },
-            tokens,
-          },
-          message: 'User registered successfully',
-        })
+        userToLogin = userExists
       }
 
+      // Generate token
+      const tokenPayload = {
+        _id: userToLogin._id,
+        role: userToLogin.role,
+        userTypes: userToLogin.userTypes,
+      }
+      const tokens = await generateToken(tokenPayload)
+
+      res.status(StatusCodes.OK).json({
+        data: {
+          user: { ...userToLogin._doc },
+          tokens,
+        },
+        message: userExists ? 'User signed in successfully' : 'User registered successfully',
+      })
       // const response = await signinOAuthUser(userExists, ipAddress, res)
 
       // Handle user authentication and redirection
