@@ -29,10 +29,15 @@ router.post('/youtube-channel-id', Authenticate(), CONTROLLER_PORTFOLIO.youtubeA
 
 router.post('/youtube-analytics', Authenticate(), CONTROLLER_PORTFOLIO.youtubeAnalytics)
 
+router.get('/get-youtube-analytics', Authenticate(), CONTROLLER_PORTFOLIO.getYoutubeAnalytics)
+
 router.post('/youtube-subscriber', Authenticate(), CONTROLLER_PORTFOLIO.youtubeSubscriber)
 
-router.post('/tiktok-details', CONTROLLER_PORTFOLIO.fetchTikTokData)
+router.post('/tiktok-details', Authenticate(), CONTROLLER_PORTFOLIO.fetchTikTokData)
+router.post('/get-tiktok-analytics', CONTROLLER_PORTFOLIO.getTiktokAnalytics)
+router.post('/get-insta-analytics', CONTROLLER_PORTFOLIO.getInstaAnalytics)
+router.post('/get-youtube-analytics', CONTROLLER_PORTFOLIO.getYoutubeAnalytics)
 
-router.get('/tiktok-demo', CONTROLLER_PORTFOLIO.fetchDemographics)
+router.get('/tiktok-demo', Authenticate(), CONTROLLER_PORTFOLIO.fetchDemographics)
 
 export default router
