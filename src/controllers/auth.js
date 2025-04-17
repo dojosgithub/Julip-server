@@ -297,7 +297,7 @@ export const CONTROLLER_AUTH = {
           client_id: GOOGLE_CLIENT_ID,
           client_secret: GOOGLE_CLIENT_SECRET,
           code,
-          redirect_uri: REDIRECT_URI,
+          redirect_uri: GOOGLE_REDIRECT_URI,
           grant_type: 'authorization_code',
         },
         {
