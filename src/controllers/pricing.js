@@ -46,7 +46,7 @@ const { ObjectId } = mongoose.Types
 export const CONTROLLER_PRICING = {
   selectPricing: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
-    const { pricing } = req.body
+    const { pricing, isOnboarding = false } = req.body
 
     if (!pricing) {
       return res.status(StatusCodes.BAD_REQUEST).json({
@@ -104,10 +104,16 @@ export const CONTROLLER_PRICING = {
     user.isPricingSelected = true
     user.userTypes = pricing
     await user.save()
-    const { email, fullName } = user
-    const sendEmail = await new Email({ email })
-    const emailProps = { firstName: fullName }
-    sendEmail.welcomeToZealPro(emailProps)
+    if (isOnboarding) {
+      const { email, fullName } = user
+      const sendEmail = await new Email({ email })
+      const emailProps = { firstName: fullName }
+      if (pricing === 'Premium') {
+        sendEmail.welcomeToZealPro(emailProps)
+      } else {
+        sendEmail.welcomeToZealBasic(emailProps)
+      }
+    }
     res.status(StatusCodes.OK).json({
       data: null,
       message: 'Pricing Plan updated successfully.',
@@ -193,8 +199,11 @@ export const CONTROLLER_PRICING = {
       }
       user.subscriptionId = subscription.id
       await user.save()
+      const { email, fullName } = user
+      const sendEmail = await new Email({ email })
+      const emailProps = { firstName: fullName }
+      sendEmail.upgrade(emailProps)
 
-      await user.save()
       res.status(200).json({
         subscriptionId: subscription.id,
         clientSecret: subscription.latest_invoice.payment_intent?.client_secret,
@@ -252,10 +261,6 @@ export const CONTROLLER_PRICING = {
         { new: true }
       )
       const user = await User.findByIdAndUpdate(userId, { userTypes: 'Premium' }, { new: true })
-      const { email, fullName } = user
-      const sendEmail = await new Email({ email })
-      const emailProps = { firstName: fullName }
-      sendEmail.upgrade(emailProps)
 
       res.status(200).json({ message: 'Subscription updated successfully', subscription })
     } catch (err) {
@@ -371,6 +376,10 @@ export const CONTROLLER_PRICING = {
       user.subscriptionId = subscription.id
       user.userTypes = 'Premium'
       await user.save()
+      const { email, fullName } = user
+      const sendEmail = await new Email({ email })
+      const emailProps = { firstName: fullName }
+      sendEmail.upgrade(emailProps)
 
       res.status(StatusCodes.OK).json({
         subscriptionId: subscription.id,

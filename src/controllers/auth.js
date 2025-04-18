@@ -203,7 +203,6 @@ export const CONTROLLER_AUTH = {
     }
     const sendEmail = await new Email({ email })
     const emailProps = { code: token }
-    console.log('emailProps', emailProps)
     // await sendEmail.welcomeToZeal(emailProps)
     sendEmail.confirmEmail(emailProps)
 
