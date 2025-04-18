@@ -61,4 +61,6 @@ router.post('/google/callback', CONTROLLER_AUTH.OAuth2)
 
 router.post('/sendemail', CONTROLLER_AUTH.checkemail)
 
+router.get('/apple/callback', CONTROLLER_AUTH.handleAppleCallback)
+
 export default router

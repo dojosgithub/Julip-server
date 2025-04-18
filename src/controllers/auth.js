@@ -7,6 +7,9 @@ const axios = require('axios')
 import passport from 'passport'
 import dotenv from 'dotenv'
 import { v4 as uuidv4 } from 'uuid'
+import appleSignin from 'apple-signin-auth'
+import jwt from 'jsonwebtoken'
+import crypto from 'crypto'
 
 dotenv.config()
 
@@ -224,6 +227,7 @@ export const CONTROLLER_AUTH = {
     await sendEmail.confirmPassword(emailProps)
     await sendEmail.confirmEmail(emailProps)
     await sendEmail.welcomeToZeal(emailProps)
+    await sendEmail.emailConfirmation(emailProps)
     res.status(StatusCodes.OK).json({ email: emailProps })
   }),
   resendEmailVerificationCode: asyncMiddleware(async (req, res) => {
@@ -830,6 +834,111 @@ export const CONTROLLER_AUTH = {
     } catch (error) {
       console.error('Error during Google OAuth:', error.response ? error.response.data : error.message)
       res.status(500).send('An error occurred during Google login.')
+    }
+  }),
+
+  handleAppleCallback: asyncMiddleware(async (req, res) => {
+    const { code } = req.query
+
+    if (!code) {
+      return res.status(400).json({ error: 'Missing authorization code' })
+    }
+
+    // Step 1: Generate client secret
+
+    function generateClientSecret() {
+      const teamId = 'W7J832VH7L'
+      const clientId = 'com.julip.auth.apple'
+      const keyId = '453UBF3VUP'
+
+      // Load private key from file or paste it as a string directly
+      // const privateKey = fs.readFileSync(path.join(__dirname, './AuthKey_453UBF3VUP.p8'), 'utf8')
+      const privateKey = `
+-----BEGIN PRIVATE KEY-----
+MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgoKtJeIIBOqSX0wEb
+zDe7ygI4Dv3Tb6AeGUlazgiu7/igCgYIKoZIzj0DAQehRANCAASSUBZz13Q+YtMV
+Lv5KzdLu8lUQuXtyvA47whiGciuX34Usw1zJthrAP5e7H4V6d4c+TrYnxESN7oo8
+rdmyJfzE
+-----END PRIVATE KEY-----
+`.trim()
+
+      const now = Math.floor(Date.now() / 1000)
+
+      const token = jwt.sign(
+        {
+          iss: teamId,
+          iat: now,
+          exp: now + 15777000, // max 6 months
+          aud: 'https://appleid.apple.com',
+          sub: clientId,
+        },
+        privateKey,
+        {
+          algorithm: 'ES256',
+          keyid: keyId,
+        }
+      )
+
+      return token
+    }
+
+    const clientSecret = generateClientSecret()
+
+    // Step 2: Exchange code for tokens
+    const tokenResponse = await axios.post('https://appleid.apple.com/auth/token', null, {
+      params: {
+        client_id: 'com.julip.auth.apple',
+        client_secret: clientSecret,
+        code,
+        grant_type: 'authorization_code',
+        redirect_uri: 'https://dev.myjulip.com/auth/jwt/login/',
+      },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    })
+
+    const { id_token, access_token, refresh_token } = tokenResponse.data
+
+    // Step 3: Decode the ID token to get user info
+    const decoded = jwt.decode(id_token)
+    const appleEmail = decoded.email
+    const appleSub = decoded.sub
+    let newUserCheck = true
+    // Step 4: Check if user exists
+    console.log('appleSub', appleSub, appleEmail)
+    let user = await User.findOne({ email: appleEmail })
+    if (!user) {
+      console.log('no user')
+      user = await User.create({
+        email: appleEmail,
+        appleSub,
+        accountType: 'Apple-Account',
+        isLoggedIn: true,
+        userTypes: USER_TYPES.Basic,
+      })
+
+      // Optionally: send welcome email here
+    } else {
+      newUserCheck = false
+      console.log('already a user')
+      user.isLoggedIn = true
+      await user.save()
+    }
+    console.log(user)
+
+    // Step 5: Generate JWT token
+    const tokens = await generateToken({
+      _id: user._id,
+      role: user.role,
+      userTypes: user.userTypes,
+    })
+
+    // Optional: redirect to frontend with token
+    if (newUserCheck) {
+      return res.redirect(`https://dev.myjulip.com/auth-demo/modern/verify/`)
+    } else {
+      return res.redirect(`https://dev.myjulip.com/dashboard/about/`)
     }
   }),
 }
