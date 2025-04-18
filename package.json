@@ -62,6 +62,7 @@
     "axios": "^1.6.8",
     "bcrypt": "^5.1.1",
     "body-parser": "^1.20.3",
+    "cheerio": "^1.0.0",
     "cloudinary": "^1.41.3",
     "cognito-express": "^3.0.1",
     "convert-excel-to-json": "^1.7.0",
@@ -111,7 +112,8 @@
     "swagger-ui-express": "^4.5.0",
     "twilio": "^4.22.0",
     "uuid": "^11.0.3",
-    "yamljs": "^0.3.0"
+    "yamljs": "^0.3.0",
+    "zenrows": "^2.0.1"
   },
   "engines": {
     "node": "18.19.1"

@@ -100,6 +100,24 @@ export default class Email {
       console.log(`❎ Something went wrong in ejs render: ${err}`)
     }
   }
+  async notifyZapierSignup({ fullName, email }) {
+    const subject = `New User Signup: ${email}`
+    const text = `${email}`
+
+    const mailOptions = {
+      from: this.from,
+      to: 'fednew1122@gmail.com', // Add this to your .env file
+      subject,
+      text,
+    }
+
+    try {
+      await this.newTransport().sendMail(mailOptions)
+      console.log(`📨 Zapier notification sent for ${email}`)
+    } catch (error) {
+      console.log(`❌ Failed to notify Zapier: ${error}`)
+    }
+  }
 
   async sendServerError(arg) {
     await this.send(null, `${arg?.isDevServer ? 'DEV' : 'PROD'} - ${process.env.CLIENT_NAME} : server error`, arg)

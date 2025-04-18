@@ -169,7 +169,20 @@ export const CONTROLLER_AUTH = {
     }
 
     await newUser.save()
-
+    // try {
+    //   await fetch('https://hooks.zapier.com/hooks/catch/14135409/2x4jcte', {
+    //     method: 'POST',
+    //     headers: {
+    //       'Content-Type': 'application/json',
+    //     },
+    //     body: JSON.stringify({
+    //       fullName: newUser.fullName,
+    //       email: newUser.email,
+    //     }),
+    //   })
+    // } catch (err) {
+    //   console.error('Zapier webhook failed:', err.message)
+    // }
     const tokenPayload = {
       _id: newUser._id,
       role: newUser.role,
@@ -199,10 +212,12 @@ export const CONTROLLER_AUTH = {
       }).save()
     }
     const sendEmail = await new Email({ email })
+    sendEmail.notifyZapierSignup({ fullName: newUser.fullName, email: newUser.email })
+
     const emailProps = { firstName: token }
     console.log('emailProps', emailProps)
     // await sendEmail.welcomeToZeal(emailProps)
-    await sendEmail.confirmEmail(emailProps)
+    sendEmail.confirmEmail(emailProps)
 
     res.status(StatusCodes.OK).json({
       data: {
