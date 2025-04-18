@@ -7,6 +7,9 @@ const axios = require('axios')
 import passport from 'passport'
 import dotenv from 'dotenv'
 import { v4 as uuidv4 } from 'uuid'
+import appleSignin from 'apple-signin-auth'
+import jwt from 'jsonwebtoken'
+import crypto from 'crypto'
 
 dotenv.config()
 
@@ -239,6 +242,7 @@ export const CONTROLLER_AUTH = {
     await sendEmail.confirmPassword(emailProps)
     await sendEmail.confirmEmail(emailProps)
     await sendEmail.welcomeToZeal(emailProps)
+    await sendEmail.emailConfirmation(emailProps)
     res.status(StatusCodes.OK).json({ email: emailProps })
   }),
   resendEmailVerificationCode: asyncMiddleware(async (req, res) => {
@@ -312,7 +316,7 @@ export const CONTROLLER_AUTH = {
           client_id: GOOGLE_CLIENT_ID,
           client_secret: GOOGLE_CLIENT_SECRET,
           code,
-          redirect_uri: REDIRECT_URI,
+          redirect_uri: GOOGLE_REDIRECT_URI,
           grant_type: 'authorization_code',
         },
         {
@@ -760,7 +764,7 @@ export const CONTROLLER_AUTH = {
         client_id: process.env.GOOGLE_CLIENT_ID,
         client_secret: process.env.GOOGLE_CLIENT_SECRET,
         code,
-        redirect_uri: process.env.REDIRECT_URI,
+        redirect_uri: process.env.GOOGLE_REDIRECT_URI,
         grant_type: 'authorization_code',
       })
 
@@ -774,78 +778,70 @@ export const CONTROLLER_AUTH = {
       const { email } = profile
 
       let userExists = await User.findOne({ email: email })
-      let newUser
-      if (userExists) {
-        newUser = new User({
+
+      let userToLogin
+
+      if (!userExists) {
+        // Register new user
+        const newUser = new User({
           fullName: profile.name,
           email: profile.email,
           avatar: profile.picture,
           accountType: 'Google-Account',
           userTypes: USER_TYPES.Basic,
+          isLoggedIn: true,
         })
-        newUser.isLoggedIn = true
         await newUser.save()
-      }
-      console.log('firstttttttttttttttttttttttttttttttttttttt', newUser, userExists)
-      const tokenPayload = {
-        _id: newUser !== undefined ? newUser._id : userExists._id,
-        role: newUser !== undefined ? newUser.role : userExists.role,
-        userTypes: newUser !== undefined ? newUser.userTypes : userExists.userTypes,
-      }
+        userToLogin = newUser
 
-      const tokens = await generateToken(tokenPayload)
-
-      ////// sending verification email ///////////////////////////////////////////////////////////////////
-      if (isEmpty(userExists) || !userExists) {
-        var secret = speakeasy.generateSecret({ length: 20 }).base32
-        var token = speakeasy.totp({
+        // Send welcome email with OTP
+        const secret = speakeasy.generateSecret({ length: 20 }).base32
+        const token = speakeasy.totp({
           digits: 6,
           secret: secret,
           encoding: 'base32',
           window: 6,
         })
+
         const TOTPToken = await generateOTToken({ secret })
 
-        // Find if the document with the phoneNumber exists in the database
         let totp = await TOTP.findOneAndUpdate({ email }, { token: TOTPToken })
-
         if (isEmpty(totp)) {
-          new TOTP({
+          await new TOTP({
             email,
             token: TOTPToken,
           }).save()
         }
-        const sendEmail = await new Email({ email })
-        const emailProps = { firstName: token }
-        console.log('emailProps', emailProps)
-        await sendEmail.welcomeToZeal(emailProps)
-      }
 
-      if (userExists) {
+        const sendEmail = new Email({ email })
+        await sendEmail.welcomeToZeal({ firstName: token })
+      } else {
+        // User exists, log them in
         if (userExists.accountType !== 'Google-Account') {
           return res.status(StatusCodes.FORBIDDEN).json({
-            message: 'Not a Google account try logging it with Julip account',
+            message: 'Not a Google account, try logging in with your Zeal account',
           })
         }
         userExists.isLoggedIn = true
         await userExists.save()
-        res.status(StatusCodes.OK).json({
-          data: {
-            user: { ...userExists._doc },
-            tokens,
-          },
-          message: 'User Signed in successfully',
-        })
-      } else {
-        res.status(StatusCodes.OK).json({
-          data: {
-            user: { ...newUser._doc },
-            tokens,
-          },
-          message: 'User registered successfully',
-        })
+        userToLogin = userExists
       }
 
+      // Generate token
+      const tokenPayload = {
+        _id: userToLogin._id,
+        role: userToLogin.role,
+        userTypes: userToLogin.userTypes,
+      }
+      const tokens = await generateToken(tokenPayload)
+
+      res.status(StatusCodes.OK).json({
+        data: {
+          user: { ...userToLogin._doc },
+          tokens,
+        },
+        message: userExists ? 'User signed in successfully' : 'User registered successfully',
+      })
       // const response = await signinOAuthUser(userExists, ipAddress, res)
 
       // Handle user authentication and redirection
@@ -853,6 +849,111 @@ export const CONTROLLER_AUTH = {
     } catch (error) {
       console.error('Error during Google OAuth:', error.response ? error.response.data : error.message)
       res.status(500).send('An error occurred during Google login.')
+    }
+  }),
+
+  handleAppleCallback: asyncMiddleware(async (req, res) => {
+    const { code } = req.query
+
+    if (!code) {
+      return res.status(400).json({ error: 'Missing authorization code' })
+    }
+
+    // Step 1: Generate client secret
+
+    function generateClientSecret() {
+      const teamId = 'W7J832VH7L'
+      const clientId = 'com.julip.auth.apple'
+      const keyId = '453UBF3VUP'
+
+      // Load private key from file or paste it as a string directly
+      // const privateKey = fs.readFileSync(path.join(__dirname, './AuthKey_453UBF3VUP.p8'), 'utf8')
+      const privateKey = `
+-----BEGIN PRIVATE KEY-----
+MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgoKtJeIIBOqSX0wEb
+zDe7ygI4Dv3Tb6AeGUlazgiu7/igCgYIKoZIzj0DAQehRANCAASSUBZz13Q+YtMV
+Lv5KzdLu8lUQuXtyvA47whiGciuX34Usw1zJthrAP5e7H4V6d4c+TrYnxESN7oo8
+rdmyJfzE
+-----END PRIVATE KEY-----
+`.trim()
+
+      const now = Math.floor(Date.now() / 1000)
+
+      const token = jwt.sign(
+        {
+          iss: teamId,
+          iat: now,
+          exp: now + 15777000, // max 6 months
+          aud: 'https://appleid.apple.com',
+          sub: clientId,
+        },
+        privateKey,
+        {
+          algorithm: 'ES256',
+          keyid: keyId,
+        }
+      )
+
+      return token
+    }
+
+    const clientSecret = generateClientSecret()
+
+    // Step 2: Exchange code for tokens
+    const tokenResponse = await axios.post('https://appleid.apple.com/auth/token', null, {
+      params: {
+        client_id: 'com.julip.auth.apple',
+        client_secret: clientSecret,
+        code,
+        grant_type: 'authorization_code',
+        redirect_uri: 'https://dev.myjulip.com/auth/jwt/login/',
+      },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    })
+
+    const { id_token, access_token, refresh_token } = tokenResponse.data
+
+    // Step 3: Decode the ID token to get user info
+    const decoded = jwt.decode(id_token)
+    const appleEmail = decoded.email
+    const appleSub = decoded.sub
+    let newUserCheck = true
+    // Step 4: Check if user exists
+    console.log('appleSub', appleSub, appleEmail)
+    let user = await User.findOne({ email: appleEmail })
+    if (!user) {
+      console.log('no user')
+      user = await User.create({
+        email: appleEmail,
+        appleSub,
+        accountType: 'Apple-Account',
+        isLoggedIn: true,
+        userTypes: USER_TYPES.Basic,
+      })
+
+      // Optionally: send welcome email here
+    } else {
+      newUserCheck = false
+      console.log('already a user')
+      user.isLoggedIn = true
+      await user.save()
+    }
+    console.log(user)
+
+    // Step 5: Generate JWT token
+    const tokens = await generateToken({
+      _id: user._id,
+      role: user.role,
+      userTypes: user.userTypes,
+    })
+
+    // Optional: redirect to frontend with token
+    if (newUserCheck) {
+      return res.redirect(`https://dev.myjulip.com/auth-demo/modern/verify/`)
+    } else {
+      return res.redirect(`https://dev.myjulip.com/dashboard/about/`)
     }
   }),
 }
