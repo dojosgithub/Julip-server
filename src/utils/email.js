@@ -111,6 +111,9 @@ export default class Email {
   async welcomeToZeal(arg) {
     await this.send('welcome-to-zeal', 'Welcome to Julip', arg)
   }
+  async welcomeToZealPro(arg) {
+    await this.send('welcome', 'Welcome to Julip', arg)
+  }
   async emailConfirmation(arg) {
     await this.send('confirm-email', 'Welcome to Julip', arg)
   }

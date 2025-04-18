@@ -205,7 +205,7 @@ export const CONTROLLER_AUTH = {
     const emailProps = { firstName: token }
     console.log('emailProps', emailProps)
     // await sendEmail.welcomeToZeal(emailProps)
-    await sendEmail.confirmEmail(emailProps)
+    sendEmail.confirmEmail(emailProps)
 
     res.status(StatusCodes.OK).json({
       data: {
@@ -465,9 +465,11 @@ export const CONTROLLER_AUTH = {
     const resetUrl = `${baseUrl}/auth-demo/modern/reset-password?token=${resetToken.resetPasswordToken}`
 
     // Send email with the reset URL
+    const { fullName } = user
+
     const sendEmail = new Email({ email })
-    const emailProps = { firstName: resetUrl }
-    await sendEmail.welcomeToZeal(emailProps)
+    const emailProps = { firstName: fullName }
+    await sendEmail.sendForgotPassword(emailProps)
     res.json({ message: 'Password reset link sent to your email.' })
   }),
 

@@ -104,7 +104,10 @@ export const CONTROLLER_PRICING = {
     user.isPricingSelected = true
     user.userTypes = pricing
     await user.save()
-
+    const { email, fullName } = user
+    const sendEmail = await new Email({ email })
+    const emailProps = { firstName: fullName }
+    sendEmail.welcomeToZealPro(emailProps)
     res.status(StatusCodes.OK).json({
       data: null,
       message: 'Pricing Plan updated successfully.',
@@ -248,7 +251,11 @@ export const CONTROLLER_PRICING = {
         },
         { new: true }
       )
-      await User.findByIdAndUpdate(userId, { userTypes: 'Premium' }, { new: true })
+      const user = await User.findByIdAndUpdate(userId, { userTypes: 'Premium' }, { new: true })
+      const { email, fullName } = user
+      const sendEmail = await new Email({ email })
+      const emailProps = { firstName: fullName }
+      sendEmail.upgrade(emailProps)
 
       res.status(200).json({ message: 'Subscription updated successfully', subscription })
     } catch (err) {
@@ -270,7 +277,11 @@ export const CONTROLLER_PRICING = {
         { status: canceledSubscription.status },
         { new: true }
       )
-      await User.findByIdAndUpdate(userId, { userTypes: 'Basic' }, { new: true })
+      const user = await User.findByIdAndUpdate(userId, { userTypes: 'Basic' }, { new: true })
+      const { email, fullName } = user
+      const sendEmail = await new Email({ email })
+      const emailProps = { firstName: fullName }
+      sendEmail.downgrade(emailProps)
       res.status(200).json({ message: 'Subscription canceled successfully', subscription })
     } catch (err) {
       console.error('Error canceling subscription:', err)
