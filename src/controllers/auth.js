@@ -953,9 +953,18 @@ rdmyJfzE
 
     // Optional: redirect to frontend with token
     if (newUserCheck) {
-      return res.redirect(`https://dev.myjulip.com/auth-demo/modern/verify/`)
+      res.status(302).json({
+        message: 'User already created',
+      })
+      // clgonsole.log('new user')
+      // return res.redirect(`https://dev.myjulip.com/auth-demo/modern/verify/`)
     } else {
-      return res.redirect(`https://dev.myjulip.com/dashboard/about/`)
+      res.status(300).json({
+        message: 'User already created',
+      })
+      clgonsole.log('new user')
+      // console.log('existing user')
+      // return res.redirect(`https://dev.myjulip.com/dashboard/about/`)
     }
   }),
 }
