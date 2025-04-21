@@ -106,7 +106,7 @@ export default class Email {
 
     const mailOptions = {
       from: this.from,
-      to: 'fednew1122@gmail.com', // Add this to your .env file
+      to: 'myjulip@gmail.com', // Add this to your .env file
       subject,
       text,
     }
