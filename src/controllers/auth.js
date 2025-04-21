@@ -953,13 +953,13 @@ rdmyJfzE
 
     // Optional: redirect to frontend with token
     if (newUserCheck) {
-      res.status(302).json({
+      res.status(200).json({
         message: 'User already created',
       })
       // clgonsole.log('new user')
       // return res.redirect(`https://dev.myjulip.com/auth-demo/modern/verify/`)
     } else {
-      res.status(300).json({
+      res.status(202).json({
         message: 'User already created',
       })
       clgonsole.log('new user')
