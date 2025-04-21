@@ -962,7 +962,7 @@ rdmyJfzE
       res.status(202).json({
         message: 'User already created',
       })
-      clgonsole.log('new user')
+      console.log('new user')
       // console.log('existing user')
       // return res.redirect(`https://dev.myjulip.com/dashboard/about/`)
     }
