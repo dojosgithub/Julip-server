@@ -734,10 +734,10 @@ export const CONTROLLER_PORTFOLIO = {
 
   youtubeAnalytics: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
-    const { refreshToken, accessToken, apiKey } = req.body
+    const { refreshToken, apiKey } = req.body
 
     try {
-      let token = accessToken
+      let token
 
       // If refreshToken is provided, exchange it for a new accessToken
       if (refreshToken) {
@@ -763,7 +763,7 @@ export const CONTROLLER_PORTFOLIO = {
           Authorization: `Bearer ${token}`,
         },
       })
-      const channelId = response.data.items
+      const channelId = response.data.items[0].id
       console.log('Channel ID:', channelId)
 
       // Validate input

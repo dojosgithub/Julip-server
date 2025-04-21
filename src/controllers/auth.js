@@ -952,10 +952,10 @@ rdmyJfzE
     })
 
     // Optional: redirect to frontend with token
-    if (newUserCheck) {
-      return res.redirect(`https://dev.myjulip.com/auth-demo/modern/verify/`)
-    } else {
-      return res.redirect(`https://dev.myjulip.com/dashboard/about/`)
-    }
+    // if (newUserCheck) {
+    //   return res.redirect(`https://dev.myjulip.com/auth-demo/modern/verify/`)
+    // } else {
+    //   return res.redirect(`https://dev.myjulip.com/dashboard/about/`)
+    // }
   }),
 }
