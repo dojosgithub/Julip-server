@@ -124,7 +124,7 @@ export default class Email {
   }
 
   async sendForgotPassword(arg) {
-    await this.send('forgot-password', 'Reset code', arg)
+    await this.send('forgot-password', 'Reset Password', arg)
   }
   async welcomeToZeal(arg) {
     await this.send('welcome-to-zeal', 'Welcome to Julip', arg)

@@ -101,8 +101,8 @@ export const CONTROLLER_AUTH = {
         }).save()
       }
       const sendEmail = await new Email({ email })
-      const emailProps = { token }
-      await sendEmail.registerAccount(emailProps)
+      const emailProps = { code: token }
+      await sendEmail.confirmEmail(emailProps)
 
       res.json({ message: 'Verification code sent' })
     }
@@ -268,9 +268,9 @@ export const CONTROLLER_AUTH = {
         token: TOTPToken,
       }).save()
     }
-    const sendEmail = await new Email({ email })
-    const emailProps = { firstName: token }
     // await sendEmail.welcomeToZeal(emailProps)
+    const sendEmail = await new Email({ email })
+    const emailProps = { code: token }
     await sendEmail.confirmEmail(emailProps)
     res.status(StatusCodes.OK).json({
       message: 'Code sent',
