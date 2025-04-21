@@ -13,6 +13,7 @@ import { User, Group, Challenge, Profile } from '../models'
 
 // * Middlewares
 import { asyncMiddleware } from '../middlewares'
+import { currencySymbols, extractWithFallbacks } from '../utils/helper'
 
 const createBrowser = async () => {
   // Check if running on Heroku (process.env.DYNO is set on Heroku)
@@ -335,43 +336,139 @@ export const CONTROLLER_SCRAPE = {
     }
   }),
 
+  // webCrawler: asyncMiddleware(async (req, res) => {
+  //   const { url } = req.body
+  //   try {
+  //     // const response = await axios.get('https://app.scrapingbee.com/api/v1', {
+  //     //   params: {
+  //     //     api_key: 'MTBXWDECZTSZDXNFUTR8ILAOFU5TNL3VOZNHCV06XOP310QP5UYY8E5ARAENKYOI405PRJMUM9WVKNHK',
+  //     //     url,
+  //     //     extract_rules: JSON.stringify({
+  //     //       title: 'h1',
+  //     //       price: '.price, .product-price, [itemprop="price"]',
+  //     //       description: '.description, .product-description, [itemprop="description"]',
+  //     //       brand: '.brand, [itemprop="brand"], .product-brand',
+  //     //     }),
+  //     //   },
+  //     // })
+
+  // const response = await axios.get('https://api.diffbot.com/v3/product', {
+  //   params: {
+  //     token: 'e27411d975d8692c44ba04748233a7fd',
+  //     url: url, // URL of the product page
+  //   },
+  // })
+  // // Extract relevant fields from the Diffbot response
+  // const productData = response?.data?.objects[0] // Diffbot returns data in `objects` array
+  // console.log('response.data', response.data)
+  // const extractedData = {
+  //   title: productData.title || null,
+  //   price: productData.offerPrice || productData.price || null, // Use `offerPrice` or `price`
+  //   brand: productData.brand || null,
+  //   image: productData.images ? productData.images[0]?.url : null, // Use the first image URL
+  //   description: productData.description || null,
+  // }
+
+  //     res.status(StatusCodes.OK).json({
+  //       data: extractedData,
+  //       message: 'Product data fetched successfully.',
+  //     })
+  //   } catch (error) {
+  //     console.error('Error scraping:', error)
+  //     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+  //       message: 'Error scraping: ' + error.message,
+  //     })
+  //   }
+  // }),
+
   webCrawler: asyncMiddleware(async (req, res) => {
     const { url } = req.body
     try {
-      // const response = await axios.get('https://app.scrapingbee.com/api/v1', {
-      //   params: {
-      //     api_key: 'MTBXWDECZTSZDXNFUTR8ILAOFU5TNL3VOZNHCV06XOP310QP5UYY8E5ARAENKYOI405PRJMUM9WVKNHK',
-      //     url,
-      //     extract_rules: JSON.stringify({
-      //       title: 'h1',
-      //       price: '.price, .product-price, [itemprop="price"]',
-      //       description: '.description, .product-description, [itemprop="description"]',
-      //       brand: '.brand, [itemprop="brand"], .product-brand',
-      //     }),
-      //   },
-      // })
+      if (url.includes('chewy.com')) {
+        const client = new ZenRows('1a4b70cef75946e38721336fa7c116ed1a892c0e')
 
-      const response = await axios.get('https://api.diffbot.com/v3/product', {
-        params: {
-          token: 'e27411d975d8692c44ba04748233a7fd',
-          url: url, // URL of the product page
-        },
-      })
-      // Extract relevant fields from the Diffbot response
-      const productData = response?.data?.objects[0] // Diffbot returns data in `objects` array
-      console.log('response.data', response.data)
-      const extractedData = {
-        title: productData.title || null,
-        price: productData.offerPrice || productData.price || null, // Use `offerPrice` or `price`
-        brand: productData.brand || null,
-        image: productData.images ? productData.images[0]?.url : null, // Use the first image URL
-        description: productData.description || null,
+        const request = await client.get(url, {
+          js_render: 'true',
+          premium_proxy: 'true',
+        })
+
+        const data = await request.text() // Get the raw HTML response
+        console.log('Raw HTML received')
+
+        // Parse the HTML with cheerio
+        const cheerio = require('cheerio')
+        const $ = cheerio.load(data)
+
+        // Try to extract data from JSON-LD first (most reliable)
+        let extractedData = {}
+
+        try {
+          // Find the JSON-LD script tag
+          const jsonLdText = $('script[type="application/ld+json"]').html()
+
+          if (jsonLdText) {
+            // Parse the JSON content
+            const jsonData = JSON.parse(jsonLdText)
+
+            // Extract the product data
+            extractedData = {
+              title: jsonData.name || null,
+              price: null,
+              brand: jsonData.brand?.name || jsonData.hasVariant?.[0]?.seller?.name || jsonData.seller?.name || null,
+              image: jsonData.image || null,
+              description: jsonData.description || null,
+            }
+            console.log('jsonData', jsonData)
+            // Extract price from the first variant if available
+            if (Array.isArray(jsonData.offers)) {
+              const offer = jsonData.offers[0]
+              const symbol = currencySymbols[offer?.priceCurrency] || offer?.priceCurrency || ''
+              if (offer?.price) {
+                extractedData.price = `${symbol}${offer.price}`
+              }
+            } else if (jsonData.offers?.price) {
+              const currency = jsonData.offers?.priceCurrency
+              const symbol = currencySymbols[currency] || currency || ''
+              extractedData.price = currency ? `${symbol}${jsonData.offers.price}` : `${jsonData.offers.price}`
+            }
+          }
+        } catch (jsonError) {
+          console.error('Error extracting from JSON-LD:', jsonError)
+          // Continue to fallback methods if JSON-LD extraction fails
+        }
+
+        extractedData = extractWithFallbacks($, extractedData)
+        // Log the extracted data for debugging
+        console.log('Extracted data:', extractedData)
+
+        res.status(StatusCodes.OK).json({
+          data: extractedData,
+          message: 'Product data fetched successfully.(ZenRows)',
+        })
+      } else {
+        // Default: Use Diffbot
+        const response = await axios.get('https://api.diffbot.com/v3/product', {
+          params: {
+            token: 'e27411d975d8692c44ba04748233a7fd',
+            url: url,
+          },
+        })
+
+        const productData = response?.data?.objects[0]
+        console.log('productData', productData)
+        const extractedData = {
+          title: productData?.title || null,
+          price: productData?.offerPrice || productData?.price || null,
+          brand: productData?.brand || null,
+          image: productData?.images?.[0]?.url || null,
+          description: productData?.description || null,
+        }
+
+        res.status(StatusCodes.OK).json({
+          data: extractedData,
+          message: 'Product data fetched from Diffbot.',
+        })
       }
-
-      res.status(StatusCodes.OK).json({
-        data: extractedData,
-        message: 'Product data fetched successfully.',
-      })
     } catch (error) {
       console.error('Error scraping:', error)
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
@@ -379,154 +476,6 @@ export const CONTROLLER_SCRAPE = {
       })
     }
   }),
-
-  // webCrawler: asyncMiddleware(async (req, res) => {
-  //   const { url } = req.body
-  //   try {
-  //     const client = new ZenRows('6d0a24a6d0b994b6899bf797b7f50d49494d332b')
-
-  //     const request = await client.get(url, {
-  //       js_render: 'true',
-  //       premium_proxy: 'true',
-  //       json_response: 'true',
-  //       // Do NOT use json_response so you can get HTML
-  //     })
-  //     // const res = await request.text()
-  //     const data = await request.text() // This should contain the full HTML response
-  //     console.log('data', data)
-  //     console.log('parsed data', JSON.parse(data))
-  //     // Parse the JSON response
-  //     const parsedResponse = JSON.parse(data) // Parse the response if it's a JSON string
-  //     const rawHtml = parsedResponse.html // Extract the HTML from the parsed JSON
-  //     // const data = res.html
-  //     // You can parse it with cheerio if needed
-  //     const cheerio = require('cheerio')
-  //     const $ = cheerio.load(rawHtml)
-
-  //     const extractedData = {
-  //       title: $('h1.pdp-e-i-head').text().trim() || null,
-  //       price: $('span.payBlkBig').text().trim() || null,
-  //       brand: $('span.bcrumb-last').text().trim() || null,
-  //       image: $('img.cloudzoom').attr('src') || null,
-  //       description: $('#specifications .detailssubbox').text().trim() || null,
-  //     }
-
-  //     res.status(StatusCodes.OK).json({
-  //       data: extractedData,
-  //       message: 'Product data fetched successfully.',
-  //     })
-  //   } catch (error) {
-  //     console.error('Error scraping:', error)
-  //     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-  //       message: 'Error scraping: ' + error.message,
-  //     })
-  //   }
-  // }),
-
-  // webCrawler: asyncMiddleware(async (req, res) => {
-  //   const { url } = req.body
-  //   try {
-  //     const client = new ZenRows('6d0a24a6d0b994b6899bf797b7f50d49494d332b')
-
-  //     const request = await client.get(url, {
-  //       js_render: 'true',
-  //       premium_proxy: 'true',
-  //       // Remove json_response to get the raw HTML
-  //       // json_response: 'true',
-  //     })
-
-  //     const data = await request.text() // Get the raw HTML response
-  //     console.log('Raw HTML received')
-
-  //     // Parse the HTML with cheerio
-  //     const cheerio = require('cheerio')
-  //     const $ = cheerio.load(data)
-
-  //     // Try to extract data from JSON-LD first (most reliable)
-  //     let extractedData = {}
-
-  //     try {
-  //       // Find the JSON-LD script tag
-  //       const jsonLdText = $('script[type="application/ld+json"]').html()
-
-  //       if (jsonLdText) {
-  //         // Parse the JSON content
-  //         const jsonData = JSON.parse(jsonLdText)
-
-  //         // Extract the product data
-  //         extractedData = {
-  //           title: jsonData.name || null,
-  //           price: null,
-  //           brand: jsonData.brand?.name || jsonData.hasVariant?.[0]?.seller?.name || jsonData.seller?.name || null,
-  //           image: jsonData.image || null,
-  //           description: jsonData.description || null,
-  //         }
-
-  //         // Extract price from the first variant if available
-  //         if (jsonData.hasVariant && jsonData.hasVariant.length > 0) {
-  //           const firstVariant = jsonData.hasVariant[0]
-  //           if (firstVariant.offers && firstVariant.offers.length > 0) {
-  //             extractedData.price = firstVariant.offers[0].price || null
-  //           }
-  //         } else if (jsonData.offers) {
-  //           // Handle single product case
-  //           extractedData.price =
-  //             jsonData.offers.price || (Array.isArray(jsonData.offers) ? jsonData.offers[0]?.price : null)
-  //         }
-  //       }
-  //     } catch (jsonError) {
-  //       console.error('Error extracting from JSON-LD:', jsonError)
-  //       // Continue to fallback methods if JSON-LD extraction fails
-  //     }
-
-  //     // Fallback to traditional selectors if JSON-LD didn't work
-  //     // Try multiple common selectors for each field
-  //     if (!extractedData.title) {
-  //       extractedData.title =
-  //         $('h1.pdp-e-i-head, h1.product-title, h1[itemprop="name"], h1').first().text().trim() || null
-  //     }
-
-  //     if (!extractedData.price) {
-  //       extractedData.price =
-  //         $('span.payBlkBig, .product-price, span[itemprop="price"], .price').first().text().trim() || null
-  //       // Clean up price if found
-  //       if (extractedData.price) {
-  //         // Remove currency symbols and convert to number if possible
-  //         const priceMatch = extractedData.price.match(/[\d,.]+/)
-  //         if (priceMatch) {
-  //           extractedData.price = priceMatch[0].replace(/[^\d.]/g, '')
-  //         }
-  //       }
-  //     }
-
-  //     if (!extractedData.brand) {
-  //       extractedData.brand = $('span.bcrumb-last, .brand, [itemprop="brand"]').first().text().trim() || null
-  //     }
-
-  //     if (!extractedData.image) {
-  //       extractedData.image = $('img.cloudzoom, img.product-image, [itemprop="image"]').first().attr('src') || null
-  //     }
-
-  //     if (!extractedData.description) {
-  //       extractedData.description =
-  //         $('#specifications .detailssubbox, .product-description, [itemprop="description"]').first().text().trim() ||
-  //         null
-  //     }
-
-  //     // Log the extracted data for debugging
-  //     console.log('Extracted data:', extractedData)
-
-  //     res.status(StatusCodes.OK).json({
-  //       data: extractedData,
-  //       message: 'Product data fetched successfully.',
-  //     })
-  //   } catch (error) {
-  //     console.error('Error scraping:', error)
-  //     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-  //       message: 'Error scraping: ' + error.message,
-  //     })
-  //   }
-  // }),
   //----------------------------------------------------------------------------------------------------
   // webCrawler: asyncMiddleware(async (req, res) => {
   //   // Helper function to detect site type
