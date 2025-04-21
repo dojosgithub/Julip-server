@@ -101,8 +101,8 @@ export const CONTROLLER_AUTH = {
         }).save()
       }
       const sendEmail = await new Email({ email })
-      const emailProps = { code: token }
-      await sendEmail.confirmEmail(emailProps)
+      const emailProps = { token }
+      await sendEmail.registerAccount(emailProps)
 
       res.json({ message: 'Verification code sent' })
     }
@@ -268,9 +268,9 @@ export const CONTROLLER_AUTH = {
         token: TOTPToken,
       }).save()
     }
-    // await sendEmail.welcomeToZeal(emailProps)
     const sendEmail = await new Email({ email })
-    const emailProps = { code: token }
+    const emailProps = { firstName: token }
+    // await sendEmail.welcomeToZeal(emailProps)
     await sendEmail.confirmEmail(emailProps)
     res.status(StatusCodes.OK).json({
       message: 'Code sent',
@@ -952,10 +952,10 @@ rdmyJfzE
     })
 
     // Optional: redirect to frontend with token
-    // if (newUserCheck) {
-    //   return res.redirect(`https://dev.myjulip.com/auth-demo/modern/verify/`)
-    // } else {
-    //   return res.redirect(`https://dev.myjulip.com/dashboard/about/`)
-    // }
+    if (newUserCheck) {
+      return res.redirect(`https://dev.myjulip.com/auth-demo/modern/verify/`)
+    } else {
+      return res.redirect(`https://dev.myjulip.com/dashboard/about/`)
+    }
   }),
 }
