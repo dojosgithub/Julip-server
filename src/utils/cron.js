@@ -4,7 +4,7 @@ import { AUCTION_STATUS, CAR_STATUS, SYSTEM_STAFF_ROLE, USER_TYPES } from './use
 import Email from '../utils/email'
 import { Notification } from '../models/Notifications'
 import { toObjectId } from './misc'
-import { Comment, Group, Post, User, Badge, Product } from '../models'
+import { Comment, Group, Post, User, Badge, Product, Subscription } from '../models'
 import { sendPushNotification } from './pushNotification'
 import { calculateAverage, getInstagramFollowers, getInstagramInsights, getInstagramMedia } from './insta-acc-funcs'
 
@@ -23,6 +23,7 @@ export const task = schedule(
     // if (process.env.NODE_ENV) automatedEmails()
     console.log('CRON JOB RUNNING!!!')
     productsToDelete()
+    sendTrialEmails()
   },
   { timezone: 'America/New_York' }
 )
@@ -41,6 +42,58 @@ async function productsToDelete() {
   }
 }
 
+async function sendTrialEmails() {
+  try {
+    const trialingSubscriptions = await Subscription.find({ status: 'trialing' }).populate('user')
+    const today = new Date()
+
+    for (const subscription of trialingSubscriptions) {
+      const { trialEndDate, user } = subscription
+
+      if (!trialEndDate || !user) continue
+
+      // Assume 14-day trial: Calculate start date from trialEndDate
+      const trialStartDate = new Date(trialEndDate)
+      trialStartDate.setDate(trialEndDate.getDate() - 14)
+
+      const diffInMs = today - trialStartDate
+      const trialDay = Math.floor(diffInMs / (1000 * 60 * 60 * 24)) + 1
+
+      if (trialDay < 1 || trialDay > 14) continue // Skip if outside trial window
+
+      const { email, fullName } = user
+      const sendEmail = new Email({ email })
+      const emailProps = { firstName: fullName }
+
+      switch (trialDay) {
+        case 3:
+          await sendEmail.trialDay3(emailProps)
+          break
+        case 5:
+          await sendEmail.trialDay5(emailProps)
+          break
+        case 10:
+          await sendEmail.trialDay10(emailProps)
+          break
+        case 12:
+          await sendEmail.trialDay12(emailProps)
+          break
+        case 13:
+          await sendEmail.trialDay13(emailProps)
+          break
+        case 14:
+          await sendEmail.trialFinalDay(emailProps)
+          break
+        default:
+          break
+      }
+
+      console.log(`✅ Email sent to ${email} for trial day ${trialDay}`)
+    }
+  } catch (err) {
+    console.error('❌ Error sending trial emails:', err)
+  }
+}
 // Schedule the cron job to run daily at midnight
 // cron.schedule('0 0 * * *', async () => {
 //   try {
