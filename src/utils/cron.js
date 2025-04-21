@@ -81,9 +81,9 @@ async function sendTrialEmails() {
         case 13:
           await sendEmail.trialDay13(emailProps)
           break
-        // case 14:
-        //   await sendEmail.trialFinalDay(emailProps)
-        //   break
+        case 14:
+          await sendEmail.trialFinalDay(emailProps)
+          break
         default:
           break
       }
