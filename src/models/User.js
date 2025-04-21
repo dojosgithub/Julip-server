@@ -13,6 +13,9 @@ export const userSchema = new Schema(
       required: true,
       unique: true,
     },
+    appleSub: {
+      type: String,
+    },
     isEmailVerified: {
       type: Boolean,
       default: false,
