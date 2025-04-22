@@ -867,11 +867,11 @@ export const CONTROLLER_AUTH = {
       const clientId = 'com.julip.auth.apple'
       const keyId = '453UBF3VUP'
       const privateKey = `-----BEGIN PRIVATE KEY-----
-  MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgoKtJeIIBOqSX0wEb
-  zDe7ygI4Dv3Tb6AeGUlazgiu7/igCgYIKoZIzj0DAQehRANCAASSUBZz13Q+YtMV
-  Lv5KzdLu8lUQuXtyvA47whiGciuX34Usw1zJthrAP5e7H4V6d4c+TrYnxESN7oo8
-  rdmyJfzE
-  -----END PRIVATE KEY-----`.trim()
+MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgoKtJeIIBOqSX0wEb
+zDe7ygI4Dv3Tb6AeGUlazgiu7/igCgYIKoZIzj0DAQehRANCAASSUBZz13Q+YtMV
+Lv5KzdLu8lUQuXtyvA47whiGciuX34Usw1zJthrAP5e7H4V6d4c+TrYnxESN7oo8
+rdmyJfzE
+-----END PRIVATE KEY-----`.trim()
 
       const now = Math.floor(Date.now() / 1000)
       return jwt.sign(
@@ -944,6 +944,7 @@ export const CONTROLLER_AUTH = {
 
       const sendEmail = new Email({ email: appleEmail })
       await sendEmail.welcomeToZeal({ firstName: token })
+      user.isLoggedIn = true
     } else {
       user.isLoggedIn = true
       await user.save()

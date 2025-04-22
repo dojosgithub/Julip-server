@@ -167,34 +167,47 @@ export const CONTROLLER_ANALYTICS = {
   addProductClick: asyncMiddleware(async (req, res) => {
     const { userId, productName } = req.body
 
-    let analytics = await Analytics.findOne({ userId })
-
-    // Initialize the document if not found
-    if (!analytics) {
-      analytics = new Analytics({ userId })
+    const updateQuery = {
+      userId,
+      'products.productName': productName,
     }
 
-    // Check if the product already exists in the array
-    const productIndex = analytics.products.findIndex((product) => product.productName === productName)
+    const updateExistingProduct = {
+      $inc: { 'products.$.count': 1 },
+      $set: { 'products.$.timestamp': new Date() },
+    }
 
-    if (productIndex === -1) {
-      // If product doesn't exist, add it
-      analytics.products.push({
-        productName,
-        count: 1,
-        timestamp: new Date(),
+    const updated = await Analytics.findOneAndUpdate(updateQuery, updateExistingProduct, {
+      new: true,
+    })
+
+    if (updated) {
+      return res.status(StatusCodes.OK).json({
+        message: 'Product click updated successfully.',
+        data: updated.products,
       })
-    } else {
-      // If product exists, update its count and timestamp
-      analytics.products[productIndex].count += 1
-      analytics.products[productIndex].timestamp = new Date()
     }
 
-    await analytics.save()
+    // If product doesn't exist, push a new one
+    const updateNewProduct = {
+      $push: {
+        products: {
+          productName,
+          count: 1,
+          timestamp: new Date(),
+        },
+      },
+    }
 
-    res.status(StatusCodes.OK).json({
+    const result = await Analytics.findOneAndUpdate({ userId }, updateNewProduct, {
+      upsert: true,
+      new: true,
+      setDefaultsOnInsert: true,
+    })
+
+    return res.status(StatusCodes.OK).json({
       message: 'Product click added successfully.',
-      data: analytics.products, // Return the updated products array
+      data: result.products,
     })
   }),
 
