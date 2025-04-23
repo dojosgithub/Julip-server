@@ -373,7 +373,7 @@ export const CONTROLLER_PORTFOLIO = {
       console.error('Error saving Instagram analytics:', error.message)
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         message: 'Error during authentication',
-        error: error.message,
+        error: error.response?.data || error.message,
       })
     }
   }),
