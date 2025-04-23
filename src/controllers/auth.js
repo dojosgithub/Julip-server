@@ -483,7 +483,7 @@ export const CONTROLLER_AUTH = {
     const { fullName } = user
 
     const sendEmail = new Email({ email })
-    const emailProps = { firstName: fullName }
+    const emailProps = { resetUrl }
     await sendEmail.sendForgotPassword(emailProps)
     res.json({ message: 'Password reset link sent to your email.' })
   }),
