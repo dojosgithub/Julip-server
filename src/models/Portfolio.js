@@ -18,7 +18,7 @@ const portfolioContentSchema = {
   location: {
     name: {
       type: String,
-      default: 'Location',
+      default: 'My Location',
     },
     visibility: {
       type: Boolean, // Optional field
@@ -32,7 +32,7 @@ const portfolioContentSchema = {
   brand: {
     name: {
       type: String,
-      default: 'Brand',
+      default: "Brands I've Worked With",
     },
     visibility: {
       type: Boolean, // Optional field
@@ -40,7 +40,7 @@ const portfolioContentSchema = {
     },
     oneLiner: {
       type: String,
-      default: '',
+      default: 'Click the logo to see my work',
     },
     brandList: [
       {
@@ -68,7 +68,7 @@ const portfolioContentSchema = {
   sample: {
     name: {
       type: String,
-      default: 'Content Sample',
+      default: 'Content Samples',
     },
     visibility: {
       type: Boolean,
