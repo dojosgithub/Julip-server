@@ -14,10 +14,12 @@ export const generateToken = (payload) => {
 }
 
 export const decodeToken = (token) => {
+  console.log('decodeToken', token)
   return new Promise((resolve, reject) => {
     jwt.verify(token, process.env.JWT_SECRET_KEY, (err, decoded) => {
       if (err) {
-        return reject(new Error('Invalid or expired token.'))
+        console.error('JWT verification error:', err)
+        return reject(new Error(err.message || 'Invalid or expired token.'))
       }
       resolve(decoded)
     })

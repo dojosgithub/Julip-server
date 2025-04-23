@@ -450,7 +450,7 @@ export const CONTROLLER_AUTH = {
 
     if (user.accountType === 'Google-Account') {
       return res.status(400).json({
-        message: 'Not a Zeal Account',
+        message: 'Not a Julip Account',
       })
     }
 
@@ -493,7 +493,9 @@ export const CONTROLLER_AUTH = {
     const { token, newPassword } = req.body
 
     const decoded = await decodeToken(token)
+    console.log('decoded', decoded)
     const { email } = decoded
+    console.log('decoded', email, decoded)
     // Find the user by the reset token and check token validity
     const user = await User.findOne({
       email: email,
@@ -909,7 +911,11 @@ rdmyJfzE
     const { id_token, access_token } = tokenResponse.data
     const decoded = jwt.decode(id_token)
     const { email: appleEmail, sub: appleSub } = decoded
-
+    if (!appleEmail) {
+      return res.status(422).json({
+        error: 'Apple did not return an email address. Please use a different login method or try again.',
+      })
+    }
     let user = await User.findOne({ email: appleEmail })
     let isNewUser = false
 
