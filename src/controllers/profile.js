@@ -254,6 +254,7 @@ export const CONTROLLER_PROFILE = {
 
     // Mapping of platforms to their base URLs
     const platformBaseUrls = {
+      Email: 'mailto:',
       Instagram: 'https://instagram.com/',
       TikTok: 'https://www.tiktok.com/@',
       YouTube: 'https://www.youtube.com/c/',
@@ -265,6 +266,7 @@ export const CONTROLLER_PROFILE = {
       Spotify: 'https://open.spotify.com/user/',
       Snapchat: 'https://www.snapchat.com/add/',
       X: 'https://x.com/',
+      Substack: 'https://substack.com/@',
     }
 
     // Validate and process socialLinks
