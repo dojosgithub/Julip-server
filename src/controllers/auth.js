@@ -913,7 +913,8 @@ rdmyJfzE
     const { email: appleEmail, sub: appleSub } = decoded
     if (!appleEmail) {
       return res.status(422).json({
-        error: 'Apple did not return an email address. Please use a different login method or try again.',
+        error:
+          'Apple did not return an email address. Please use a apple account associated with an email or use different login method or try again.',
       })
     }
     let user = await User.findOne({ email: appleEmail })

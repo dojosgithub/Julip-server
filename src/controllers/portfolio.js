@@ -311,7 +311,7 @@ export const CONTROLLER_PORTFOLIO = {
   InstaDetails: asyncMiddleware(async (req, res) => {
     const { user_id: instagramUserId, access_token: accessToken } = req.body
     const { _id: userId } = req.decoded // assuming you're using middleware to decode the user
-
+    console.log('instagramUserId', instagramUserId, accessToken, 'userId', userId)
     try {
       const followers_response = await axios.get(
         `https://graph.instagram.com/${instagramUserId}?fields=followers_count&access_token=${accessToken}`
@@ -664,7 +664,7 @@ export const CONTROLLER_PORTFOLIO = {
       params.append('client_id', process.env.YOUTUBE_CLIENT_ID)
       params.append('client_secret', process.env.YOUTUBE_CLIENT_SECRET)
       params.append('grant_type', 'authorization_code')
-      params.append('redirect_uri', process.env.LINKEDIN_REDIRECT_URI)
+      params.append('redirect_uri', process.env.YOUTUBE_REDIRECT_URI)
       params.append('code', authCode)
       params.append('access_type', 'offline')
 
@@ -973,7 +973,7 @@ export const CONTROLLER_PORTFOLIO = {
           client_secret: process.env.TIKTOK_CLIENT_SECRET,
           code: code.split('&')[0],
           grant_type: 'authorization_code',
-          redirect_uri: 'https://dev.myjulip.com/auth/jwt/onboarding',
+          redirect_uri: process.env.TIKTOK_REDIRECT_URI,
         }),
         {
           headers: {
