@@ -10,6 +10,10 @@ export const testimonialSchema = new Schema(
       type: String,
       required: true,
     },
+    company: {
+      type: String,
+      required: false, // optional field
+    },
     testimonial: {
       type: String,
       required: true,
