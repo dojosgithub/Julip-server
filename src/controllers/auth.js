@@ -285,7 +285,16 @@ export const CONTROLLER_AUTH = {
       return res.status(400).json({ message: 'No TOTP record found or it has already been used.' })
     }
 
-    let decoded = await verifyTOTPToken(totp.token)
+    let decoded
+    try {
+      decoded = await verifyTOTPToken(totp.token)
+    } catch (err) {
+      if (err.name === 'TokenExpiredError') {
+        return res.status(400).json({ message: 'Verification code has expired. Please request a new one.' })
+      } else {
+        return res.status(400).json({ message: 'Invalid verification code token.' })
+      }
+    }
 
     let verified = speakeasy.totp.verify({
       digits: 6,
@@ -299,7 +308,7 @@ export const CONTROLLER_AUTH = {
       const user = await User.findOne({ email })
       user.isEmailVerified = true
       await user.save()
-      res.status(200).json({ message: 'code verified' })
+      res.status(200).json({ message: 'Code verified' })
     } else {
       res.status(400).json({ message: 'Invalid verification code' })
     }

@@ -158,13 +158,19 @@ export const CONTROLLER_SHOP = {
         { userId: userId },
         { draft: shopData, lastPublishedAt: Date.now() },
         { new: true }
-      )
+      ).populate({
+        path: 'draft.pinnedProducts.productsList',
+        model: 'Product',
+      })
     } else if (version === 'published') {
       updatedShop = await Shop.findOneAndUpdate(
         { userId: userId },
         { published: shopData, lastPublishedAt: Date.now() },
         { new: true }
-      )
+      ).populate({
+        path: 'published.pinnedProducts.productsList',
+        model: 'Product',
+      })
     }
 
     if (!updatedShop) {

@@ -17,7 +17,7 @@ export const CONTROLLER_TESTIMONIALS = {
   createTestimonial: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
     const body = await JSON.parse(req.body.body)
-    const { name, testimonial, rating, visibility } = body
+    const { name, company, testimonial, rating, visibility } = body
 
     // Validate required fields
     if (!name || !testimonial || !rating) {
@@ -30,7 +30,7 @@ export const CONTROLLER_TESTIMONIALS = {
     if (req.file) {
       image = req.file.path
     }
-    const testimonialData = new Testimonials({ userId, name, testimonial, rating, image, visibility })
+    const testimonialData = new Testimonials({ userId, name, company, testimonial, rating, image, visibility })
     await testimonialData.save()
     const services = await Services.findOne({ userId })
     if (!services) {
@@ -51,7 +51,7 @@ export const CONTROLLER_TESTIMONIALS = {
   updateTestimonial: asyncMiddleware(async (req, res) => {
     const { id } = req.params
     const parsedbody = JSON.parse(req.body.body)
-    const { name, testimonial, rating, visibility } = parsedbody
+    const { name, company, testimonial, rating, visibility } = parsedbody
     let image
 
     if (!id) {
@@ -65,7 +65,7 @@ export const CONTROLLER_TESTIMONIALS = {
     }
     const updatedTestimonial = await Testimonials.findByIdAndUpdate(
       id,
-      { name, testimonial, rating, image, visibility },
+      { name, company, testimonial, rating, image, visibility },
       { new: true }
     )
 
