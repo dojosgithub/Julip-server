@@ -328,6 +328,11 @@ export const CONTROLLER_PORTFOLIO = {
       console.log('media', media.data)
       const mediaData = media.data.data || []
 
+      const demo = await axios.get(
+        `https://graph.instagram.com/${instagramUserId}/follower_insights?metric=audience_gender_age,audience_locale&period=lifetime&access_token=${accessToken}`
+      )
+      console.log('demo', demo.data)
+
       const totalLikes = mediaData.reduce((sum, post) => sum + (post.like_count || 0), 0)
       const totalComments = mediaData.reduce((sum, post) => sum + (post.comments_count || 0), 0)
       const totalShares = mediaData.reduce((sum, post) => sum + (post.share_count || 0), 0)
@@ -833,11 +838,11 @@ export const CONTROLLER_PORTFOLIO = {
       })
 
       // Calculate averages for engagements (likes, comments, shares)
-      const totalDays = impressionsResponse.data.rows.length
-      const averageLikes = totalLikes / totalDays
-      const averageComments = totalComments / totalDays
-      const averageShares = totalShares / totalDays
-      const averageWatchTime = estimatedWatchTime / totalDays
+      const totalDays = impressionsResponse.data.rows.length || 0
+      const averageLikes = totalDays ? totalLikes / totalDays : 0
+      const averageComments = totalDays ? totalComments / totalDays : 0
+      const averageShares = totalDays ? totalShares / totalDays : 0
+      const averageWatchTime = totalDays ? estimatedWatchTime / totalDays : 0
 
       const watchTimeUrl = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&metrics=estimatedMinutesWatched&dimensions=day`
       const watchTimeResponse = await axios.get(watchTimeUrl, {
@@ -1137,27 +1142,6 @@ export const CONTROLLER_PORTFOLIO = {
     const cleanCode = code.split('&')[0] // Keep only the code part before any '&'
     console.log('cleanCode', cleanCode)
     try {
-      // Step 1: Get Access Token using auth_code
-      // const tokenResponse = await axios.post(
-      //   'https://business-api.tiktok.com/open_api/v1.3/oauth2/access_token/',
-      //   {
-      //     app_id: '7484099952986193937',
-      //     secret: '495dd5ac195a7ebbdd6fee7b7b13d109505e5a55',
-      //     auth_code: cleanCode,
-      //     grant_type: 'authorized_code',
-      //     redirect_uri: 'https://dev.myjulip.com/auth/jwt/onboarding',
-      //   },
-
-      //   {
-      //     headers: {
-      //       'Content-Type': 'application/json',
-      //     },
-      //   }
-      // )
-
-      // const accessToken = tokenResponse.data.data.access_token
-      // console.log('Access token:', tokenResponse)
-
       // Step 2: Use Access Token to fetch demographics
       const response = await axios.get('https://business-api.tiktok.com/open_api/v1.3/tcm/creator/authorized/', {
         headers: {
@@ -1194,4 +1178,116 @@ export const CONTROLLER_PORTFOLIO = {
       res.status(500).json({ error })
     }
   }),
+
+  fetchInstaDemographics: async (req, res) => {
+    const { code } = req.query
+    const cleanCode = code.split('&')[0]
+    const { _id: userId } = req.decoded // assuming you're using middleware to decode the user
+
+    try {
+      // Step 1: Get short-lived access token
+      const shortTokenRes = await axios.get('https://graph.facebook.com/v22.0/oauth/access_token', {
+        params: {
+          client_id: process.env.FB_APP_ID,
+          redirect_uri: process.env.FB_REDIRECT_URI,
+          client_secret: process.env.FB_APP_SECRET,
+          code: cleanCode,
+        },
+      })
+
+      const shortLivedToken = shortTokenRes.data.access_token
+
+      // Step 2: Exchange for long-lived token
+      const longTokenRes = await axios.get('https://graph.facebook.com/v22.0/oauth/access_token', {
+        params: {
+          grant_type: 'fb_exchange_token',
+          client_id: process.env.FB_APP_ID,
+          client_secret: process.env.FB_APP_SECRET,
+          fb_exchange_token: shortLivedToken,
+        },
+      })
+
+      const longLivedToken = longTokenRes.data.access_token
+
+      // Step 3: Get user's pages
+      const pagesRes = await axios.get('https://graph.facebook.com/v22.0/me/accounts', {
+        params: {
+          access_token: longLivedToken,
+        },
+      })
+
+      const page = pagesRes.data.data[0]
+      const pageId = page.id
+      const pageAccessToken = page.access_token
+
+      // Step 4: Get connected Instagram account ID
+      const instaRes = await axios.get(`https://graph.facebook.com/v22.0/${pageId}`, {
+        params: {
+          fields: 'connected_instagram_account',
+          access_token: pageAccessToken,
+        },
+      })
+
+      const igAccountId = instaRes.data.connected_instagram_account?.id
+      if (!igAccountId) {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          message: 'Instagram business account not connected to the Facebook Page.',
+        })
+      }
+
+      // Step 5: Fetch demographics
+      const insightsRes = await axios.get(`https://graph.facebook.com/v22.0/${igAccountId}/insights`, {
+        params: {
+          metric: 'follower_demographics',
+          metric_type: 'total_value',
+          breakdown: 'age,gender,country',
+          period: 'lifetime',
+          access_token: pageAccessToken,
+        },
+      })
+
+      const breakdowns = insightsRes.data.data.reduce(
+        (acc, metric) => {
+          if (metric.name === 'follower_demographics') {
+            metric.breakdowns.forEach(({ dimension, value }) => {
+              if (dimension === 'age') {
+                acc.followersByAge[value.key] = value.value
+              } else if (dimension === 'gender') {
+                acc.followersByGender[value.key] = value.value
+              } else if (dimension === 'country') {
+                acc.followersByCountry[value.key] = value.value
+              }
+            })
+          }
+          return acc
+        },
+        { followersByAge: {}, followersByGender: {}, followersByCountry: {} }
+      )
+
+      // Step 6: Save to DB
+      const updated = await InstaAnalytics.findOneAndUpdate(
+        { userId },
+        {
+          longLivedToken,
+          longLivedTokenExpiry: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // ~60 days
+          followersByAge: breakdowns.followersByAge,
+          followersByGender: breakdowns.followersByGender,
+          followersByCountry: breakdowns.followersByCountry,
+          lastSyncedAt: new Date(),
+        },
+        { upsert: true, new: true }
+      )
+
+      return res.status(StatusCodes.OK).json({
+        message: 'Instagram demographics fetched and saved successfully',
+        data: updated,
+      })
+    } catch (error) {
+      console.error('Error:', error.response?.data || error.message)
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: 'Failed to fetch demographic insights',
+        error: error.response?.data || error.message,
+      })
+    }
+  },
 }

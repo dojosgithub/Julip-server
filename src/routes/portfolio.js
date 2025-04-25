@@ -40,4 +40,6 @@ router.post('/get-youtube-analytics', CONTROLLER_PORTFOLIO.getYoutubeAnalytics)
 
 router.get('/tiktok-demo', Authenticate(), CONTROLLER_PORTFOLIO.fetchDemographics)
 
+router.get('/insta-demo', Authenticate(), CONTROLLER_PORTFOLIO.fetchInstaDemographics)
+
 export default router
