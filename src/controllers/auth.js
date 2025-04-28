@@ -920,13 +920,11 @@ rdmyJfzE
     const { id_token, access_token } = tokenResponse.data
     const decoded = jwt.decode(id_token)
     const { email: appleEmail, sub: appleSub } = decoded
-    if (!appleEmail) {
-      return res.status(422).json({
-        error:
-          'Apple did not return an email address. Please use a apple account associated with an email or use different login method or try again.',
-      })
+    let user
+    console.log('appleSub 11111111111111111111111111111111111111111111', appleSub)
+    if (appleSub) {
+      user = await User.findOne({ appleSub })
     }
-    let user = await User.findOne({ email: appleEmail })
     let isNewUser = false
 
     if (!user) {
