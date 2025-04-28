@@ -927,7 +927,7 @@ rdmyJfzE
     }
     let isNewUser = false
 
-    if (!user) {
+    if (!user && appleEmail && appleSub) {
       // 3. Create new user
       const newUser = new User({
         email: appleEmail,
@@ -959,6 +959,8 @@ rdmyJfzE
       const sendEmail = new Email({ email: appleEmail })
       await sendEmail.welcomeToZeal({ firstName: token })
       user.isLoggedIn = true
+    } else if (!appleSub) {
+      res.status(400).json({ message: 'Apple ID not linked to any user account' })
     } else {
       user.isLoggedIn = true
       await user.save()
