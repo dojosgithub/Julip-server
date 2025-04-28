@@ -961,7 +961,7 @@ rdmyJfzE
       user.isLoggedIn = true
     } else if (!appleSub) {
       res.status(400).json({ message: 'Apple ID not linked to any user account' })
-    } else {
+    } else if (user) {
       user.isLoggedIn = true
       await user.save()
     }
