@@ -965,22 +965,23 @@ rdmyJfzE
       user.isLoggedIn = true
       await user.save()
     }
-
-    // 5. Generate JWT tokens
-    const tokenPayload = {
-      _id: user._id,
-      role: user.role,
-      userTypes: user.userTypes,
-    }
-    const tokens = await generateToken(tokenPayload)
-    if (isNewUser) {
-      return res.status(200).json({
-        data: {
-          user: { ...user._doc },
-          tokens,
-        },
-        message: isNewUser ? 'User registered successfully' : 'User signed in successfully',
-      })
+    if (user) {
+      // 5. Generate JWT tokens
+      const tokenPayload = {
+        _id: user._id,
+        role: user.role,
+        userTypes: user.userTypes,
+      }
+      const tokens = await generateToken(tokenPayload)
+      if (isNewUser) {
+        return res.status(200).json({
+          data: {
+            user: { ...user._doc },
+            tokens,
+          },
+          message: isNewUser ? 'User registered successfully' : 'User signed in successfully',
+        })
+      }
     } else {
       return res.status(202).json({
         data: {
