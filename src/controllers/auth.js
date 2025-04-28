@@ -927,7 +927,7 @@ rdmyJfzE
     }
     let isNewUser = false
 
-    if (!user && appleEmail && appleSub) {
+    if (user && appleEmail && appleSub) {
       // 3. Create new user
       const newUser = new User({
         email: appleEmail,
