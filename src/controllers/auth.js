@@ -921,7 +921,7 @@ rdmyJfzE
     const decoded = jwt.decode(id_token)
     const { email: appleEmail, sub: appleSub } = decoded
     let user
-    console.log('appleSub 11111111111111111111111111111111111111111111', appleSub)
+    console.log('appleSub 11111111111111111111111111111111111111111111', appleSub, appleEmail)
     if (appleSub) {
       user = await User.findOne({ appleSub })
     }
