@@ -21,6 +21,7 @@ import {
   UserChallengeProgress,
   Template,
   Subscription,
+  Shop,
   Product,
   Service,
 } from '../models'
@@ -380,6 +381,45 @@ export const CONTROLLER_PRICING = {
       const sendEmail = await new Email({ email })
       const emailProps = { firstName: fullName }
       sendEmail.upgrade(emailProps)
+
+      // Cancel Product deletion
+      // Find the user's shop and populate draft and published products
+      const userShop = await Shop.findOne({ userId }).populate([
+        { path: 'draft.collections.products', model: 'Product' },
+        { path: 'published.collections.products', model: 'Product' },
+      ])
+
+      if (!userShop) {
+        return res.status(StatusCodes.NOT_FOUND).json({ message: 'Shop not found.' })
+      }
+      // Access the collections from draft and published
+      const draftCollections = userShop.draft?.collections || []
+      const publishedCollections = userShop.published?.collections || []
+
+      // Flatten the products from all collections into a single array
+      const allDraftProducts = draftCollections.flatMap((collection) => collection.products || [])
+      const allPublishedProducts = publishedCollections.flatMap((collection) => collection.products || [])
+
+      // Helper function to prepare updates
+      const prepareUpdates = (products) => {
+        return products.map((product) => ({ _id: product._id, markedForDeletion: false, deletionTimestamp: null }))
+      }
+
+      const draftProductsToUpdate = prepareUpdates(allDraftProducts)
+      const publishedProductsToUpdate = prepareUpdates(allPublishedProducts)
+      const allProductsToUpdate = [...draftProductsToUpdate, ...publishedProductsToUpdate]
+
+      // Perform the bulk update
+      await Product.bulkWrite(
+        allProductsToUpdate.map((update) => ({
+          updateOne: {
+            filter: { _id: update._id },
+            update: {
+              $set: { markedForDeletion: update.markedForDeletion, deletionTimestamp: update.deletionTimestamp },
+            },
+          },
+        }))
+      )
 
       res.status(StatusCodes.OK).json({
         subscriptionId: subscription.id,
