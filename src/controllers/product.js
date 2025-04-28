@@ -207,29 +207,51 @@ export const CONTROLLER_PRODUCT = {
     const { _id: userId } = req.decoded
     const { chosenProducts } = req.body // Array of product IDs the user wants to keep
 
-    if (!chosenProducts || chosenProducts.length > 5) {
+    const chosenProductIds = chosenProducts.map((product) => product._id)
+    if (!chosenProductIds || chosenProductIds.length > 5) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'You can only choose up to 5 products to keep.',
       })
     }
 
-    // Find all products belonging to the user
-    const userProducts = await Product.find({ userId: new ObjectId(userId) })
+    // Find the user's shop and populate draft and published products
+    const userShop = await Shop.findOne({ userId }).populate([
+      { path: 'draft.collections.products', model: 'Product' },
+      { path: 'published.collections.products', model: 'Product' },
+    ])
 
-    // Mark products for deletion
-    const productsToUpdate = userProducts.map((product) => {
-      if (chosenProducts.includes(product._id.toString())) {
-        return { _id: product._id, markedForDeletion: false, deletionTimestamp: null }
-      } else {
-        const deletionTimestamp = new Date()
-        deletionTimestamp.setHours(deletionTimestamp.getHours() + 48) // Set to 48 hours from now
-        return { _id: product._id, markedForDeletion: true, deletionTimestamp }
-      }
-    })
+    if (!userShop) {
+      return res.status(StatusCodes.NOT_FOUND).json({ message: 'Shop not found.' })
+    }
+    // Access the collections from draft and published
+    const draftCollections = userShop.draft?.collections || []
+    const publishedCollections = userShop.published?.collections || []
 
-    // Update products in the database
+    // Flatten the products from all collections into a single array
+    const allDraftProducts = draftCollections.flatMap((collection) => collection.products || [])
+    const allPublishedProducts = publishedCollections.flatMap((collection) => collection.products || [])
+
+    // Helper function to prepare updates
+    const prepareUpdates = (products) => {
+      return products.map((product) => {
+        if (chosenProductIds.includes(product._id.toString())) {
+          return { _id: product._id, markedForDeletion: false, deletionTimestamp: null }
+        } else {
+          const deletionTimestamp = new Date()
+          deletionTimestamp.setHours(deletionTimestamp.getHours() + 48) // Set to 48 hours from now
+          return { _id: product._id, markedForDeletion: true, deletionTimestamp }
+        }
+      })
+    }
+
+    const draftProductsToUpdate = prepareUpdates(allDraftProducts)
+    const publishedProductsToUpdate = prepareUpdates(allPublishedProducts)
+
+    const allProductsToUpdate = [...draftProductsToUpdate, ...publishedProductsToUpdate]
+
+    // Perform the bulk update
     await Product.bulkWrite(
-      productsToUpdate.map((update) => ({
+      allProductsToUpdate.map((update) => ({
         updateOne: {
           filter: { _id: update._id },
           update: {
