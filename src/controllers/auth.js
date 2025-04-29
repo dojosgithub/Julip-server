@@ -866,9 +866,8 @@ export const CONTROLLER_AUTH = {
   }),
 
   handleAppleCallback: asyncMiddleware(async (req, res) => {
+    const { code } = req.query
     try {
-      const { code } = req.query
-
       if (!code) {
         return res.status(400).json({ error: 'Missing authorization code' })
       }
@@ -879,11 +878,11 @@ export const CONTROLLER_AUTH = {
         const clientId = 'com.julip.auth.apple'
         const keyId = '453UBF3VUP'
         const privateKey = `-----BEGIN PRIVATE KEY-----
-        MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgoKtJeIIBOqSX0wEb
-        zDe7ygI4Dv3Tb6AeGUlazgiu7/igCgYIKoZIzj0DAQehRANCAASSUBZz13Q+YtMV
-        Lv5KzdLu8lUQuXtyvA47whiGciuX34Usw1zJthrAP5e7H4V6d4c+TrYnxESN7oo8
-        rdmyJfzE
-        -----END PRIVATE KEY-----`.trim()
+MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgoKtJeIIBOqSX0wEb
+zDe7ygI4Dv3Tb6AeGUlazgiu7/igCgYIKoZIzj0DAQehRANCAASSUBZz13Q+YtMV
+Lv5KzdLu8lUQuXtyvA47whiGciuX34Usw1zJthrAP5e7H4V6d4c+TrYnxESN7oo8
+rdmyJfzE
+-----END PRIVATE KEY-----`.trim()
 
         const now = Math.floor(Date.now() / 1000)
         return jwt.sign(
@@ -918,23 +917,14 @@ export const CONTROLLER_AUTH = {
         },
       })
 
-      console.log('Apple token response:', tokenResponse.data)
-
       const { id_token, access_token } = tokenResponse.data
-
-      if (!id_token) {
-        return res.status(400).json({ error: 'Missing id_token from Apple response' })
-      }
-
       const decoded = jwt.decode(id_token)
-      console.log('Decoded Apple ID Token:', decoded)
-
       const { email: appleEmail, sub: appleSub } = decoded
-      if (!appleSub) {
-        return res.status(400).json({ message: 'Apple ID not linked to any user account' })
+      let user
+      console.log('appleSub 11111111111111111111111111111111111111111111', appleSub, appleEmail)
+      if (appleSub) {
+        user = await User.findOne({ appleSub })
       }
-
-      let user = await User.findOne({ appleSub })
       let isNewUser = false
 
       if (!user && appleEmail && appleSub) {
@@ -969,11 +959,12 @@ export const CONTROLLER_AUTH = {
         const sendEmail = new Email({ email: appleEmail })
         await sendEmail.welcomeToZeal({ firstName: token })
         user.isLoggedIn = true
+      } else if (!appleSub) {
+        res.status(400).json({ message: 'Apple ID not linked to any user account' })
       } else if (user) {
         user.isLoggedIn = true
         await user.save()
       }
-
       // 5. Check if user exists and send JWT tokens
       if (user) {
         const tokenPayload = {
@@ -985,7 +976,7 @@ export const CONTROLLER_AUTH = {
 
         return res.status(200).json({
           data: {
-            user: { ...user._doc },
+            user: { ...user._doc }, // Only access _doc if user exists
             tokens,
           },
           message: isNewUser ? 'User registered successfully' : 'User signed in successfully',
@@ -993,7 +984,6 @@ export const CONTROLLER_AUTH = {
       } else {
         return res.status(404).json({
           message: 'User not found or unable to sign in',
-          details: { appleSub, appleEmail, decoded },
         })
       }
     } catch (error) {
@@ -1006,4 +996,146 @@ export const CONTROLLER_AUTH = {
       })
     }
   }),
+
+  // handleAppleCallback2222222: asyncMiddleware(async (req, res) => {
+  //   try {
+  //     const { code } = req.query
+
+  //     if (!code) {
+  //       return res.status(400).json({ error: 'Missing authorization code' })
+  //     }
+
+  //     // 1. Generate Apple Client Secret
+  //     function generateClientSecret() {
+  //       const teamId = 'W7J832VH7L'
+  //       const clientId = 'com.julip.auth.apple'
+  //       const keyId = '453UBF3VUP'
+  //       const privateKey = `-----BEGIN PRIVATE KEY-----
+  // MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgoKtJeIIBOqSX0wEb
+  // zDe7ygI4Dv3Tb6AeGUlazgiu7/igCgYIKoZIzj0DAQehRANCAASSUBZz13Q+YtMV
+  // Lv5KzdLu8lUQuXtyvA47whiGciuX34Usw1zJthrAP5e7H4V6d4c+TrYnxESN7oo8
+  // rdmyJfzE
+  // -----END PRIVATE KEY-----`.trim()
+
+  //       const now = Math.floor(Date.now() / 1000)
+  //       return jwt.sign(
+  //         {
+  //           iss: teamId,
+  //           iat: now,
+  //           exp: now + 15777000,
+  //           aud: 'https://appleid.apple.com',
+  //           sub: clientId,
+  //         },
+  //         privateKey,
+  //         {
+  //           algorithm: 'ES256',
+  //           keyid: keyId,
+  //         }
+  //       )
+  //     }
+
+  //     const clientSecret = generateClientSecret()
+
+  //     // 2. Exchange code for tokens
+  //     const tokenResponse = await axios.post('https://appleid.apple.com/auth/token', null, {
+  //       params: {
+  //         client_id: 'com.julip.auth.apple',
+  //         client_secret: clientSecret,
+  //         code,
+  //         grant_type: 'authorization_code',
+  //         redirect_uri: 'https://dev.myjulip.com/auth/jwt/login/',
+  //       },
+  //       headers: {
+  //         'Content-Type': 'application/x-www-form-urlencoded',
+  //       },
+  //     })
+
+  //     console.log('Apple token response:', tokenResponse.data)
+
+  //     const { id_token, access_token } = tokenResponse.data
+
+  //     if (!id_token) {
+  //       return res.status(400).json({ error: 'Missing id_token from Apple response' })
+  //     }
+
+  //     const decoded = jwt.decode(id_token)
+  //     console.log('Decoded Apple ID Token:', decoded)
+
+  //     const { email: appleEmail, sub: appleSub } = decoded
+  //     if (!appleSub) {
+  //       return res.status(400).json({ message: 'Apple ID not linked to any user account' })
+  //     }
+
+  //     let user = await User.findOne({ appleSub })
+  //     let isNewUser = false
+
+  //     if (!user && appleEmail && appleSub) {
+  //       // 3. Create new user
+  //       const newUser = new User({
+  //         email: appleEmail,
+  //         appleSub,
+  //         accountType: 'Apple-Account',
+  //         isLoggedIn: true,
+  //         userTypes: USER_TYPES.Basic,
+  //       })
+  //       await newUser.save()
+  //       user = newUser
+  //       isNewUser = true
+
+  //       // 4. Send welcome email with OTP
+  //       const secret = speakeasy.generateSecret({ length: 20 }).base32
+  //       const token = speakeasy.totp({
+  //         digits: 6,
+  //         secret: secret,
+  //         encoding: 'base32',
+  //         window: 6,
+  //       })
+
+  //       const TOTPToken = await generateOTToken({ secret })
+
+  //       let totp = await TOTP.findOneAndUpdate({ email: appleEmail }, { token: TOTPToken })
+  //       if (!totp) {
+  //         await new TOTP({ email: appleEmail, token: TOTPToken }).save()
+  //       }
+
+  //       const sendEmail = new Email({ email: appleEmail })
+  //       await sendEmail.welcomeToZeal({ firstName: token })
+  //       user.isLoggedIn = true
+  //     } else if (user) {
+  //       user.isLoggedIn = true
+  //       await user.save()
+  //     }
+
+  //     // 5. Check if user exists and send JWT tokens
+  //     if (user) {
+  //       const tokenPayload = {
+  //         _id: user._id,
+  //         role: user.role,
+  //         userTypes: user.userTypes,
+  //       }
+  //       const tokens = await generateToken(tokenPayload)
+
+  //       return res.status(200).json({
+  //         data: {
+  //           user: { ...user._doc },
+  //           tokens,
+  //         },
+  //         message: isNewUser ? 'User registered successfully' : 'User signed in successfully',
+  //       })
+  //     } else {
+  //       return res.status(404).json({
+  //         message: 'User not found or unable to sign in',
+  //         details: { appleSub, appleEmail, decoded },
+  //       })
+  //     }
+  //   } catch (error) {
+  //     console.error('Apple login error:', error)
+
+  //     return res.status(500).json({
+  //       message: 'Internal server error during Apple sign-in',
+  //       error: error.message,
+  //       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+  //     })
+  //   }
+  // })
 }
