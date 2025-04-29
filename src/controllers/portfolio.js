@@ -328,10 +328,10 @@ export const CONTROLLER_PORTFOLIO = {
       console.log('media', media.data)
       const mediaData = media.data.data || []
 
-      const demo = await axios.get(
-        `https://graph.instagram.com/${instagramUserId}/follower_insights?metric=audience_gender_age,audience_locale&period=lifetime&access_token=${accessToken}`
-      )
-      console.log('demo', demo.data)
+      // const demo = await axios.get(
+      //   `https://graph.instagram.com/${instagramUserId}/follower_insights?metric=audience_gender_age,audience_locale&period=lifetime&access_token=${accessToken}`
+      // )
+      // console.log('demo', demo.data)
 
       const totalLikes = mediaData.reduce((sum, post) => sum + (post.like_count || 0), 0)
       const totalComments = mediaData.reduce((sum, post) => sum + (post.comments_count || 0), 0)
