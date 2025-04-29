@@ -7,7 +7,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 // * Models
-import { Testimonials, Service, LandingPage, Services } from '../models'
+import { Testimonials, Service, LandingPage, Services, Faq } from '../models'
 
 // * Middlewares
 import { asyncMiddleware } from '../middlewares'
@@ -316,6 +316,35 @@ export const CONTROLLER_SERVICES = {
         message: 'Services created successfully.',
       })
     } else {
+      // Update nested items first
+      // 1. Collection's sevices
+      if (collections?.length) {
+        for (const collection of collections) {
+          if (collection?.services?.length) {
+            for (const service of collection.services) {
+              const { _id, ...updates } = service
+              if (_id) {
+                await Service.findByIdAndUpdate(_id, { $set: updates })
+              }
+            }
+          }
+        }
+      }
+      // 2. Testimonial's list
+      for (const testimonialItem of testimonials.list) {
+        const { _id, ...updates } = testimonialItem
+        if (_id) {
+          await Testimonials.findByIdAndUpdate(_id, { $set: updates })
+        }
+      }
+      // 3. Faq's list
+      for (const faqItem of faqs.list) {
+        const { _id, ...updates } = faqItem
+        if (_id) {
+          await Faq.findByIdAndUpdate(_id, { $set: updates })
+        }
+      }
+
       if (version === 'draft') {
         servicesData = await Services.findByIdAndUpdate(
           id,
