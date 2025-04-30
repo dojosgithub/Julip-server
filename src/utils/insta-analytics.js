@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { InstaAnalytics } from '../models/InstaAnalytics.js' // adjust path as needed
+import { InstaAnalytics } from '../models'
 
 export const updateInstagramAnalyticsForUser = async (user) => {
   const { instagramUserId, accessToken, userId } = user

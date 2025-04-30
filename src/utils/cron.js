@@ -4,7 +4,7 @@ import { AUCTION_STATUS, CAR_STATUS, SYSTEM_STAFF_ROLE, USER_TYPES } from './use
 import Email from '../utils/email'
 import { Notification } from '../models/Notifications'
 import { toObjectId } from './misc'
-import { Comment, Group, Post, User, Badge, Product, Subscription } from '../models'
+import { Comment, Group, Post, User, Badge, Product, Subscription, YoutubeAnalytics, TikTokAnalytics } from '../models'
 import { sendPushNotification } from './pushNotification'
 import { calculateAverage, getInstagramFollowers, getInstagramInsights, getInstagramMedia } from './insta-acc-funcs'
 
@@ -28,6 +28,14 @@ export const task = schedule(
   },
   { timezone: 'America/New_York' }
 )
+
+schedule('*/5 * * * *', syncInstaCronJob, { timezone: 'America/New_York' })
+
+// YouTube sync every day at 2 AM
+schedule('*/7 * * * *', syncYouTubeCronJob, { timezone: 'America/New_York' })
+
+// TikTok sync every 12 hours
+schedule('*/10 * * * *', syncTiktokCronJob, { timezone: 'America/New_York' })
 
 async function productsToDelete() {
   try {
@@ -162,5 +170,67 @@ async function deleteUnverifiedUsers() {
     console.log(`✅ Deleted ${usersToDelete.length} unverified user(s).`)
   } catch (error) {
     console.error('❌ Error deleting unverified users:', error)
+  }
+}
+
+const syncTiktokCronJob = async () => {
+  console.log('TikTok Cron started at', new Date().toISOString())
+
+  const accounts = await TikTokAnalytics.find({})
+
+  for (const account of accounts) {
+    const { userId, accessToken, accessTokenExpiry, refreshToken } = account
+
+    const now = new Date()
+    if (!accessTokenExpiry || now >= accessTokenExpiry) {
+      console.log(`Access token expired for user ${userId}. Please refresh manually or implement auto-refresh.`)
+      continue
+    }
+
+    try {
+      await fetchAndSaveTikTokAnalytics({ userId, accessToken })
+      console.log(`✅ TikTok analytics updated for user ${userId}`)
+    } catch (error) {
+      console.error(`❌ Failed to update analytics for user ${userId}`, error.message)
+    }
+  }
+
+  console.log('TikTok Cron finished at', new Date().toISOString())
+}
+
+const syncYouTubeCronJob = async () => {
+  const allUsers = await YoutubeAnalytics.find({ refreshToken: { $exists: true, $ne: null } })
+
+  for (const user of allUsers) {
+    try {
+      await fetchYouTubeAnalytics({
+        userId: user.userId,
+        refreshToken: user.refreshToken,
+      })
+      console.log(`Synced YouTube analytics for user ${user.userId}`)
+    } catch (err) {
+      console.error(`Error syncing YouTube analytics for user ${user.userId}:`, err.message)
+    }
+  }
+}
+
+const syncInstaCronJob = async () => {
+  console.log(`[CRON] Running Instagram analytics update at ${new Date().toISOString()}`)
+
+  const now = new Date()
+
+  try {
+    const validUsers = await InstaAnalytics.find({ longLivedTokenExpiry: { $gt: now } })
+
+    for (const user of validUsers) {
+      await updateInstagramAnalyticsForUser(user)
+    }
+
+    const expiredUsers = await InstaAnalytics.find({ longLivedTokenExpiry: { $lte: now } })
+    expiredUsers.forEach((user) => {
+      console.log(`[CRON] Token expired for user ${user.userId}. They need to refresh their token.`)
+    })
+  } catch (err) {
+    console.error('[CRON] General error:', err.message)
   }
 }

@@ -1125,10 +1125,10 @@ export const CONTROLLER_PORTFOLIO = {
       const totalShares = insights.reduce((sum, v) => sum + (v.share_count || 0), 0)
 
       const count = insights.length
-      const avgLikes = totalLikes / count || 0
-      const avgComments = totalComments / count || 0
-      const avgViews = totalViews / count || 0
-      const avgShares = totalShares / count || 0
+      const avgLikes = +(totalLikes / count || 0).toFixed(2)
+      const avgComments = +(totalComments / count || 0).toFixed(2)
+      const avgViews = +(totalViews / count || 0).toFixed(2)
+      const avgShares = +(totalShares / count || 0).toFixed(2)
 
       await TikTokAnalytics.findOneAndUpdate(
         { userId }, // or however you identify the user
@@ -1143,7 +1143,23 @@ export const CONTROLLER_PORTFOLIO = {
           displayName: userProfile.display_name,
           followers: userProfile.follower_count,
           lastSyncedAt: new Date(),
-          // ...other metrics if needed
+          totalLikes,
+          totalComments,
+          totalShares,
+          totalViews,
+          avgLikes,
+          avgComments,
+          avgShares,
+          avgViews,
+          videos: insights.map((video) => ({
+            id: video.id,
+            title: video.title,
+            view_count: video.view_count,
+            like_count: video.like_count,
+            comment_count: video.comment_count,
+            share_count: video.share_count,
+            cover_image_url: video.cover_image_url,
+          })),
         },
         { upsert: true, new: true }
       )

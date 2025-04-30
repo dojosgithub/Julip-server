@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { YoutubeAnalytics } from '../../models/YoutubeAnalytics.js'
+import { YoutubeAnalytics } from '../models'
 
 export const fetchYouTubeAnalytics = async ({ userId, refreshToken }) => {
   if (!refreshToken) throw new Error('Missing refresh token')
