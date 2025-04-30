@@ -199,6 +199,8 @@ const syncTiktokCronJob = async () => {
 }
 
 const syncYouTubeCronJob = async () => {
+  console.log(`[CRON] Running Youtube analytics update at ${new Date().toISOString()}`)
+
   const allUsers = await YoutubeAnalytics.find({ refreshToken: { $exists: true, $ne: null } })
 
   for (const user of allUsers) {
