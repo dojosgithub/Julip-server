@@ -288,7 +288,8 @@ export const CONTROLLER_PORTFOLIO = {
           userId,
           instagramUserId,
           accessToken: longLivedToken,
-          tokenExpiry: expiryDate,
+          longLivedToken: longLivedToken,
+          longLivedTokenExpiry: expiryDate,
           lastSyncedAt: new Date(),
         },
         { upsert: true, new: true }
@@ -718,25 +719,6 @@ export const CONTROLLER_PORTFOLIO = {
     }
   }),
 
-  youtubeSubscriber: asyncMiddleware(async (req, res) => {
-    const { accessToken, apiKey } = req.body
-    try {
-      const response = await axios.get(
-        `https://www.googleapis.com/youtube/v3/channels?part=statistics&mine=true&key=${apiKey}`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      )
-      const subscriberCount = response.data.items[0].statistics.subscriberCount
-      console.log('Subscriber Count:', subscriberCount)
-      return subscriberCount
-    } catch (error) {
-      console.error('Error fetching subscribers count:', error)
-    }
-  }),
-
   youtubeAnalytics: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
     const { refreshToken, apiKey } = req.body
@@ -928,6 +910,24 @@ export const CONTROLLER_PORTFOLIO = {
     }
   }),
 
+  youtubeSubscriber: asyncMiddleware(async (req, res) => {
+    const { accessToken, apiKey } = req.body
+    try {
+      const response = await axios.get(
+        `https://www.googleapis.com/youtube/v3/channels?part=statistics&mine=true&key=${apiKey}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+      const subscriberCount = response.data.items[0].statistics.subscriberCount
+      console.log('Subscriber Count:', subscriberCount)
+      return subscriberCount
+    } catch (error) {
+      console.error('Error fetching subscribers count:', error)
+    }
+  }),
   getYoutubeAnalytics: asyncMiddleware(async (req, res) => {
     const { userId } = req.body
     try {

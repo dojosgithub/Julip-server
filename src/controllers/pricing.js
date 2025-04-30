@@ -570,179 +570,146 @@ export const CONTROLLER_PRICING = {
     const payload = req.body
 
     try {
-      // Verify the webhook signature
-      const event = stripe.webhooks.constructEvent(
-        payload,
-        sig,
-        process.env.STRIPE_WEBHOOK_SECRET // Use your webhook secret
-      )
+      const event = stripe.webhooks.constructEvent(payload, sig, process.env.STRIPE_WEBHOOK_SECRET)
 
-      // Log the event type and data
       console.log('Received event:', event.type)
-      console.log('Event data:', event.data.object)
 
-      // Handle specific event types
       switch (event.type) {
-        // =================================================================
+        // ==========================
         // Subscription Events
-        // =================================================================
-        case 'customer.subscription.created':
-          // New subscription created (e.g., influencer's subscription)
-          const subscriptionCreated = event.data.object
-          console.log('Subscription created:', subscriptionCreated.id)
-          // Update database or trigger actions
-          // Store subscription details in the database
-          await Subscription.create({
-            subscriptionId: subscriptionCreated.id,
-            customerId: subscriptionCreated.customer,
-            status: subscriptionCreated.status,
-            plan: subscriptionCreated.items.data[0].plan.id,
-            startDate: new Date(subscriptionCreated.start_date * 1000),
-            endDate: new Date(subscriptionCreated.current_period_end * 1000),
-          })
-          break
+        // ==========================
 
-        case 'customer.subscription.updated':
-          // Subscription updated (e.g., plan changed)
-          const subscriptionUpdated = event.data.object
-          console.log('Subscription updated:', subscriptionUpdated.id)
-          // Update database or trigger actions
+        case 'customer.subscription.created': {
+          const subscription = event.data.object
+
+          console.log('Subscription created:', subscription.id)
+
+          const user = await User.findOne({ stripeAccountId: subscription.customer })
+
+          if (!user) {
+            console.warn(`User not found for customer ID: ${subscription.customer}`)
+            break
+          }
+
+          await Subscription.create({
+            user: user._id,
+            stripeCustomerId: subscription.customer,
+            stripeSubscriptionId: subscription.id,
+            plan: subscription.items.data[0].plan.id,
+            status: subscription.status,
+            trialEndDate: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
+            currentPeriodStart: new Date(subscription.current_period_start * 1000),
+            currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+            cancelAtPeriodEnd: subscription.cancel_at_period_end,
+            metadata: subscription.metadata || {},
+          })
+
+          await User.findByIdAndUpdate(user._id, {
+            subscriptionId: subscription.id,
+            userTypes: 'Premium',
+          })
+
+          break
+        }
+
+        case 'customer.subscription.updated': {
+          const subscription = event.data.object
+          console.log('Subscription updated:', subscription.id)
+
           await Subscription.findOneAndUpdate(
-            { subscriptionId: subscriptionUpdated.id },
+            { stripeSubscriptionId: subscription.id },
             {
-              status: subscriptionUpdated.status,
-              plan: subscriptionUpdated.items.data[0].plan.id,
-              endDate: new Date(subscriptionUpdated.current_period_end * 1000),
+              status: subscription.status,
+              plan: subscription.items.data[0].plan.id,
+              currentPeriodStart: new Date(subscription.current_period_start * 1000),
+              currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+              cancelAtPeriodEnd: subscription.cancel_at_period_end,
+              trialEndDate: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
+              metadata: subscription.metadata || {},
+              updatedAt: new Date(),
             }
           )
           break
+        }
 
-        case 'customer.subscription.deleted':
-          // Subscription canceled
-          const subscriptionDeleted = event.data.object
-          console.log('Subscription deleted:', subscriptionDeleted.id)
-          // Update database or trigger actions
-          await Subscription.findOneAndUpdate({ subscriptionId: subscriptionDeleted.id }, { status: 'canceled' })
-          break
+        case 'customer.subscription.deleted': {
+          const subscription = event.data.object
+          console.log('Subscription deleted:', subscription.id)
 
-        case 'customer.subscription.trial_will_end':
-          // Trial period ending soon
-          const subscriptionTrialEnding = event.data.object
-          console.log('Trial ending for subscription:', subscriptionTrialEnding.id)
-          // Send email/notification to user
-          const userTrial = await User.findOne({ stripeCustomerId: subscriptionTrialEnding.customer })
-          if (userTrial) {
-            // Send an email notification (email service needed)
-            console.log(`Send email to ${userTrial.email} about trial ending`)
-          }
-          break
+          await Subscription.findOneAndUpdate({ stripeSubscriptionId: subscription.id }, { status: 'canceled' })
 
-        // =================================================================
-        // Payment Events
-        // =================================================================
-        case 'payment_intent.succeeded':
-          // Payment succeeded (e.g., third-party purchase)
-          const paymentIntentSucceeded = event.data.object
-          console.log('Payment succeeded:', paymentIntentSucceeded.id)
-          // Update database (e.g., mark product as sold, notify influencer)
-          await Payment.create({
-            paymentId: paymentIntentSucceeded.id,
-            customerId: paymentIntentSucceeded.customer,
-            amount: paymentIntentSucceeded.amount_received / 100,
-            currency: paymentIntentSucceeded.currency,
-            status: 'succeeded',
-            createdAt: new Date(paymentIntentSucceeded.created * 1000),
-          })
-          break
-
-        case 'payment_intent.payment_failed':
-          // Payment failed
-          const paymentIntentFailed = event.data.object
-          console.log('Payment failed:', paymentIntentFailed.id)
-          // Notify user or retry logic
-          await Payment.create({
-            paymentId: paymentIntentFailed.id,
-            customerId: paymentIntentFailed.customer,
-            amount: paymentIntentFailed.amount / 100,
-            currency: paymentIntentFailed.currency,
-            status: 'failed',
-            createdAt: new Date(paymentIntentFailed.created * 1000),
-          })
-          break
-
-        case 'charge.succeeded':
-          // Charge succeeded (supports Stripe Connect transfers)
-          const chargeSucceeded = event.data.object
-          console.log('Charge succeeded:', chargeSucceeded.id)
-          // Update database (e.g., confirm payment to influencer)
-          await Payment.create({
-            paymentId: chargeSucceeded.id,
-            customerId: chargeSucceeded.customer,
-            amount: chargeSucceeded.amount / 100,
-            currency: chargeSucceeded.currency,
-            status: 'succeeded',
-            createdAt: new Date(chargeSucceeded.created * 1000),
-          })
-          break
-
-        case 'charge.failed':
-          // Charge failed
-          const chargeFailed = event.data.object
-          console.log('Charge failed:', chargeFailed.id)
-          // Handle failed charge (e.g., notify user)
-          await Payment.create({
-            paymentId: chargeFailed.id,
-            customerId: chargeFailed.customer,
-            amount: chargeFailed.amount / 100,
-            currency: chargeFailed.currency,
-            status: 'failed',
-            createdAt: new Date(chargeFailed.created * 1000),
-          })
-          break
-
-        // =================================================================
-        // Stripe Connect Events
-        // =================================================================
-        case 'account.updated':
-          // Stripe Connect account updated (e.g., onboarding completed)
-          const accountUpdated = event.data.object
-          console.log('Stripe account updated:', accountUpdated.id)
-          // Update database (e.g., mark account as ready)
-          break
-
-        // =================================================================
-        // Invoice Events (Optional)
-        // =================================================================
-        case 'invoice.payment_succeeded':
-          // Invoice paid (e.g., subscription renewal)
-          const invoicePaid = event.data.object
-          console.log('Invoice paid:', invoicePaid.id)
-          // Update database or trigger actions
-          await Subscription.findOneAndUpdate(
-            { customerId: invoicePaid.customer },
-            { status: 'active', endDate: new Date(invoicePaid.period_end * 1000) }
+          await User.findOneAndUpdate(
+            { stripeAccountId: subscription.customer },
+            {
+              subscriptionId: null,
+              userTypes: 'Basic',
+            }
           )
           break
+        }
 
-        case 'invoice.payment_failed':
-          // Invoice payment failed
-          const invoiceFailed = event.data.object
-          console.log('Invoice payment failed:', invoiceFailed.id)
-          // Notify user or retry logic
-          await Subscription.findOneAndUpdate({ customerId: invoiceFailed.customer }, { status: 'past_due' })
+        case 'customer.subscription.trial_will_end': {
+          const subscription = event.data.object
+          console.log('Trial ending for subscription:', subscription.id)
+
+          const user = await User.findOne({ stripeAccountId: subscription.customer })
+          if (user) {
+            // TODO: Integrate your email service here
+            console.log(`Send email to ${user.email} about trial ending`)
+          }
           break
+        }
+
+        // ==========================
+        // Invoice Events
+        // ==========================
+
+        case 'invoice.payment_succeeded': {
+          const invoice = event.data.object
+          console.log('Invoice paid:', invoice.id)
+
+          await Subscription.findOneAndUpdate(
+            { stripeCustomerId: invoice.customer },
+            {
+              status: 'active',
+              currentPeriodStart: new Date(invoice.period_start * 1000),
+              currentPeriodEnd: new Date(invoice.period_end * 1000),
+            }
+          )
+          break
+        }
+
+        case 'invoice.payment_failed': {
+          const invoice = event.data.object
+          console.log('Invoice payment failed:', invoice.id)
+
+          await Subscription.findOneAndUpdate({ stripeCustomerId: invoice.customer }, { status: 'past_due' })
+          break
+        }
+
+        // ==========================
+        // Connect Account Events
+        // ==========================
+
+        case 'account.updated': {
+          const account = event.data.object
+          console.log('Stripe account updated:', account.id)
+
+          // You can add logic here to track onboarding state or enable payouts, etc.
+          break
+        }
 
         default:
           console.log(`Unhandled event type: ${event.type}`)
       }
 
-      // Acknowledge receipt of the event
       res.status(200).json({ received: true })
     } catch (err) {
       console.error('Webhook error:', err.message)
       res.status(400).send(`Webhook Error: ${err.message}`)
     }
   }),
+
   // handleInfluencerWebhook: asyncMiddleware(async (req, res) => {
   //   const sig = req.headers['stripe-signature']
   //   const payload = req.body

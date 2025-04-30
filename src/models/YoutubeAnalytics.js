@@ -37,7 +37,7 @@ const youtubeAnalyticsSchema = new mongoose.Schema(
 
     rawImpressions: Object, // Keep raw response in case needed for graphs
     rawAnalytics: Object,
-
+    subscriber: String,
     needsReauthorization: { type: Boolean, default: false },
   },
   { timestamps: true }
