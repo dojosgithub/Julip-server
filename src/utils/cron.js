@@ -4,9 +4,23 @@ import { AUCTION_STATUS, CAR_STATUS, SYSTEM_STAFF_ROLE, USER_TYPES } from './use
 import Email from '../utils/email'
 import { Notification } from '../models/Notifications'
 import { toObjectId } from './misc'
-import { Comment, Group, Post, User, Badge, Product, Subscription, YoutubeAnalytics, TikTokAnalytics } from '../models'
+import {
+  Comment,
+  Group,
+  Post,
+  User,
+  Badge,
+  Product,
+  Subscription,
+  YoutubeAnalytics,
+  TikTokAnalytics,
+  InstaAnalytics,
+} from '../models'
 import { sendPushNotification } from './pushNotification'
 import { calculateAverage, getInstagramFollowers, getInstagramInsights, getInstagramMedia } from './insta-acc-funcs'
+import { fetchAndSaveTikTokAnalytics } from './tiktok-analytics'
+import { fetchYouTubeAnalytics } from './youtube-analytics'
+import { updateInstagramAnalyticsForUser } from './insta-analytics'
 
 // "0 0 * * 0", Every sunday at 00:00 - Required
 // "59 14 * * 1", Every monday at 14:59
@@ -29,13 +43,19 @@ export const task = schedule(
   { timezone: 'America/New_York' }
 )
 
-// schedule('*/5 * * * *', syncInstaCronJob(), { timezone: 'America/New_York' })
+export const instaschedule = schedule('*/5 * * * *', async () => await syncInstaCronJob(), {
+  timezone: 'America/New_York',
+})
 
-// // YouTube sync every day at 2 AM
-// schedule('*/7 * * * *', syncYouTubeCronJob(), { timezone: 'America/New_York' })
+// YouTube sync every day at 2 AM
+export const youtubeschedule = schedule('*/5 * * * *', async () => await syncYouTubeCronJob(), {
+  timezone: 'America/New_York',
+})
 
-// // TikTok sync every 12 hours
-// schedule('*/10 * * * *', syncTiktokCronJob(), { timezone: 'America/New_York' })
+// TikTok sync every 12 hours
+export const tiktokschedule = schedule('*/5 * * * *', async () => await syncTiktokCronJob(), {
+  timezone: 'America/New_York',
+})
 
 async function productsToDelete() {
   try {

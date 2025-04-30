@@ -866,8 +866,10 @@ export const CONTROLLER_AUTH = {
   }),
 
   handleAppleCallback: asyncMiddleware(async (req, res) => {
-    const { code } = req.query
+    const { code, user: userRaw } = req.query
     try {
+      const userInfo = userRaw ? JSON.parse(userRaw) : null
+      console.log(userInfo, 'userInfo', userRaw)
       if (!code) {
         return res.status(400).json({ error: 'Missing authorization code' })
       }
