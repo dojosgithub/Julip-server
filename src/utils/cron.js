@@ -18,12 +18,13 @@ import { calculateAverage, getInstagramFollowers, getInstagramInsights, getInsta
 // Define the task using ES6 arrow function syntax
 export const task = schedule(
   '0 0 0 * * *', // Every 24 hours
-  // '* * * * *', // Every 24 hours
+  // '* * * * *', // Every 1 minute
   () => {
     // if (process.env.NODE_ENV) automatedEmails()
     console.log('CRON JOB RUNNING!!!')
     productsToDelete()
     sendTrialEmails()
+    deleteUnverifiedUsers()
   },
   { timezone: 'America/New_York' }
 )
@@ -138,3 +139,28 @@ async function sendTrialEmails() {
 //     console.error('Error in cron job:', error)
 //   }
 // })
+
+async function deleteUnverifiedUsers() {
+  try {
+    // const cutoffDate = new Date(Date.now() - 24 * 60 * 60 * 1000) // 24 hours ago
+    const cutoffDate = new Date(Date.now() - 1 * 60 * 1000) // 1 minute ago
+
+    const usersToDelete = await User.find({
+      isEmailVerified: false,
+      createdAt: { $lte: cutoffDate },
+    })
+
+    if (usersToDelete.length === 0) {
+      console.log('🟡 No unverified users to delete.')
+      return
+    }
+
+    await User.deleteMany({
+      _id: { $in: usersToDelete.map((user) => user._id) },
+    })
+
+    console.log(`✅ Deleted ${usersToDelete.length} unverified user(s).`)
+  } catch (error) {
+    console.error('❌ Error deleting unverified users:', error)
+  }
+}
