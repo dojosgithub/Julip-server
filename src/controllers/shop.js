@@ -153,6 +153,15 @@ export const CONTROLLER_SHOP = {
       visibility,
     }
 
+    if (pinnedProducts?.productsList?.length) {
+      for (const item of pinnedProducts.productsList) {
+        const { _id, ...updates } = item
+        if (_id) {
+          await Product.findByIdAndUpdate(_id, { $set: updates })
+        }
+      }
+    }
+
     if (version === 'draft') {
       updatedShop = await Shop.findOneAndUpdate(
         { userId: userId },

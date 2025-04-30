@@ -10,7 +10,18 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 // * Models
-import { InstaAnalytics, Pages, Portfolio, Product, Shop, TikTokAnalytics, User, YoutubeAnalytics } from '../models'
+import {
+  InstaAnalytics,
+  Pages,
+  Portfolio,
+  Audience,
+  Product,
+  Shop,
+  TikTokAnalytics,
+  User,
+  YoutubeAnalytics,
+  Sample,
+} from '../models'
 
 // * Middlewares
 import { asyncMiddleware } from '../middlewares'
@@ -213,14 +224,20 @@ export const CONTROLLER_PORTFOLIO = {
     const { version = 'draft' } = req.query // 'draft' or 'published'
     const { name, location, speciality, brand, audience, sample, testimonials, contact, visibility } = req.body
 
+    let portfolio = await Portfolio.findOne({ userId }).lean()
+
+    if (!portfolio) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'Portfolio not found.',
+      })
+    }
+
     // Construct the update object dynamically based on the version
     const updatePath = `${version}`
     const updateData = {
       [`${updatePath}.name`]: name,
       [`${updatePath}.location`]: location,
       [`${updatePath}.speciality`]: speciality,
-      [`${updatePath}.audience`]: audience,
-      [`${updatePath}.sample`]: sample,
       [`${updatePath}.testimonials`]: testimonials,
       [`${updatePath}.contact`]: contact,
       [`${updatePath}.visibility`]: visibility,
@@ -233,9 +250,58 @@ export const CONTROLLER_PORTFOLIO = {
       updateData[`${updatePath}.brand.oneLiner`] = brand.oneLiner
       updateData[`${updatePath}.brand.brandList`] = brand.brandList || []
     }
+    // Update nested fields within the audience object
+    if (audience) {
+      // Update individual Audience documents
+      if (audience?.audienceList?.length) {
+        for (const item of audience.audienceList) {
+          const { _id, ...updates } = item
+          if (_id) {
+            await Audience.findByIdAndUpdate(_id, { $set: updates })
+          }
+        }
+      }
+
+      // set the full updated array
+      updateData[`${updatePath}.audience.name`] = audience.name
+      updateData[`${updatePath}.audience.visibility`] = audience.visibility
+      updateData[`${updatePath}.audience.audienceList`] = audience.audienceList.map((item) => item._id)
+    }
+
+    // Update nested fields within the sample object
+    if (sample && sample?.categoryList?.length) {
+      for (const category of sample.categoryList) {
+        const { _id, name, sampleList = [] } = category
+        if (_id) {
+          // Update name
+          await Sample.findByIdAndUpdate(_id, { $set: { name } })
+
+          // Update each item in sampleList by its _id
+          for (const sampleItem of sampleList) {
+            if (sampleItem._id) {
+              await Sample.updateOne(
+                { _id, 'sampleList._id': sampleItem._id },
+                {
+                  $set: {
+                    'sampleList.$.url': sampleItem.url,
+                    'sampleList.$.tile': sampleItem.tile,
+                    'sampleList.$.buttonTitle': sampleItem.buttonTitle,
+                    'sampleList.$.visibility': sampleItem.visibility,
+                  },
+                }
+              )
+            }
+          }
+        }
+      }
+
+      updateData[`${updatePath}.sample.name`] = sample.name
+      updateData[`${updatePath}.sample.visibility`] = sample.visibility
+      updateData[`${updatePath}.sample.categoryList`] = sample.categoryList.map((item) => item._id)
+    }
 
     // Find and update the portfolio
-    let portfolio = await Portfolio.findOneAndUpdate({ userId }, { $set: updateData }, { new: true, lean: true })
+    portfolio = await Portfolio.findOneAndUpdate({ userId }, { $set: updateData }, { new: true, lean: true })
 
     if (!portfolio) {
       return res.status(StatusCodes.NOT_FOUND).json({

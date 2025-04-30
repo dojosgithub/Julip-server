@@ -12,7 +12,7 @@ export const sampleSchema = new Schema(
         },
         tile: { type: String },
         buttonTitle: { type: String },
-        visibility: { type: String },
+        visibility: { type: Boolean },
       },
     ],
   },
