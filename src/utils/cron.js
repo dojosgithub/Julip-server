@@ -29,13 +29,13 @@ export const task = schedule(
   { timezone: 'America/New_York' }
 )
 
-schedule('*/5 * * * *', syncInstaCronJob(), { timezone: 'America/New_York' })
+// schedule('*/5 * * * *', syncInstaCronJob(), { timezone: 'America/New_York' })
 
-// YouTube sync every day at 2 AM
-schedule('*/7 * * * *', syncYouTubeCronJob(), { timezone: 'America/New_York' })
+// // YouTube sync every day at 2 AM
+// schedule('*/7 * * * *', syncYouTubeCronJob(), { timezone: 'America/New_York' })
 
-// TikTok sync every 12 hours
-schedule('*/10 * * * *', syncTiktokCronJob(), { timezone: 'America/New_York' })
+// // TikTok sync every 12 hours
+// schedule('*/10 * * * *', syncTiktokCronJob(), { timezone: 'America/New_York' })
 
 async function productsToDelete() {
   try {
