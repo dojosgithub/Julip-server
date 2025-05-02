@@ -106,6 +106,10 @@ app.use(
 app.use(passport.initialize())
 app.use(passport.session())
 app.use(bodyParser.json())
+app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups')
+  next()
+})
 // app.get(
 //   '/api/stream',
 //   (req, res, next) => {

@@ -43,19 +43,19 @@ export const task = schedule(
   { timezone: 'America/New_York' }
 )
 
-export const instaschedule = schedule('*/5 * * * *', async () => await syncInstaCronJob(), {
-  timezone: 'America/New_York',
-})
+// export const instaschedule = schedule('*/5 * * * *', async () => await syncInstaCronJob(), {
+//   timezone: 'America/New_York',
+// })
 
-// YouTube sync every day at 2 AM
-export const youtubeschedule = schedule('*/5 * * * *', async () => await syncYouTubeCronJob(), {
-  timezone: 'America/New_York',
-})
+// // YouTube sync every day at 2 AM
+// export const youtubeschedule = schedule('*/5 * * * *', async () => await syncYouTubeCronJob(), {
+//   timezone: 'America/New_York',
+// })
 
-// TikTok sync every 12 hours
-export const tiktokschedule = schedule('*/5 * * * *', async () => await syncTiktokCronJob(), {
-  timezone: 'America/New_York',
-})
+// // TikTok sync every 12 hours
+// export const tiktokschedule = schedule('*/5 * * * *', async () => await syncTiktokCronJob(), {
+//   timezone: 'America/New_York',
+// })
 
 async function productsToDelete() {
   try {
