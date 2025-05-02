@@ -976,13 +976,31 @@ rdmyJfzE
         }
         const tokens = await generateToken(tokenPayload)
 
-        return res.status(200).json({
-          data: {
-            user: { ...user._doc }, // Only access _doc if user exists
-            tokens,
-          },
-          message: isNewUser ? 'User registered successfully' : 'User signed in successfully',
-        })
+        // return res.status(200).json({
+        //   data: {
+        //     user: { ...user._doc }, // Only access _doc if user exists
+        //     tokens,
+        //   },
+        //   message: isNewUser ? 'User registered successfully' : 'User signed in successfully',
+        // })
+
+        if (isNewUser) {
+          return res.status(200).json({
+            data: {
+              user: { ...user._doc }, // Only access _doc if user exists
+              tokens,
+            },
+            message: 'User registered successfully',
+          })
+        } else {
+          return res.status(202).json({
+            data: {
+              user: { ...user._doc }, // Only access _doc if user exists
+              tokens,
+            },
+            message: 'User signed in successfully',
+          })
+        }
       } else {
         return res.status(404).json({
           message: 'User not found or unable to sign in',
