@@ -866,7 +866,7 @@ export const CONTROLLER_AUTH = {
   }),
 
   handleAppleCallback: asyncMiddleware(async (req, res) => {
-    const { code, user: userRaw } = req.query
+    const { code, user: userRaw } = req.body
     try {
       const userInfo = userRaw ? JSON.parse(userRaw) : null
       console.log(userInfo, 'userInfo', userRaw)
