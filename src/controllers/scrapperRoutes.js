@@ -118,67 +118,7 @@ export const CONTROLLER_SCRAPE = {
         .waitForSelector('[data-automation="buybox-price"]', { timeout: 5000 })
         .catch(() => console.log('Price selector timeout'))
 
-      const productData = await page.evaluate(() => {
-        // Brand - multiple possible selectors
-        const brand =
-          document.querySelector('.b-product_details-brand a')?.innerText?.trim() ||
-          document.querySelector('.b-product_details-brand span')?.innerText?.trim() ||
-          document.querySelector('[itemprop="brand"]')?.innerText?.trim() ||
-          document.querySelector('[data-automation="product-brand"]')?.innerText?.trim() ||
-          document.querySelector('.prod-brandName')?.innerText?.trim() ||
-          document.querySelector('.brand-name')?.innerText?.trim() ||
-          // Try finding brand within product title
-          (document.querySelector('h1')?.innerText || '').split(' ')[0] ||
-          // Try finding any element containing "Brand:" text
-          Array.from(document.querySelectorAll('*'))
-            .find((el) => el.innerText?.includes('Brand:'))
-            ?.innerText?.split('Brand:')[1]
-            ?.trim()
-
-        // Debug: Log all potential brand elements
-        console.log('Brand Elements:', {
-          brandLink: document.querySelector('.b-product_details-brand a')?.innerText,
-          brandSpan: document.querySelector('.b-product_details-brand span')?.innerText,
-          brandItemprop: document.querySelector('[itemprop="brand"]')?.innerText,
-          brandAutomation: document.querySelector('[data-automation="product-brand"]')?.innerText,
-          prodBrandName: document.querySelector('.prod-brandName')?.innerText,
-        })
-
-        // Title
-        const title =
-          document.querySelector('[itemprop="name"]')?.innerText?.trim() ||
-          document.querySelector('h1')?.innerText?.trim()
-
-        // Description - multiple possible selectors
-        const description =
-          document.querySelector('[itemprop="description"]')?.innerText?.trim() ||
-          document.querySelector('#product-overview')?.innerText?.trim() ||
-          document.querySelector('.product-description-content')?.innerText?.trim()
-
-        // Price - updated selectors
-        const priceElement = document.querySelector('[data-automation="buybox-price"]')
-        const price = priceElement ? priceElement.innerText.trim() : null
-
-        // Alternative price selectors if the above fails
-        const altPrice =
-          price ||
-          document.querySelector('.price-characteristic')?.innerText?.trim() ||
-          document.querySelector('[data-testid="price-value"]')?.innerText?.trim() ||
-          document.querySelector('span[itemprop="price"]')?.innerText?.trim()
-
-        // Image
-        const image =
-          document.querySelector('[data-testid="hero-image"]')?.src ||
-          document.querySelector('[property="og:image"]')?.getAttribute('content')
-
-        return {
-          brand: brand || null,
-          title: title || null,
-          description: description || null,
-          price: altPrice || null,
-          image: image || null,
-        }
-      })
+      const productData = await scrapeWalmartData(url)
 
       await browser.close()
 
@@ -444,6 +384,12 @@ export const CONTROLLER_SCRAPE = {
         res.status(StatusCodes.OK).json({
           data: extractedData,
           message: 'Product data fetched successfully.(ZenRows)',
+        })
+      } else if (url.includes('walmart.com')) {
+        const productData = await scrapeWalmartData(url)
+        return res.status(StatusCodes.OK).json({
+          data: productData,
+          message: 'Walmart product data fetched successfully.',
         })
       } else {
         // Default: Use Diffbot
@@ -998,4 +944,87 @@ export const CONTROLLER_SCRAPE = {
       })
     }
   }),
+}
+
+// Helper Function to scrape product data from walmart website.
+const scrapeWalmartData = async (url) => {
+  const browser = await createBrowser()
+  const page = await browser.newPage()
+
+  await page.setUserAgent(
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  )
+
+  await page.goto(url, {
+    waitUntil: 'networkidle0',
+    timeout: 30000,
+  })
+
+  await page
+    .waitForSelector('[data-automation="buybox-price"]', { timeout: 5000 })
+    .catch(() => console.log('Price selector timeout'))
+
+  const productData = await page.evaluate(() => {
+    // Brand - multiple possible selectors
+    const brand =
+      document.querySelector('.b-product_details-brand a')?.innerText?.trim() ||
+      document.querySelector('.b-product_details-brand span')?.innerText?.trim() ||
+      document.querySelector('[itemprop="brand"]')?.innerText?.trim() ||
+      document.querySelector('[data-automation="product-brand"]')?.innerText?.trim() ||
+      document.querySelector('.prod-brandName')?.innerText?.trim() ||
+      document.querySelector('.brand-name')?.innerText?.trim() ||
+      // Try finding brand within product title
+      (document.querySelector('h1')?.innerText || '').split(' ')[0] ||
+      // Try finding any element containing "Brand:" text
+      Array.from(document.querySelectorAll('*'))
+        .find((el) => el.innerText?.includes('Brand:'))
+        ?.innerText?.split('Brand:')[1]
+        ?.trim()
+
+    // Debug: Log all potential brand elements
+    console.log('Brand Elements:', {
+      brandLink: document.querySelector('.b-product_details-brand a')?.innerText,
+      brandSpan: document.querySelector('.b-product_details-brand span')?.innerText,
+      brandItemprop: document.querySelector('[itemprop="brand"]')?.innerText,
+      brandAutomation: document.querySelector('[data-automation="product-brand"]')?.innerText,
+      prodBrandName: document.querySelector('.prod-brandName')?.innerText,
+    })
+
+    // Title
+    const title =
+      document.querySelector('[itemprop="name"]')?.innerText?.trim() || document.querySelector('h1')?.innerText?.trim()
+
+    // Description - multiple possible selectors
+    const description =
+      document.querySelector('[itemprop="description"]')?.innerText?.trim() ||
+      document.querySelector('#product-overview')?.innerText?.trim() ||
+      document.querySelector('.product-description-content')?.innerText?.trim()
+
+    // Price - updated selectors
+    const priceElement = document.querySelector('[data-automation="buybox-price"]')
+    const price = priceElement ? priceElement.innerText.trim() : null
+
+    // Alternative price selectors if the above fails
+    const altPrice =
+      price ||
+      document.querySelector('.price-characteristic')?.innerText?.trim() ||
+      document.querySelector('[data-testid="price-value"]')?.innerText?.trim() ||
+      document.querySelector('span[itemprop="price"]')?.innerText?.trim()
+
+    // Image
+    const image =
+      document.querySelector('[data-testid="hero-image"]')?.src ||
+      document.querySelector('[property="og:image"]')?.getAttribute('content')
+
+    return {
+      brand: brand || null,
+      title: title || null,
+      description: description || null,
+      price: altPrice || null,
+      image: image || null,
+    }
+  })
+
+  await browser.close()
+  return productData
 }

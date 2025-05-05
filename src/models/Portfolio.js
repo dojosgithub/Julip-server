@@ -40,7 +40,7 @@ const portfolioContentSchema = {
     },
     oneLiner: {
       type: String,
-      default: 'Click the logo to see my work',
+      default: '',
     },
     brandList: [
       {
