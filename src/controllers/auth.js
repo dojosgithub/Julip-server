@@ -459,7 +459,7 @@ export const CONTROLLER_AUTH = {
 
     if (user.accountType === 'Google-Account') {
       return res.status(400).json({
-        message: 'Not a Julip Account',
+        message: 'Google account users can not reset password',
       })
     }
 

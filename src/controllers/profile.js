@@ -290,7 +290,7 @@ export const CONTROLLER_PROFILE = {
         return {
           platform,
           username, // Original input URL stored as `name`
-          url: fullUrl, // Fully constructed URL
+          url: platform === 'Email' ? username : fullUrl,
           visibility,
         }
       })
