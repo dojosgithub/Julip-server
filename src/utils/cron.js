@@ -43,19 +43,19 @@ export const task = schedule(
   { timezone: 'America/New_York' }
 )
 
-// export const instaschedule = schedule('*/5 * * * *', async () => await syncInstaCronJob(), {
-//   timezone: 'America/New_York',
-// })
+export const instaschedule = schedule('0 22 * * *', async () => await syncInstaCronJob(), {
+  timezone: 'America/New_York',
+})
 
-// // YouTube sync every day at 2 AM
-// export const youtubeschedule = schedule('*/5 * * * *', async () => await syncYouTubeCronJob(), {
-//   timezone: 'America/New_York',
-// })
+// YouTube sync every day at 2 AM
+export const youtubeschedule = schedule('0 23 * * *', async () => await syncYouTubeCronJob(), {
+  timezone: 'America/New_York',
+})
 
-// // TikTok sync every 12 hours
-// export const tiktokschedule = schedule('*/5 * * * *', async () => await syncTiktokCronJob(), {
-//   timezone: 'America/New_York',
-// })
+// TikTok sync every 12 hours
+export const tiktokschedule = schedule('0 0 * * *', async () => await syncTiktokCronJob(), {
+  timezone: 'America/New_York',
+})
 
 async function productsToDelete() {
   try {
@@ -203,7 +203,9 @@ const syncTiktokCronJob = async () => {
 
     const now = new Date()
     if (!accessTokenExpiry || now >= accessTokenExpiry) {
-      console.log(`Access token expired for user ${userId}. Please refresh manually or implement auto-refresh.`)
+      console.log(
+        `Access token expired in TikTok for user ${userId}. Please refresh manually or implement auto-refresh.`
+      )
       continue
     }
 
@@ -211,7 +213,7 @@ const syncTiktokCronJob = async () => {
       await fetchAndSaveTikTokAnalytics({ userId, accessToken })
       console.log(`✅ TikTok analytics updated for user ${userId}`)
     } catch (error) {
-      console.error(`❌ Failed to update analytics for user ${userId}`, error.message)
+      console.error(`❌ Failed to update analytics in TikTok for user ${userId}`, error.message)
     }
   }
 
@@ -229,7 +231,7 @@ const syncYouTubeCronJob = async () => {
         userId: user.userId,
         refreshToken: user.refreshToken,
       })
-      console.log(`Synced YouTube analytics for user ${user.userId}`)
+      console.log(`Synced YouTube analytics for user in Youtube ${user.userId}`)
     } catch (err) {
       console.error(`Error syncing YouTube analytics for user ${user.userId}:`, err.message)
     }
@@ -250,9 +252,9 @@ const syncInstaCronJob = async () => {
 
     const expiredUsers = await InstaAnalytics.find({ longLivedTokenExpiry: { $lte: now } })
     expiredUsers.forEach((user) => {
-      console.log(`[CRON] Token expired for user ${user.userId}. They need to refresh their token.`)
+      console.log(`[CRON] Token expired in Instagram for user ${user.userId}. They need to refresh their token.`)
     })
   } catch (err) {
-    console.error('[CRON] General error:', err.message)
+    console.error('[CRON] General error in Instagram:', err.message)
   }
 }

@@ -210,9 +210,9 @@ app.get('/ping', (req, res) => res.send('Ping Successfulls 😄'))
 server.listen(PORT, async () => {
   // app.listen(PORT, '0.0.0.0', '0', async () => {
   task.start()
-  // instaschedule.start()
-  // tiktokschedule.start()
-  // youtubeschedule.start()
+  instaschedule.start()
+  tiktokschedule.start()
+  youtubeschedule.start()
   // challengeTask.start()
   console.log(`[⚡️ server]: Server running on port ${PORT} | Environment: ${process.env.NODE_ENV}`)
 })
