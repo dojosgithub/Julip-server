@@ -827,12 +827,16 @@ export const CONTROLLER_AUTH = {
         }
 
         const sendEmail = new Email({ email })
-        await sendEmail.welcomeToZeal({ firstName: token })
+        // await sendEmail.welcomeToZeal({ firstName: token })
+
+        sendEmail.notifyZapierSignup({ fullName: newUser.fullName, email: newUser.email })
+        const emailProps = { code: token }
+        sendEmail.confirmEmail(emailProps)
       } else {
         // User exists, log them in
         if (userExists.accountType !== 'Google-Account') {
           return res.status(StatusCodes.FORBIDDEN).json({
-            message: 'Not a Google account, try logging in with your Zeal account',
+            message: 'Not a Google account, try logging in with your Julip account',
           })
         }
         userExists.isLoggedIn = true
