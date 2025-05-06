@@ -677,9 +677,9 @@ export const CONTROLLER_SHOP = {
     }
 
     // Validate productsList
-    if (productsList && (!Array.isArray(productsList) || !productsList.length)) {
+    if (productsList && !Array.isArray(productsList)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
-        message: 'productsList must be a non-empty array of product objects.',
+        message: 'productsList must be an array of product objects.',
       })
     }
 
