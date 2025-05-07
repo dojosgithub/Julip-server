@@ -466,7 +466,15 @@ export const CONTROLLER_PORTFOLIO = {
       })
     } catch (error) {
       console.error('Error fetching channel ID:', error)
-      res.status(500).json({ error })
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: 'Instagram API error',
+        error: {
+          message: error.response?.data?.error?.message || error.message,
+          code: error.response?.data?.error?.code,
+          type: error.response?.data?.error?.type,
+          fbtrace_id: error.response?.data?.error?.fbtrace_id,
+        },
+      })
     }
   }),
 
@@ -1031,6 +1039,7 @@ export const CONTROLLER_PORTFOLIO = {
 
   // const accessToken = 'act.YRB3VcJdCmUupAX1iMIcBxjoI4O0kqFaXmuP3YXHVSDeE3QrnR6NnuufDDT7!5878.va'
   // TIKTOK
+  // TIKTOK
   fetchTikTokData: asyncMiddleware(async (req, res) => {
     const { code } = req.query
     const { _id: userId } = req.decoded
@@ -1290,15 +1299,16 @@ export const CONTROLLER_PORTFOLIO = {
       })
 
       const longLivedToken = longTokenRes.data.access_token
-
+      console.log('longLivedToken', longLivedToken)
       // Step 3: Get user's pages
       const pagesRes = await axios.get('https://graph.facebook.com/v22.0/me/accounts', {
         params: {
           access_token: longLivedToken,
         },
       })
-
+      console.log('pagesRes.data', pagesRes.data)
       const page = pagesRes.data.data[0]
+      console.log('page', page)
       const pageId = page.id
       const pageAccessToken = page.access_token
 

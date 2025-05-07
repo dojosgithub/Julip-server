@@ -49,6 +49,9 @@ const tiktokAnalyticsSchema = new mongoose.Schema({
   avgComments: Number,
   avgShares: Number,
   avgViews: Number,
+  avgWatchTime: Number,
+  avgImpressions: Number,
+  avgReach: Number,
   videos: [
     {
       id: String,
