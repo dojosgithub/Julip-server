@@ -377,28 +377,46 @@ export const CONTROLLER_PORTFOLIO = {
 
   InstaDetails: asyncMiddleware(async (req, res) => {
     const { user_id: instagramUserId, access_token: accessToken } = req.body
-    const { _id: userId } = req.decoded // assuming you're using middleware to decode the user
+    const { _id: userId } = req.decoded
+
     console.log('instagramUserId', instagramUserId, accessToken, 'userId', userId)
+
+    const isTransientError = (err) =>
+      err?.response?.data?.error?.is_transient === true || err?.response?.data?.error?.code === 2
+
+    const retryRequest = async (url, retries = 3, delay = 1000) => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          return await axios.get(url)
+        } catch (err) {
+          const shouldRetry = isTransientError(err)
+          if (shouldRetry && i < retries - 1) {
+            console.warn(`Transient error on ${url}, retrying (${i + 1}/${retries})...`)
+            await new Promise((res) => setTimeout(res, delay))
+          } else {
+            throw err
+          }
+        }
+      }
+    }
+
     try {
-      const followers_response = await axios.get(
+      const followers_response = await retryRequest(
         `https://graph.instagram.com/${instagramUserId}?fields=followers_count&access_token=${accessToken}`
       )
       console.log('followers_response', followers_response.data)
-      const reach = await axios.get(
+
+      const reach = await retryRequest(
         `https://graph.instagram.com/${instagramUserId}/insights?metric=reach&period=days_28&access_token=${accessToken}`
       )
       console.log('reach', reach.data)
 
-      const media = await axios.get(
+      const media = await retryRequest(
         `https://graph.instagram.com/${instagramUserId}/media?fields=likes_count,comments_count,media_type,media_url,permalink,like_count,share_count&access_token=${accessToken}`
       )
       console.log('media', media.data)
-      const mediaData = media.data.data || []
 
-      // const demo = await axios.get(
-      //   `https://graph.instagram.com/${instagramUserId}/follower_insights?metric=audience_gender_age,audience_locale&period=lifetime&access_token=${accessToken}`
-      // )
-      // console.log('demo', demo.data)
+      const mediaData = media.data.data || []
 
       const totalLikes = mediaData.reduce((sum, post) => sum + (post.like_count || 0), 0)
       const totalComments = mediaData.reduce((sum, post) => sum + (post.comments_count || 0), 0)
@@ -411,7 +429,6 @@ export const CONTROLLER_PORTFOLIO = {
 
       const totalViews = reach.data.data.reduce((sum, insight) => sum + insight.values[0].value, 0)
 
-      // Save or update the data
       const updated = await InstaAnalytics.findOneAndUpdate(
         { userId },
         {
@@ -443,6 +460,11 @@ export const CONTROLLER_PORTFOLIO = {
       })
     } catch (error) {
       console.error('Error saving Instagram analytics:', error.message)
+      if (error.response) {
+        console.error('Status:', error.response.status)
+        console.error('Headers:', error.response.headers)
+        console.error('Data:', error.response.data)
+      }
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         message: 'Error during authentication',
         error: error.response?.data || error.message,
