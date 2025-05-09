@@ -195,7 +195,18 @@ export const CONTROLLER_PROFILE = {
     user.isProfileCreated = true
     // Creation of Pages
 
-    const shop = new Shop({ userId })
+    const defaultShopContent = {
+      name: 'Shop',
+      collections: [],
+      pinnedProducts: {
+        name: 'Pinned Product',
+        productsList: [],
+        visibility: false,
+      },
+      visibility: true,
+    }
+
+    const shop = new Shop({ userId, draft: defaultShopContent, published: defaultShopContent })
     const about = new About({ userId })
     const services = new Services({ userId })
     const portfolio = new Portfolio({ userId })
