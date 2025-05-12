@@ -1130,7 +1130,7 @@ export const CONTROLLER_PORTFOLIO = {
 
       const userProfile = userProfileResponse.data.data
       console.log('userProfileResponse', userProfileResponse)
-      console.log('userProfileResponse.data', userProfileResponse.data)
+      console.log('userProfileResponse.data', userProfileResponse.data.data.user.follower_count)
       console.log('userProfileResponse.data.user', userProfileResponse.data.user)
       // Step 3: Fetch user's videos
       const videoListResponse = await axios.post(
@@ -1189,7 +1189,7 @@ export const CONTROLLER_PORTFOLIO = {
       const safeTotalLikes = totalLikes || 1
       const safeTotalComments = totalComments || 1
       const safeTotalShares = totalShares || 1
-      const safeFollowers = userProfile.follower_count > 0 ? userProfile.follower_count : 1
+      const safeFollowers = userProfileResponse.data.data.user.follower_count > 0 ? userProfile.follower_count : 1
 
       const engagementRateRaw =
         ((avgLikes / safeTotalLikes + avgComments / safeTotalComments + avgShares / safeTotalShares) / safeFollowers) *
@@ -1207,9 +1207,9 @@ export const CONTROLLER_PORTFOLIO = {
           refreshToken,
           refreshTokenExpiry,
           openId,
-          avatar: userProfile.avatar_url,
-          displayName: userProfile.display_name,
-          followers: userProfile.follower_count,
+          avatar: userProfileResponse.data.data.user.avatar_url,
+          displayName: userProfileResponse.data.data.user.display_name,
+          followers: userProfileResponse.data.data.user.follower_count,
           lastSyncedAt: new Date(),
           totalLikes,
           totalComments,
