@@ -865,7 +865,7 @@ export const CONTROLLER_PORTFOLIO = {
         `https://www.googleapis.com/youtube/v3/channels?part=statistics&mine=true&key=${apiKey}`,
         {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       )
