@@ -1129,7 +1129,7 @@ export const CONTROLLER_PORTFOLIO = {
       })
 
       const userProfile = userProfileResponse.data.data
-
+      console.log('userProfileResponse', userProfileResponse, userProfileResponse.user)
       // Step 3: Fetch user's videos
       const videoListResponse = await axios.post(
         'https://open.tiktokapis.com/v2/video/list/?fields=cover_image_url,id,title',
@@ -1194,7 +1194,7 @@ export const CONTROLLER_PORTFOLIO = {
         100
 
       const engagementRate = +engagementRateRaw.toFixed(2)
-      console.log(' userProfile.follower_count', userProfile.follower_count)
+      console.log(' userProfile.follower_count', engagementRate, userProfile.follower_count)
       await TikTokAnalytics.findOneAndUpdate(
         { userId }, // or however you identify the user
         {
