@@ -1194,7 +1194,7 @@ export const CONTROLLER_PORTFOLIO = {
         100
 
       const engagementRate = +engagementRateRaw.toFixed(2)
-
+      console.log(' userProfile.follower_count', userProfile.follower_count)
       await TikTokAnalytics.findOneAndUpdate(
         { userId }, // or however you identify the user
         {
