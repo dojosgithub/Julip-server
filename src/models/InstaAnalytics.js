@@ -12,6 +12,10 @@ const InstaAnalyticsSchema = new Schema(
       type: String,
       required: true,
     },
+    engagementRate: {
+      type: Number,
+      default: 0,
+    },
     accessToken: {
       type: String,
       required: true,

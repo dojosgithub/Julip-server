@@ -28,6 +28,7 @@ const youtubeAnalyticsSchema = new mongoose.Schema(
 
     averageLikes: Number,
     averageComments: Number,
+    subscriberCount: Number,
     averageShares: Number,
     averageWatchTime: Number,
     duration: String,

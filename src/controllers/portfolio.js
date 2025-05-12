@@ -428,11 +428,16 @@ export const CONTROLLER_PORTFOLIO = {
       const avgShares = totalPosts ? totalShares / totalPosts : 0
 
       const totalViews = reach.data.data.reduce((sum, insight) => sum + insight.values[0].value, 0)
+      const followersCount = followers_response.data.followers_count || 1
+      let engagementRate = ((totalLikes + totalComments + totalShares) / followersCount) * 100
+      engagementRate = Math.min(+engagementRate.toFixed(2), 100) // round to 2 decimal places and cap at 100
 
       const updated = await InstaAnalytics.findOneAndUpdate(
         { userId },
         {
+          totalPosts,
           followersCount: followers_response.data.followers_count,
+          engagementRate,
           totalViews,
           totalLikes,
           totalComments,
@@ -849,6 +854,17 @@ export const CONTROLLER_PORTFOLIO = {
       const channelId = response.data.items[0].id
       console.log('Channel ID:', channelId)
 
+      const subscriber = await axios.get(
+        `https://www.googleapis.com/youtube/v3/channels?part=statistics&mine=true&key=${apiKey}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+      const subscriberCount = subscriber.data.items[0].statistics.subscriberCount
+      console.log('Subscriber Count:', subscriberCount)
+
       // Validate input
       if (!token || !channelId) {
         return res.status(400).json({ message: 'Both accessToken and channelId are required.' })
@@ -947,7 +963,7 @@ export const CONTROLLER_PORTFOLIO = {
           // userEmail: userId,
           channelId,
           lastSyncedAt: new Date(),
-
+          subscriberCount,
           // Analytics data
           totalReach: totalViews,
           totalLikes,
@@ -1160,6 +1176,9 @@ export const CONTROLLER_PORTFOLIO = {
       const avgComments = +(totalComments / count || 0).toFixed(2)
       const avgViews = +(totalViews / count || 0).toFixed(2)
       const avgShares = +(totalShares / count || 0).toFixed(2)
+      const safeFollowerCount = userProfile.follower_count > 0 ? userProfile.follower_count : 1
+      const engagementRateRaw = ((totalLikes + totalComments + totalShares) / safeFollowerCount) * 100
+      const engagementRate = +engagementRateRaw.toFixed(2)
 
       await TikTokAnalytics.findOneAndUpdate(
         { userId }, // or however you identify the user
@@ -1167,6 +1186,7 @@ export const CONTROLLER_PORTFOLIO = {
           userId,
           accessToken,
           accessTokenExpiry,
+          engagementRate,
           refreshToken,
           refreshTokenExpiry,
           openId,
