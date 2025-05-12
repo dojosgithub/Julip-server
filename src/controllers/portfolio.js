@@ -1129,7 +1129,9 @@ export const CONTROLLER_PORTFOLIO = {
       })
 
       const userProfile = userProfileResponse.data.data
-      console.log('userProfileResponse', userProfileResponse, userProfileResponse.user)
+      console.log('userProfileResponse', userProfileResponse)
+      console.log('userProfileResponse.data', userProfileResponse.data)
+      console.log('userProfileResponse.data.user', userProfileResponse.data.user)
       // Step 3: Fetch user's videos
       const videoListResponse = await axios.post(
         'https://open.tiktokapis.com/v2/video/list/?fields=cover_image_url,id,title',
