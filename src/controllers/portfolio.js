@@ -429,9 +429,16 @@ export const CONTROLLER_PORTFOLIO = {
 
       const totalViews = reach.data.data.reduce((sum, insight) => sum + insight.values[0].value, 0)
       const followersCount = followers_response.data.followers_count || 1
-      let engagementRate = ((totalLikes + totalComments + totalShares) / followersCount) * 100
-      engagementRate = Math.min(+engagementRate.toFixed(2), 100) // round to 2 decimal places and cap at 100
+      const safeTotalLikes = totalLikes || 1
+      const safeTotalComments = totalComments || 1
+      const safeTotalShares = totalShares || 1
+      const safeFollowers = followersCount > 0 ? followersCount : 1
 
+      const engagementRateRaw =
+        ((avgLikes / safeTotalLikes + avgComments / safeTotalComments + avgShares / safeTotalShares) / safeFollowers) *
+        100
+
+      const engagementRate = +engagementRateRaw.toFixed(2)
       const updated = await InstaAnalytics.findOneAndUpdate(
         { userId },
         {
@@ -1177,7 +1184,15 @@ export const CONTROLLER_PORTFOLIO = {
       const avgViews = +(totalViews / count || 0).toFixed(2)
       const avgShares = +(totalShares / count || 0).toFixed(2)
       const safeFollowerCount = userProfile.follower_count > 0 ? userProfile.follower_count : 1
-      const engagementRateRaw = ((totalLikes + totalComments + totalShares) / safeFollowerCount) * 100
+      const safeTotalLikes = totalLikes || 1
+      const safeTotalComments = totalComments || 1
+      const safeTotalShares = totalShares || 1
+      const safeFollowers = userProfile.follower_count > 0 ? userProfile.follower_count : 1
+
+      const engagementRateRaw =
+        ((avgLikes / safeTotalLikes + avgComments / safeTotalComments + avgShares / safeTotalShares) / safeFollowers) *
+        100
+
       const engagementRate = +engagementRateRaw.toFixed(2)
 
       await TikTokAnalytics.findOneAndUpdate(
