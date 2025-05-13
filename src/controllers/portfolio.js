@@ -1185,18 +1185,17 @@ export const CONTROLLER_PORTFOLIO = {
       const avgComments = +(totalComments / count || 0).toFixed(2)
       const avgViews = +(totalViews / count || 0).toFixed(2)
       const avgShares = +(totalShares / count || 0).toFixed(2)
-      const safeFollowerCount = userProfile.follower_count > 0 ? userProfile.follower_count : 1
+      const safeFollowerCount =
+        userProfileResponse.data.data.user.follower_count > 0 ? userProfileResponse.data.data.user.follower_count : 1
 
       const safeTotalLikes = isNaN(totalLikes) ? 0 : totalLikes
       const safeTotalComments = isNaN(totalComments) ? 0 : totalComments
       const safeTotalShares = isNaN(totalShares) ? 0 : totalShares
-      const safeFollowers = isNaN(followerCount) || followerCount <= 0 ? 1 : followerCount
-
       const engagementRateRaw =
         ((avgLikes / (safeTotalLikes || 1) +
           avgComments / (safeTotalComments || 1) +
           avgShares / (safeTotalShares || 1)) /
-          safeFollowers) *
+          safeFollowerCount) *
         100
 
       const engagementRate = isNaN(engagementRateRaw) ? 0 : +engagementRateRaw.toFixed(2)
