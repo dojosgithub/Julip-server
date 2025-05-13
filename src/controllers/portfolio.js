@@ -1237,7 +1237,9 @@ export const CONTROLLER_PORTFOLIO = {
       )
       // Step 6: Respond with the aggregated data
       res.status(StatusCodes.OK).json({
-        followers: userProfile.follower_count,
+        avatar: userProfileResponse.data.data.user.avatar_url,
+        displayName: userProfileResponse.data.data.user.display_name,
+        followers: userProfileResponse.data.data.user.follower_count,
         totalLikes,
         totalComments,
         totalShares,
