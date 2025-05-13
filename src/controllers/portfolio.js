@@ -994,6 +994,7 @@ export const CONTROLLER_PORTFOLIO = {
       )
 
       res.json({
+        subscriberCount,
         data: analyticsResponse.data,
         impressions: impressionsResponse.data,
         totalReach: totalViews,
