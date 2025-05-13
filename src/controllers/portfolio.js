@@ -1186,16 +1186,21 @@ export const CONTROLLER_PORTFOLIO = {
       const avgViews = +(totalViews / count || 0).toFixed(2)
       const avgShares = +(totalShares / count || 0).toFixed(2)
       const safeFollowerCount = userProfile.follower_count > 0 ? userProfile.follower_count : 1
-      const safeTotalLikes = totalLikes || 1
-      const safeTotalComments = totalComments || 1
-      const safeTotalShares = totalShares || 1
-      const safeFollowers = userProfileResponse.data.data.user.follower_count > 0 ? userProfile.follower_count : 1
+
+      const safeTotalLikes = isNaN(totalLikes) ? 0 : totalLikes
+      const safeTotalComments = isNaN(totalComments) ? 0 : totalComments
+      const safeTotalShares = isNaN(totalShares) ? 0 : totalShares
+      const safeFollowers = isNaN(followerCount) || followerCount <= 0 ? 1 : followerCount
 
       const engagementRateRaw =
-        ((avgLikes / safeTotalLikes + avgComments / safeTotalComments + avgShares / safeTotalShares) / safeFollowers) *
+        ((avgLikes / (safeTotalLikes || 1) +
+          avgComments / (safeTotalComments || 1) +
+          avgShares / (safeTotalShares || 1)) /
+          safeFollowers) *
         100
 
-      const engagementRate = +engagementRateRaw.toFixed(2)
+      const engagementRate = isNaN(engagementRateRaw) ? 0 : +engagementRateRaw.toFixed(2)
+
       console.log(' userProfile.follower_count', engagementRate, userProfile.follower_count)
       await TikTokAnalytics.findOneAndUpdate(
         { userId }, // or however you identify the user
