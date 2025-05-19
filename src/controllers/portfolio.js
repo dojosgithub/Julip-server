@@ -1202,20 +1202,20 @@ export const CONTROLLER_PORTFOLIO = {
       const engagementRate = isNaN(engagementRateRaw) ? 0 : +engagementRateRaw.toFixed(2)
       console.log(' userProfile.follower_count', engagementRate, userProfile.follower_count)
 
-      const demographics = await axios.get('https://open.tiktokapis.com/v2/insight/audience/', {
-        params: {
-          start_date: '2024-04-01',
-          end_date: '2024-04-30',
-          metrics: 'age,gender,country',
-        },
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      })
+      // const demographics = await axios.get('https://open.tiktokapis.com/v2/insight/audience/', {
+      //   params: {
+      //     start_date: '2024-04-01',
+      //     end_date: '2024-04-30',
+      //     metrics: 'age,gender,country',
+      //   },
+      //   headers: {
+      //     Authorization: `Bearer ${accessToken}`,
+      //     'Content-Type': 'application/json',
+      //   },
+      // })
 
-      const demographicsResponse = demographics.data
-      console.log('demographicsResponse', demographicsResponse)
+      // const demographicsResponse = demographics.data
+      // console.log('demographicsResponse', demographicsResponse)
       // // Save or transform as needed
       // res.status(200).json({
       //   message: 'TikTok demographics fetched successfully',
