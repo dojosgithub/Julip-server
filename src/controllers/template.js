@@ -244,53 +244,61 @@ export const CONTROLLER_TEMPLATE = {
         message: 'Template id not found.',
       })
     }
-    const template = await Template.findById(toObjectId(templateId)).lean()
-    if (!template) {
+
+    // 1) fetch the base template you want to clone
+    const base = await Template.findById(toObjectId(templateId)).lean()
+    if (!base) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: 'Template not found.',
       })
     }
 
-    // Ensure all required fields are present in draft and published
-    const newTemplate = new Template({
-      userId,
-      draft: {
-        name: template.name,
-        mode: template.mode,
-        colors: {
-          light: template.colors.light,
-          dark: template.colors.dark,
-        },
-        fonts: template.fonts,
-      },
-      published: {
-        name: template.name,
-        mode: template.mode,
-        colors: {
-          light: template.colors.light,
-          dark: template.colors.dark,
-        },
-        fonts: {
-          header: template.fonts.header,
-          body: template.fonts.body,
-        },
-      },
-    })
-
-    const savedTemplate = await newTemplate.save()
-
-    const user = await User.findById(userId)
+    // 2) fetch the user so we know their current selection
+    const user = await User.findById(userId).select('template')
     if (!user) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: 'User not found.',
       })
     }
+
+    // 3) if they already had a custom template, delete it
+    if (user.template) {
+      await Template.findByIdAndDelete(user.template)
+    }
+
+    // 4) build & save the new custom template
+    const newTemplate = new Template({
+      userId,
+      draft: {
+        name: base.name,
+        mode: base.mode,
+        colors: {
+          light: base.colors.light,
+          dark: base.colors.dark,
+        },
+        fonts: base.fonts,
+      },
+      published: {
+        name: base.name,
+        mode: base.mode,
+        colors: {
+          light: base.colors.light,
+          dark: base.colors.dark,
+        },
+        fonts: {
+          header: base.fonts.header,
+          body: base.fonts.body,
+        },
+      },
+    })
+    const savedTemplate = await newTemplate.save()
+
+    // 5) point the user at it
     user.isTemplateSelected = true
     user.template = savedTemplate._id
     await user.save()
 
     res.status(StatusCodes.OK).json({
-      data: null,
       message: 'Template updated successfully.',
     })
   }),
@@ -356,6 +364,10 @@ export const CONTROLLER_TEMPLATE = {
             populate: {
               path: 'landingPage', // Populate landingPage inside each service
               model: 'LandingPage',
+              populate: {
+                path: 'testimonials',
+                model: 'Testimonials',
+              },
             },
           },
           {
