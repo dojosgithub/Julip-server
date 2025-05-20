@@ -75,7 +75,7 @@ export const CONTROLLER_PRICING = {
     }
 
     // To transfer funds to the referrer
-    if (user.referredBy) {
+    if (user.referredBy && pricing === 'Premium') {
       const referrer = await User.findById(user.referredBy)
       if (referrer) {
         if (!referrer.stripeAccountId) {
