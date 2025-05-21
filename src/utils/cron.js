@@ -21,6 +21,7 @@ import { calculateAverage, getInstagramFollowers, getInstagramInsights, getInsta
 import { fetchAndSaveTikTokAnalytics } from './tiktok-analytics'
 import { fetchYouTubeAnalytics } from './youtube-analytics'
 import { updateInstagramAnalyticsForUser } from './insta-analytics'
+import { stripe } from '../utils/stripe'
 
 // "0 0 * * 0", Every sunday at 00:00 - Required
 // "59 14 * * 1", Every monday at 14:59
@@ -258,3 +259,76 @@ const syncInstaCronJob = async () => {
     console.error('[CRON] General error in Instagram:', err.message)
   }
 }
+
+async function processReferralPayouts() {
+  console.log('[CRON] Starting referral payout processing...')
+  const TRIAL_DAYS = 14
+  const today = new Date()
+  const trialCutoffDate = new Date(today)
+  trialCutoffDate.setDate(trialCutoffDate.getDate() - TRIAL_DAYS)
+
+  try {
+    const referredUsers = await User.find({
+      referredBy: { $exists: true },
+      userTypes: 'Premium',
+      createdAt: { $lte: trialCutoffDate },
+    })
+
+    for (const user of referredUsers) {
+      // Skip if already rewarded
+      const alreadyRewarded = await User.exists({
+        _id: user?.referredBy,
+        referredUsers: user?._id,
+      })
+
+      if (!alreadyRewarded) continue
+
+      const referrer = await User.findById(user?.referredBy)
+      console.log(`Referred user: ${user.email}  || Referred By: ${referrer.email}`)
+
+      if (!referrer || referrer?.userTypes !== 'Premium' || !referrer?.stripeAccountId) {
+        console.log(`Skipping user ${user?.email} due to missing criteria.`)
+
+        console.log(`--- referrer: ${referrer?.email} `)
+        console.log(`--- referrer.userTypes ${referrer?.userTypes} `)
+        console.log(`--- referrer.stripeAccountId ${referrer?.stripeAccountId} `)
+        continue
+      }
+
+      try {
+        const account = await stripe.accounts.retrieve(referrer?.stripeAccountId)
+
+        if (account.capabilities?.transfers !== 'active') {
+          console.log(`Transfers not active for referrer ${referrer?.email}`)
+          continue
+        }
+
+        await stripe.transfers.create({
+          amount: 1000,
+          currency: 'usd',
+          destination: referrer?.stripeAccountId,
+        })
+
+        referrer.referralRewards += 10
+        referrer.successfulReferrals += 1
+        await referrer.save()
+
+        console.log(`$10 reward transferred to referrer ${referrer?.email} for user ${user?.email}`)
+      } catch (err) {
+        console.error(`Error transferring reward for user ${user?.email}:`, err.message)
+      }
+    }
+  } catch (err) {
+    console.error('[CRON] Error processing referral payouts:', err.message)
+  }
+  console.log('[CRON] Referral payout processing finished.')
+}
+
+// * Uncomment this to make payouts
+// export const referralPayoutSchedule = schedule(
+//   '* * * * *', // Every 1 minute
+//   async () => {
+//     await processReferralPayouts()
+//   },
+//   { timezone: 'America/New_York' }
+// )
