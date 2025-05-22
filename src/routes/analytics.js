@@ -2,7 +2,7 @@
 import express, { Router } from 'express'
 
 // * Controllers
-import { CONTROLLER_ANALYTICS } from '../controllers'
+import { CONTROLLER_ANALYTICS, getAnalyticsData } from '../controllers'
 
 // * Utilities
 // import { validateRegistration } from '../models/User'
@@ -28,5 +28,38 @@ router.post('/tab-view', CONTROLLER_ANALYTICS.addTabView)
 router.post('/analysis-week', CONTROLLER_ANALYTICS.getAnalyticsLast7Days)
 
 router.post('/analysis-two-week', CONTROLLER_ANALYTICS.getAnalyticsLast14Days)
+
+// SSE Endpoint
+router.get('/stream', async (req, res) => {
+  const { userId, days } = req.query
+
+  if (!userId) {
+    return res.status(400).json({ message: 'Missing userId' })
+  }
+
+  res.set({
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+  })
+  res.flushHeaders()
+
+  const daysAgo = parseInt(days) || 7
+
+  const sendData = async () => {
+    const data = await getAnalyticsData(userId, daysAgo)
+    if (data) {
+      res.write(`data: ${JSON.stringify(data)}\n\n`)
+    }
+  }
+
+  await sendData()
+
+  const interval = setInterval(sendData, 10000) // every 10 seconds
+
+  req.on('close', () => {
+    clearInterval(interval)
+  })
+})
 
 export default router
