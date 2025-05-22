@@ -212,131 +212,86 @@ export const CONTROLLER_ANALYTICS = {
   }),
 
   // Get analytics for the last 7 days
-  // Get analytics for the last 7 days
   getAnalyticsLast7Days: asyncMiddleware(async (req, res) => {
     const { userId } = req.body
+    const data = await getAnalyticsData(userId, 7)
 
-    const sevenDaysAgo = new Date()
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-
-    const analytics = await Analytics.findOne({ userId })
-
-    if (!analytics) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        message: 'No analytics data found for the last 7 days.',
-      })
+    if (!data) {
+      return res.status(StatusCodes.NOT_FOUND).json({ message: 'No analytics data found for the last 7 days.' })
     }
-
-    // Filter webClicks and webViews within the last 7 days
-    const webClicks = analytics.webClicks.filter(({ timestamp }) => new Date(timestamp) >= sevenDaysAgo)
-    const webViews = analytics.webViews.filter(({ timestamp }) => new Date(timestamp) >= sevenDaysAgo)
-
-    const totalWebClicks = webClicks.length
-    const totalWebViews = webViews.length
-
-    // Group and count webClicks by country
-    const webClicksByCountryRaw = webClicks.reduce((acc, { location: { country } }) => {
-      country = country || 'Unknown'
-      acc[country] = (acc[country] || 0) + 1
-      return acc
-    }, {})
-
-    // Group and count webViews by country
-    const webViewsByCountryRaw = webViews.reduce((acc, { location: { country } }) => {
-      country = country || 'Unknown'
-      acc[country] = (acc[country] || 0) + 1
-      return acc
-    }, {})
-
-    // Calculate percentages
-    const webClicksByCountry = calculatePercentages(webClicksByCountryRaw, totalWebClicks)
-    const webViewsByCountry = calculatePercentages(webViewsByCountryRaw, totalWebViews)
-
-    // Convert Map to Array for tabViews
-    const tabViews = Array.from(analytics.tabViews.entries())
-      .filter(([key, value]) => new Date(value.timestamp) >= sevenDaysAgo)
-      .sort((a, b) => b[1].count - a[1].count)
-
-    // Prepare top 5 products
-    const products = analytics.products
-      .filter(({ timestamp }) => new Date(timestamp) >= sevenDaysAgo)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5) // Limit to top 5
 
     res.status(StatusCodes.OK).json({
       message: 'Analytics data for the last 7 days fetched successfully.',
-      data: {
-        webClicksByCountry,
-        webViewsByCountry,
-        webClicks: totalWebClicks, // Total click events
-        webViews: totalWebViews, // Total view events
-        tabViews,
-        products,
-      },
+      data,
     })
   }),
 
-  // Get analytics for the last 14 days
   getAnalyticsLast14Days: asyncMiddleware(async (req, res) => {
     const { userId } = req.body
+    const data = await getAnalyticsData(userId, 14)
 
-    const fourteenDaysAgo = new Date()
-    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14)
-
-    const analytics = await Analytics.findOne({ userId })
-
-    if (!analytics) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        message: 'No analytics data found for the last 14 days.',
-      })
+    if (!data) {
+      return res.status(StatusCodes.NOT_FOUND).json({ message: 'No analytics data found for the last 14 days.' })
     }
-
-    // Filter webClicks and webViews within the last 14 days
-    const webClicks = analytics.webClicks.filter(({ timestamp }) => new Date(timestamp) >= fourteenDaysAgo)
-    const webViews = analytics.webViews.filter(({ timestamp }) => new Date(timestamp) >= fourteenDaysAgo)
-
-    const totalWebClicks = webClicks.length
-    const totalWebViews = webViews.length
-
-    // Group and count webClicks by country
-    const webClicksByCountryRaw = webClicks.reduce((acc, { location: { country } }) => {
-      country = country || 'Unknown'
-      acc[country] = (acc[country] || 0) + 1
-      return acc
-    }, {})
-
-    // Group and count webViews by country
-    const webViewsByCountryRaw = webViews.reduce((acc, { location: { country } }) => {
-      country = country || 'Unknown'
-      acc[country] = (acc[country] || 0) + 1
-      return acc
-    }, {})
-
-    // Calculate percentages
-    const webClicksByCountry = calculatePercentages(webClicksByCountryRaw, totalWebClicks)
-    const webViewsByCountry = calculatePercentages(webViewsByCountryRaw, totalWebViews)
-
-    // Convert Map to Array for tabViews
-    const tabViews = Array.from(analytics.tabViews.entries())
-      .filter(([key, value]) => new Date(value.timestamp) >= fourteenDaysAgo)
-      .sort((a, b) => b[1].count - a[1].count)
-
-    // Prepare top 5 products
-    const products = analytics.products
-      .filter(({ timestamp }) => new Date(timestamp) >= fourteenDaysAgo)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5) // Limit to top 5
 
     res.status(StatusCodes.OK).json({
       message: 'Analytics data for the last 14 days fetched successfully.',
-      data: {
-        webClicksByCountry,
-        webViewsByCountry,
-        webClicks: totalWebClicks, // Total click events
-        webViews: totalWebViews, // Total view events
-        tabViews,
-        products,
-      },
+      data,
     })
   }),
+}
+
+export const getAnalyticsData = async (userId, daysAgo) => {
+  const cutoffDate = new Date()
+  cutoffDate.setDate(cutoffDate.getDate() - daysAgo)
+
+  const analytics = await Analytics.findOne({ userId })
+
+  if (!analytics) {
+    return null
+  }
+
+  const webClicks = analytics.webClicks.filter(({ timestamp }) => new Date(timestamp) >= cutoffDate)
+  const webViews = analytics.webViews.filter(({ timestamp }) => new Date(timestamp) >= cutoffDate)
+
+  const totalWebClicks = webClicks.length
+  const totalWebViews = webViews.length
+
+  // Group and count webClicks by country
+  const webClicksByCountryRaw = webClicks.reduce((acc, { location: { country } }) => {
+    country = country || 'Unknown'
+    acc[country] = (acc[country] || 0) + 1
+    return acc
+  }, {})
+
+  // Group and count webViews by country
+  const webViewsByCountryRaw = webViews.reduce((acc, { location: { country } }) => {
+    country = country || 'Unknown'
+    acc[country] = (acc[country] || 0) + 1
+    return acc
+  }, {})
+
+  // Calculate percentages
+  const webClicksByCountry = calculatePercentages(webClicksByCountryRaw, totalWebClicks)
+  const webViewsByCountry = calculatePercentages(webViewsByCountryRaw, totalWebViews)
+
+  // Convert Map to Array for tabViews
+  const tabViews = Array.from(analytics.tabViews.entries())
+    .filter(([_, value]) => new Date(value.timestamp) >= cutoffDate)
+    .sort((a, b) => b[1].count - a[1].count)
+
+  // Prepare top 5 products
+  const products = analytics.products
+    .filter(({ timestamp }) => new Date(timestamp) >= cutoffDate)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5) // Limit to top 5
+
+  return {
+    webClicksByCountry,
+    webViewsByCountry,
+    webClicks: totalWebClicks, // Total click events
+    webViews: totalWebViews, // Total view events
+    tabViews,
+    products,
+  }
 }
