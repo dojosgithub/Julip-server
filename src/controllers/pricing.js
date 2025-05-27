@@ -76,8 +76,8 @@ export const CONTROLLER_PRICING = {
 
     user.isPricingSelected = true
     user.userTypes = pricing
-    await user.save()
     if (isOnboarding) {
+      user.isLoggedIn = true //ensure the isLoggedIn field is set to true.
       const { email, fullName } = user
       const sendEmail = await new Email({ email })
       const emailProps = { firstName: fullName }
@@ -87,8 +87,9 @@ export const CONTROLLER_PRICING = {
         sendEmail.welcomeToZealBasic(emailProps)
       }
     }
+    await user.save()
     res.status(StatusCodes.OK).json({
-      data: null,
+      isLoggedIn: user?.isLoggedIn,
       message: 'Pricing Plan updated successfully.',
     })
   }),
