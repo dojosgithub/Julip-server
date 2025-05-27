@@ -89,7 +89,7 @@ export const CONTROLLER_PRICING = {
     }
     await user.save()
     res.status(StatusCodes.OK).json({
-      data: null,
+      isLoggedIn: user?.isLoggedIn,
       message: 'Pricing Plan updated successfully.',
     })
   }),
