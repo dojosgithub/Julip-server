@@ -827,208 +827,156 @@ export const CONTROLLER_PORTFOLIO = {
     }
   }),
 
-  youtubeAnalytics: asyncMiddleware(async (req, res) => {
-    const { _id: userId } = req.decoded
-    const { refreshToken, apiKey } = req.body
+youtubeAnalytics: asyncMiddleware(async (req, res) => {
+  const { _id: userId } = req.decoded;
+  const { refreshToken, apiKey } = req.body;
 
-    try {
-      let token
+  try {
+    let token;
 
-      // If refreshToken is provided, exchange it for a new accessToken
-      if (refreshToken) {
-        const params = new URLSearchParams()
-        params.append('client_id', process.env.YOUTUBE_CLIENT_ID)
-        params.append('client_secret', process.env.YOUTUBE_CLIENT_SECRET)
-        params.append('grant_type', 'refresh_token')
-        params.append('refresh_token', refreshToken)
+    // Step 1: Get Access Token using Refresh Token
+    if (refreshToken) {
+      const params = new URLSearchParams();
+      params.append('client_id', process.env.YOUTUBE_CLIENT_ID);
+      params.append('client_secret', process.env.YOUTUBE_CLIENT_SECRET);
+      params.append('grant_type', 'refresh_token');
+      params.append('refresh_token', refreshToken);
 
-        // Request a new access token using the refresh token
-        const response = await axios.post('https://oauth2.googleapis.com/token', params, {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        })
+      const response = await axios.post('https://oauth2.googleapis.com/token', params, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      });
 
-        token = response.data.access_token // Use the newly acquired access token
-        console.log('New Access Token:', token)
-      }
-
-      const response = await axios.get(`https://www.googleapis.com/youtube/v3/channels?part=id&mine=true`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      const channelId = response.data.items[0].id
-      console.log('Channel ID:', channelId)
-
-      const subscriber = await axios.get(
-        `https://www.googleapis.com/youtube/v3/channels?part=statistics&mine=true&key=${apiKey}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
-      const subscriberCount = subscriber.data.items[0].statistics.subscriberCount
-      console.log('Subscriber Count:', subscriberCount)
-
-      // Validate input
-      if (!token || !channelId) {
-        return res.status(400).json({ message: 'Both accessToken and channelId are required.' })
-      }
-
-      // Calculate date range (last 30 days)
-      const today = new Date() // Current date
-      const endDate = new Date(Math.min(today, new Date())) // Cap endDate to today
-      const startDate = new Date(endDate)
-      startDate.setDate(endDate.getDate() - 30) // Last 30 days
-
-      console.log('Today:', today.toISOString())
-      console.log('Calculated Start Date:', startDate.toISOString())
-      console.log('Calculated End Date:', endDate.toISOString())
-
-      // Format dates as YYYY-MM-DD
-      const formatDate = (date) => {
-        return date.toISOString().split('T')[0]
-      }
-
-      const formattedStartDate = formatDate(startDate)
-      const formattedEndDate = formatDate(endDate)
-
-      const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&metrics=views&dimensions=day&sort=day`
-
-      // Fetch analytics data
-      const analyticsResponse = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      console.log('Analytics Data:', analyticsResponse.data)
-
-      const subscriberUrl = `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${channelId}`
-      const subscriberResponse = await axios.get(subscriberUrl, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      console.log('Subscriber Data:', subscriberResponse.data)
-
-      const impressionsUrl = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&metrics=views,estimatedMinutesWatched,likes,comments,shares&dimensions=day`
-
-      const impressionsResponse = await axios.get(impressionsUrl, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      console.log('Impressions Data:', impressionsResponse.data)
-
-      // Aggregating the data (Total Reach and Engagements)
-      let totalViews = 0
-      let totalLikes = 0
-      let totalComments = 0
-      let totalShares = 0
-      let estimatedWatchTime = 0
-
-      // Loop through the rows and sum the values
-      impressionsResponse.data.rows.forEach((row) => {
-        totalViews += row[1] // views
-        estimatedWatchTime += row[2] // estimatedMinutesWatched
-        totalLikes += row[3] // likes
-        totalComments += row[4] // comments
-        totalShares += row[5] // shares
-      })
-
-      // Calculate averages for engagements (likes, comments, shares)
-      const totalDays = impressionsResponse.data.rows.length || 0
-      const averageLikes = totalDays ? totalLikes / totalDays : 0
-      const averageComments = totalDays ? totalComments / totalDays : 0
-      const averageShares = totalDays ? totalShares / totalDays : 0
-      const averageWatchTime = totalDays ? estimatedWatchTime / totalDays : 0
-
-      const watchTimeUrl = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&metrics=estimatedMinutesWatched&dimensions=day`
-      const watchTimeResponse = await axios.get(watchTimeUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      console.log('Watch Time Response:', watchTimeResponse.data)
-
-      const demographicsUrl = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&metrics=viewerPercentage&dimensions=ageGroup,gender`
-
-      const demographicsResponse = await axios.get(demographicsUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-
-      const countryUrl = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&metrics=views&dimensions=country`
-
-      const countryResponse = await axios.get(countryUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-
-      await YoutubeAnalytics.findOneAndUpdate(
-        { userId },
-        {
-          userId,
-          // userEmail: userId,
-          channelId,
-          lastSyncedAt: new Date(),
-          subscriberCount,
-          // Analytics data
-          totalReach: totalViews,
-          totalLikes,
-          totalComments,
-          totalShares,
-          totalEngagements: totalLikes + totalComments + totalShares,
-          totalWatchTime: estimatedWatchTime,
-          averageLikes,
-          averageComments,
-          averageShares,
-          averageWatchTime,
-          duration: `${impressionsResponse.data.rows.length}days`,
-
-          // Raw + Additional
-          demographics: demographicsResponse.data,
-          countryStats: countryResponse.data,
-          rawImpressions: impressionsResponse.data,
-          rawAnalytics: analyticsResponse.data,
-        },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
-      )
-
-      res.json({
-        subscriberCount,
-        data: analyticsResponse.data,
-        impressions: impressionsResponse.data,
-        totalReach: totalViews,
-        totalLikes,
-        totalComments,
-        totalShares,
-        totalEngagements: totalLikes + totalComments + totalShares,
-        totalWatchTime: estimatedWatchTime,
-        averageLikes,
-        averageComments,
-        averageShares,
-        averageWatchTime,
-        duration: `${impressionsResponse.data.rows.length}days`,
-        demo: demographicsResponse.data,
-        country: countryResponse.data,
-      })
-    } catch (error) {
-      console.error('Error fetching analytics:', error.response?.data || error.message)
-
-      // Handle 400 Bad Request errors specifically
-      if (error.response?.status === 400) {
-        console.error('Full Error Details:', JSON.stringify(error.response?.data, null, 2))
-        return res.status(400).json({
-          message: 'Invalid request parameters. Please check the channelId, dates, metrics, dimensions, and sort.',
-          details: error.response?.data,
-        })
-      }
-
-      // Handle other errors
-      res.status(error.response?.status || 500).json({
-        error: error.response?.data || error.message,
-      })
+      token = response.data.access_token;
+      console.log('New Access Token:', token);
     }
-  }),
+
+    // Step 2: Get Channel ID
+    const response = await axios.get(`https://www.googleapis.com/youtube/v3/channels?part=id&mine=true`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const channelId = response.data.items[0].id;
+
+    // Step 3: Get Subscriber Count
+    const subscriber = await axios.get(
+      `https://www.googleapis.com/youtube/v3/channels?part=statistics&mine=true&key=${apiKey}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const subscriberCount = subscriber.data.items[0].statistics.subscriberCount;
+
+    if (!token || !channelId) {
+      return res.status(400).json({ message: 'Both accessToken and channelId are required.' });
+    }
+
+    // Step 4: Date Range (last 30 days)
+    const today = new Date();
+    const endDate = new Date(Math.min(today, new Date()));
+    const startDate = new Date(endDate);
+    startDate.setDate(endDate.getDate() - 30);
+
+    const formatDate = (date) => date.toISOString().split('T')[0];
+    const formattedStartDate = formatDate(startDate);
+    const formattedEndDate = formatDate(endDate);
+
+    // Step 5: Fetch Daily Analytics
+    const analyticsResponse = await axios.get(
+      `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&metrics=views&dimensions=day&sort=day`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    const impressionsUrl = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&metrics=views,estimatedMinutesWatched,likes,comments,shares&dimensions=day`;
+    const impressionsResponse = await axios.get(impressionsUrl, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    // Step 6: Aggregate Metrics (using non-negative values)
+    let totalViews = 0, totalLikes = 0, totalComments = 0, totalShares = 0, estimatedWatchTime = 0;
+    impressionsResponse.data.rows.forEach((row) => {
+      totalViews += row[1];
+      estimatedWatchTime += row[2];
+      totalLikes += Math.max(0, row[3]);
+      totalComments += Math.max(0, row[4]);
+      totalShares += Math.max(0, row[5]);
+    });
+
+    const totalEngagements = totalLikes + totalComments + totalShares;
+    const engagementRate = totalViews ? (totalEngagements / totalViews) * 100 : 0;
+    const totalDays = impressionsResponse.data.rows.length || 0;
+    const averageLikes = totalDays ? totalLikes / totalDays : 0;
+    const averageComments = totalDays ? totalComments / totalDays : 0;
+    const averageShares = totalDays ? totalShares / totalDays : 0;
+    const averageWatchTime = totalDays ? estimatedWatchTime / totalDays : 0;
+
+    // Step 7: Demographics (since beginning)
+    const demographicsResponse = await axios.get(
+      `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=2006-01-01&endDate=${formattedEndDate}&metrics=viewerPercentage&dimensions=ageGroup,gender`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    // Step 8: Country Stats as Percentages
+          const demographicsStartDate = new Date()
+      demographicsStartDate.setDate(endDate.getDate() - 60)
+      const formattedDemographicsStartDate = formatDate(demographicsStartDate)
+    const countryResponse = await axios.get(
+      `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedDemographicsStartDate}&endDate=${formattedEndDate}&metrics=views&dimensions=country`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    const countryRows = countryResponse.data?.rows || [];
+    const totalCountryViews = countryRows.reduce((sum, row) => sum + row[1], 0);
+    const countryStats = countryRows.map(([code, views]) => ({
+      country: code,
+      views,
+      percentage: totalCountryViews ? ((views / totalCountryViews) * 100).toFixed(2) : "0.00",
+    }));
+
+    // Step 9: Save to Database
+    const dataToSave = {
+      userId,
+      channelId,
+      lastSyncedAt: new Date(),
+      subscriberCount,
+      totalViews,
+      totalLikes,
+      totalComments,
+      totalShares,
+      totalEngagements,
+      engagementRate,
+      totalWatchTime: estimatedWatchTime,
+      averageLikes,
+      averageComments,
+      averageShares,
+      averageWatchTime,
+      duration: `${totalDays}days`,
+      demographics: demographicsResponse.data,
+      countryStats,
+      rawImpressions: impressionsResponse.data,
+      rawAnalytics: analyticsResponse.data,
+    };
+
+    console.log('Saving analytics for channel:', channelId);
+
+    await YoutubeAnalytics.findOneAndUpdate(
+      { userId },
+      dataToSave,
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    // Step 10: Respond with analytics
+    res.json(dataToSave);
+
+  } catch (error) {
+    console.error('Error fetching analytics:', error.response?.data || error.message);
+    if (error.response?.status === 400) {
+      return res.status(400).json({
+        message: 'Invalid request parameters. Please check the channelId, dates, metrics, dimensions, and sort.',
+        details: error.response?.data,
+      });
+    }
+    res.status(error.response?.status || 500).json({
+      error: error.response?.data || error.message,
+    });
+  }
+}), 
 
   youtubeSubscriber: asyncMiddleware(async (req, res) => {
     const { accessToken, apiKey } = req.body
