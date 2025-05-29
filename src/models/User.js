@@ -81,6 +81,10 @@ export const userSchema = new Schema(
       enum: ['Premium', 'Basic'],
       default: 'Basic',
     },
+    startedAsPremium: {
+      type: Boolean,
+      default: false,
+    },
     refreshTokens: [String],
     isLoggedIn: {
       type: Boolean,
