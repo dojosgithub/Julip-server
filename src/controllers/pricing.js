@@ -83,6 +83,7 @@ export const CONTROLLER_PRICING = {
       const emailProps = { firstName: fullName }
       if (pricing === 'Premium') {
         sendEmail.welcomeToZealPro(emailProps)
+        user.startedAsPremium = true
       } else {
         sendEmail.welcomeToZealBasic(emailProps)
       }
@@ -564,6 +565,12 @@ export const CONTROLLER_PRICING = {
             break
           }
 
+          // ✅ Flag that this user started directly as Premium
+          user.startedAsPremium = true
+          user.subscriptionId = subscription.id
+          user.userTypes = 'Premium'
+          await user.save()
+
           await Subscription.create({
             user: user._id,
             stripeCustomerId: subscription.customer,
@@ -575,11 +582,6 @@ export const CONTROLLER_PRICING = {
             currentPeriodEnd: new Date(subscription.current_period_end * 1000),
             cancelAtPeriodEnd: subscription.cancel_at_period_end,
             metadata: subscription.metadata || {},
-          })
-
-          await User.findByIdAndUpdate(user._id, {
-            subscriptionId: subscription.id,
-            userTypes: 'Premium',
           })
 
           break
