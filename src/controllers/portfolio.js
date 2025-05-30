@@ -1628,9 +1628,9 @@ export const CONTROLLER_PORTFOLIO = {
       // Step 1: Exchange code for access token
       const tokenResponse = await axios.get('https://graph.facebook.com/v19.0/oauth/access_token', {
         params: {
-          client_id: '1363115408334174',
-          client_secret: '68a3da17413addbccea98e288e1e248f',
-          redirect_uri: 'https://dev.myjulip.com/auth/jwt/onboarding/',
+          client_id: '1718472132086479',
+          client_secret: '30cbe664787298c17642454aa9709cfc',
+          redirect_uri: 'https://dev.myjulip.com/dashboard/pages',
           code: authCode,
         },
       })
