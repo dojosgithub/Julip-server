@@ -42,4 +42,10 @@ router.get('/tiktok-demo', Authenticate(), CONTROLLER_PORTFOLIO.fetchDemographic
 
 router.get('/insta-demo', Authenticate(), CONTROLLER_PORTFOLIO.fetchInstaDemographics)
 
+router.get('/auth1', Authenticate(), CONTROLLER_PORTFOLIO.fbSocialAccessToken2)
+
+router.post('/insta2', Authenticate(), CONTROLLER_PORTFOLIO.fbSocialAccessToken2)
+
+router.get('/fb-insta-analytics', Authenticate(), CONTROLLER_PORTFOLIO.fbInstaAnalyticsHandler)
+
 export default router

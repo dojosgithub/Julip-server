@@ -827,156 +827,159 @@ export const CONTROLLER_PORTFOLIO = {
     }
   }),
 
-youtubeAnalytics: asyncMiddleware(async (req, res) => {
-  const { _id: userId } = req.decoded;
-  const { refreshToken, apiKey } = req.body;
+  youtubeAnalytics: asyncMiddleware(async (req, res) => {
+    const { _id: userId } = req.decoded
+    const { refreshToken, apiKey } = req.body
 
-  try {
-    let token;
+    try {
+      let token
 
-    // Step 1: Get Access Token using Refresh Token
-    if (refreshToken) {
-      const params = new URLSearchParams();
-      params.append('client_id', process.env.YOUTUBE_CLIENT_ID);
-      params.append('client_secret', process.env.YOUTUBE_CLIENT_SECRET);
-      params.append('grant_type', 'refresh_token');
-      params.append('refresh_token', refreshToken);
+      // Step 1: Get Access Token using Refresh Token
+      if (refreshToken) {
+        const params = new URLSearchParams()
+        params.append('client_id', process.env.YOUTUBE_CLIENT_ID)
+        params.append('client_secret', process.env.YOUTUBE_CLIENT_SECRET)
+        params.append('grant_type', 'refresh_token')
+        params.append('refresh_token', refreshToken)
 
-      const response = await axios.post('https://oauth2.googleapis.com/token', params, {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      });
+        const response = await axios.post('https://oauth2.googleapis.com/token', params, {
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        })
 
-      token = response.data.access_token;
-      console.log('New Access Token:', token);
-    }
+        token = response.data.access_token
+        console.log('New Access Token:', token)
+      }
 
-    // Step 2: Get Channel ID
-    const response = await axios.get(`https://www.googleapis.com/youtube/v3/channels?part=id&mine=true`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const channelId = response.data.items[0].id;
+      // Step 2: Get Channel ID
+      const response = await axios.get(`https://www.googleapis.com/youtube/v3/channels?part=id&mine=true`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const channelId = response.data.items[0].id
 
-    // Step 3: Get Subscriber Count
-    const subscriber = await axios.get(
-      `https://www.googleapis.com/youtube/v3/channels?part=statistics&mine=true&key=${apiKey}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    const subscriberCount = subscriber.data.items[0].statistics.subscriberCount;
+      // Step 3: Get Subscriber Count
+      const subscriber = await axios.get(
+        `https://www.googleapis.com/youtube/v3/channels?part=statistics&mine=true&key=${apiKey}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      const subscriberCount = subscriber.data.items[0].statistics.subscriberCount
 
-    if (!token || !channelId) {
-      return res.status(400).json({ message: 'Both accessToken and channelId are required.' });
-    }
+      if (!token || !channelId) {
+        return res.status(400).json({ message: 'Both accessToken and channelId are required.' })
+      }
 
-    // Step 4: Date Range (last 30 days)
-    const today = new Date();
-    const endDate = new Date(Math.min(today, new Date()));
-    const startDate = new Date(endDate);
-    startDate.setDate(endDate.getDate() - 30);
+      // Step 4: Date Range (last 30 days)
+      const today = new Date()
+      const endDate = new Date(Math.min(today, new Date()))
+      const startDate = new Date(endDate)
+      startDate.setDate(endDate.getDate() - 30)
 
-    const formatDate = (date) => date.toISOString().split('T')[0];
-    const formattedStartDate = formatDate(startDate);
-    const formattedEndDate = formatDate(endDate);
+      const formatDate = (date) => date.toISOString().split('T')[0]
+      const formattedStartDate = formatDate(startDate)
+      const formattedEndDate = formatDate(endDate)
 
-    // Step 5: Fetch Daily Analytics
-    const analyticsResponse = await axios.get(
-      `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&metrics=views&dimensions=day&sort=day`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+      // Step 5: Fetch Daily Analytics
+      const analyticsResponse = await axios.get(
+        `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&metrics=views&dimensions=day&sort=day`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
 
-    const impressionsUrl = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&metrics=views,estimatedMinutesWatched,likes,comments,shares&dimensions=day`;
-    const impressionsResponse = await axios.get(impressionsUrl, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+      const impressionsUrl = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&metrics=views,estimatedMinutesWatched,likes,comments,shares&dimensions=day`
+      const impressionsResponse = await axios.get(impressionsUrl, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
 
-    // Step 6: Aggregate Metrics (using non-negative values)
-    let totalViews = 0, totalLikes = 0, totalComments = 0, totalShares = 0, estimatedWatchTime = 0;
-    impressionsResponse.data.rows.forEach((row) => {
-      totalViews += row[1];
-      estimatedWatchTime += row[2];
-      totalLikes += Math.max(0, row[3]);
-      totalComments += Math.max(0, row[4]);
-      totalShares += Math.max(0, row[5]);
-    });
+      // Step 6: Aggregate Metrics (using non-negative values)
+      let totalViews = 0,
+        totalLikes = 0,
+        totalComments = 0,
+        totalShares = 0,
+        estimatedWatchTime = 0
+      impressionsResponse.data.rows.forEach((row) => {
+        totalViews += row[1]
+        estimatedWatchTime += row[2]
+        totalLikes += Math.max(0, row[3])
+        totalComments += Math.max(0, row[4])
+        totalShares += Math.max(0, row[5])
+      })
 
-    const totalEngagements = totalLikes + totalComments + totalShares;
-    const engagementRate = totalViews ? (totalEngagements / totalViews) * 100 : 0;
-    const totalDays = impressionsResponse.data.rows.length || 0;
-    const averageLikes = totalDays ? totalLikes / totalDays : 0;
-    const averageComments = totalDays ? totalComments / totalDays : 0;
-    const averageShares = totalDays ? totalShares / totalDays : 0;
-    const averageWatchTime = totalDays ? estimatedWatchTime / totalDays : 0;
+      const totalEngagements = totalLikes + totalComments + totalShares
+      const engagementRate = totalViews ? (totalEngagements / totalViews) * 100 : 0
+      const totalDays = impressionsResponse.data.rows.length || 0
+      const averageLikes = totalDays ? totalLikes / totalDays : 0
+      const averageComments = totalDays ? totalComments / totalDays : 0
+      const averageShares = totalDays ? totalShares / totalDays : 0
+      const averageWatchTime = totalDays ? estimatedWatchTime / totalDays : 0
 
-    // Step 7: Demographics (since beginning)
-    const demographicsResponse = await axios.get(
-      `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=2006-01-01&endDate=${formattedEndDate}&metrics=viewerPercentage&dimensions=ageGroup,gender`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+      // Step 7: Demographics (since beginning)
+      const demographicsResponse = await axios.get(
+        `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=2006-01-01&endDate=${formattedEndDate}&metrics=viewerPercentage&dimensions=ageGroup,gender`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
 
-    // Step 8: Country Stats as Percentages
-          const demographicsStartDate = new Date()
+      // Step 8: Country Stats as Percentages
+      const demographicsStartDate = new Date()
       demographicsStartDate.setDate(endDate.getDate() - 60)
       const formattedDemographicsStartDate = formatDate(demographicsStartDate)
-    const countryResponse = await axios.get(
-      `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedDemographicsStartDate}&endDate=${formattedEndDate}&metrics=views&dimensions=country`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+      const countryResponse = await axios.get(
+        `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${formattedDemographicsStartDate}&endDate=${formattedEndDate}&metrics=views&dimensions=country`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
 
-    const countryRows = countryResponse.data?.rows || [];
-    const totalCountryViews = countryRows.reduce((sum, row) => sum + row[1], 0);
-    const countryStats = countryRows.map(([code, views]) => ({
-      country: code,
-      views,
-      percentage: totalCountryViews ? ((views / totalCountryViews) * 100).toFixed(2) : "0.00",
-    }));
+      const countryRows = countryResponse.data?.rows || []
+      const totalCountryViews = countryRows.reduce((sum, row) => sum + row[1], 0)
+      const countryStats = countryRows.map(([code, views]) => ({
+        country: code,
+        views,
+        percentage: totalCountryViews ? ((views / totalCountryViews) * 100).toFixed(2) : '0.00',
+      }))
 
-    // Step 9: Save to Database
-    const dataToSave = {
-      userId,
-      channelId,
-      lastSyncedAt: new Date(),
-      subscriberCount,
-      totalViews,
-      totalLikes,
-      totalComments,
-      totalShares,
-      totalEngagements,
-      engagementRate,
-      totalWatchTime: estimatedWatchTime,
-      averageLikes,
-      averageComments,
-      averageShares,
-      averageWatchTime,
-      duration: `${totalDays}days`,
-      demographics: demographicsResponse.data,
-      countryStats,
-      rawImpressions: impressionsResponse.data,
-      rawAnalytics: analyticsResponse.data,
-    };
+      // Step 9: Save to Database
+      const dataToSave = {
+        userId,
+        channelId,
+        lastSyncedAt: new Date(),
+        subscriberCount,
+        totalViews,
+        totalLikes,
+        totalComments,
+        totalShares,
+        totalEngagements,
+        engagementRate,
+        totalWatchTime: estimatedWatchTime,
+        averageLikes,
+        averageComments,
+        averageShares,
+        averageWatchTime,
+        duration: `${totalDays}days`,
+        demographics: demographicsResponse.data,
+        countryStats,
+        rawImpressions: impressionsResponse.data,
+        rawAnalytics: analyticsResponse.data,
+      }
 
-    console.log('Saving analytics for channel:', channelId);
+      console.log('Saving analytics for channel:', channelId)
 
-    await YoutubeAnalytics.findOneAndUpdate(
-      { userId },
-      dataToSave,
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
+      await YoutubeAnalytics.findOneAndUpdate({ userId }, dataToSave, {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true,
+      })
 
-    // Step 10: Respond with analytics
-    res.json(dataToSave);
-
-  } catch (error) {
-    console.error('Error fetching analytics:', error.response?.data || error.message);
-    if (error.response?.status === 400) {
-      return res.status(400).json({
-        message: 'Invalid request parameters. Please check the channelId, dates, metrics, dimensions, and sort.',
-        details: error.response?.data,
-      });
+      // Step 10: Respond with analytics
+      res.json(dataToSave)
+    } catch (error) {
+      console.error('Error fetching analytics:', error.response?.data || error.message)
+      if (error.response?.status === 400) {
+        return res.status(400).json({
+          message: 'Invalid request parameters. Please check the channelId, dates, metrics, dimensions, and sort.',
+          details: error.response?.data,
+        })
+      }
+      res.status(error.response?.status || 500).json({
+        error: error.response?.data || error.message,
+      })
     }
-    res.status(error.response?.status || 500).json({
-      error: error.response?.data || error.message,
-    });
-  }
-}), 
+  }),
 
   youtubeSubscriber: asyncMiddleware(async (req, res) => {
     const { accessToken, apiKey } = req.body
@@ -1312,9 +1315,9 @@ youtubeAnalytics: asyncMiddleware(async (req, res) => {
       // Step 1: Get short-lived access token
       const shortTokenRes = await axios.get('https://graph.facebook.com/v22.0/oauth/access_token', {
         params: {
-          client_id: process.env.FB_APP_ID,
-          redirect_uri: process.env.FB_REDIRECT_URI,
-          client_secret: process.env.FB_APP_SECRET,
+          client_id: '1363115408334174',
+          client_secret: '68a3da17413addbccea98e288e1e248f',
+          redirect_uri: 'https://dev.myjulip.com/auth/jwt/onboarding/',
           code: cleanCode,
         },
       })
@@ -1415,4 +1418,408 @@ youtubeAnalytics: asyncMiddleware(async (req, res) => {
       })
     }
   },
+
+  //////////////////////////////////////////////////// newest insta details////////////////////////////
+  fbSocialAccessToken2: asyncMiddleware(async (req, res) => {
+    const { code } = req.query
+    const authCode = decodeURIComponent(code || '').split('#')[0] // ✅ Clean trailing fragments
+    const { _id: userId } = req.decoded
+
+    try {
+      // Step 1: Exchange code for access token
+      const tokenResponse = await axios.get('https://graph.facebook.com/v19.0/oauth/access_token', {
+        params: {
+          code: authCode,
+        },
+      })
+
+      const { access_token: userToken } = tokenResponse.data
+
+      // Step 2: Get user's pages
+      const pagesRes = await axios.get(`https://graph.facebook.com/v19.0/me/accounts?fields=id,name,access_token`, {
+        headers: { Authorization: `Bearer ${userToken}` },
+      })
+
+      const pages = pagesRes.data.data || []
+      let instagramId = null
+      let pageAccessToken = null
+
+      for (const page of pages) {
+        try {
+          const igRes = await axios.get(
+            `https://graph.facebook.com/v19.0/${page.id}?fields=instagram_business_account`,
+            {
+              headers: { Authorization: `Bearer ${page.access_token}` },
+            }
+          )
+
+          if (igRes.data.instagram_business_account?.id) {
+            instagramId = igRes.data.instagram_business_account.id
+            pageAccessToken = page.access_token
+            break
+          }
+        } catch (_) {
+          continue
+        }
+      }
+
+      if (!instagramId || !pageAccessToken) {
+        return res.status(400).json({ message: 'Instagram Business Account not found or missing permissions.' })
+      }
+
+      const updated = await InstaAnalytics.findOneAndUpdate(
+        { userId },
+        {
+          userId,
+          instagramUserId: instagramId,
+          accessToken: pageAccessToken,
+          longLivedToken: userToken,
+          longLivedTokenExpiry: null,
+          lastSyncedAt: new Date(),
+        },
+        { upsert: true, new: true }
+      )
+
+      req.body = { user_id: instagramId, access_token: pageAccessToken }
+      res.status(StatusCodes.OK).json({ pages, instagramId, pageAccessToken })
+    } catch (error) {
+      console.error('Instagram Auth Error:', error?.response?.data || error.message)
+      res.status(500).json({ error: error.message, message: 'Error during authentication' })
+    }
+  }),
+
+  InstaDetails2: asyncMiddleware(async (req, res) => {
+    const { user_id: instagramUserId, access_token: accessToken } = req.body
+    const { _id: userId } = req.decoded
+
+    const headers = { Authorization: `Bearer ${accessToken}` }
+    const IG_ID = instagramUserId
+
+    const retryRequest = async (url, customHeaders = headers, retries = 3, delay = 1000) => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          return await axios.get(url, { headers: customHeaders })
+        } catch (err) {
+          const isTransient = err?.response?.data?.error?.is_transient || err?.response?.data?.error?.code === 2
+          if (isTransient && i < retries - 1) {
+            await new Promise((res) => setTimeout(res, delay))
+          } else {
+            throw err
+          }
+        }
+      }
+    }
+
+    try {
+      const profile = await retryRequest(
+        `https://graph.facebook.com/v19.0/${IG_ID}?fields=name,username,followers_count,media_count`
+      )
+      const followersCount = profile.data.followers_count || 1
+
+      const reach = await retryRequest(`https://graph.facebook.com/v19.0/${IG_ID}/insights?metric=reach&period=day`)
+      const profileViews = await retryRequest(
+        `https://graph.facebook.com/v19.0/${IG_ID}/insights?metric=profile_views&period=day&metric_type=total_value`
+      )
+
+      let audienceGenderAge = null
+      let audienceCountry = null
+      let audienceCity = null
+
+      try {
+        audienceGenderAge = await retryRequest(
+          `https://graph.facebook.com/v19.0/${IG_ID}/insights?metric=engaged_audience_demographics&period=days_28&metric_type=total_value&breakdown=gender,age`
+        )
+      } catch (err) {
+        console.warn('audience_gender_age not available:', err.response?.data?.error?.message)
+      }
+
+      try {
+        audienceCountry = await retryRequest(
+          `https://graph.facebook.com/v19.0/${IG_ID}/insights?metric=reached_audience_demographics&period=days_28&metric_type=total_value&breakdown=country`
+        )
+      } catch (err) {
+        console.warn('audience_country not available:', err.response?.data?.error?.message)
+      }
+
+      try {
+        audienceCity = await retryRequest(
+          `https://graph.facebook.com/v19.0/${IG_ID}/insights?metric=follower_demographics&period=days_28&metric_type=total_value&breakdown=city`
+        )
+      } catch (err) {
+        console.warn('audience_city not available:', err.response?.data?.error?.message)
+      }
+
+      const mediaData = []
+      let nextUrl = `https://graph.facebook.com/v19.0/${IG_ID}/media?fields=id,like_count,comments_count,media_type,media_url,permalink,share_count&limit=25`
+
+      while (nextUrl) {
+        const mediaRes = await retryRequest(nextUrl)
+        const items = mediaRes.data?.data || []
+        mediaData.push(...items)
+        nextUrl = mediaRes.data?.paging?.next || null
+      }
+
+      const totalLikes = mediaData.reduce((sum, post) => sum + (post.like_count || 0), 0)
+      const totalComments = mediaData.reduce((sum, post) => sum + (post.comments_count || 0), 0)
+      const totalShares = mediaData.reduce((sum, post) => sum + (post.share_count || 0), 0)
+      const totalPosts = mediaData.length
+
+      const avgLikes = totalPosts ? totalLikes / totalPosts : 0
+      const avgComments = totalPosts ? totalComments / totalPosts : 0
+      const avgShares = totalPosts ? totalShares / totalPosts : 0
+
+      const totalViews = reach.data.data.reduce((sum, insight) => sum + insight.values[0].value, 0)
+      const safeFollowers = followersCount || 1
+
+      const engagementRate = +(((avgLikes + avgComments + avgShares) / safeFollowers) * 100).toFixed(2)
+
+      const updated = await InstaAnalytics.findOneAndUpdate(
+        { userId },
+        {
+          userId,
+          instagramUserId: IG_ID,
+          followersCount,
+          totalPosts,
+          engagementRate,
+          totalViews,
+          totalLikes,
+          totalComments,
+          totalShares,
+          avgLikes,
+          avgComments,
+          avgShares,
+          media: mediaData.map((post) => ({
+            media_type: post.media_type,
+            media_url: post.media_url,
+            permalink: post.permalink,
+            like_count: post.like_count,
+            comments_count: post.comments_count,
+            share_count: post.share_count || 0,
+          })),
+          profileViews: profileViews.data?.data || [],
+          audienceGenderAge: audienceGenderAge?.data?.data || [],
+          audienceCountry: audienceCountry?.data?.data || [],
+          audienceCity: audienceCity?.data?.data || [],
+          reachBreakdown: reach.data.data,
+          lastSyncedAt: new Date(),
+        },
+        { upsert: true, new: true }
+      )
+
+      res.status(StatusCodes.OK).json({
+        message: 'Instagram analytics saved successfully',
+        data: updated,
+      })
+    } catch (error) {
+      console.error('Instagram analytics error:', error.message)
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: 'Error while fetching Instagram analytics',
+        error: error.response?.data || error.message,
+      })
+    }
+  }),
+
+  fbInstaAnalyticsHandler: asyncMiddleware(async (req, res) => {
+    const { code } = req.query
+    const authCode = decodeURIComponent(code || '').split('#')[0]
+    const { _id: userId } = req.decoded
+
+    try {
+      // Step 1: Exchange code for access token
+      const tokenResponse = await axios.get('https://graph.facebook.com/v19.0/oauth/access_token', {
+        params: {
+          client_id: '1363115408334174',
+          client_secret: '68a3da17413addbccea98e288e1e248f',
+          redirect_uri: 'https://dev.myjulip.com/auth/jwt/onboarding/',
+          code: authCode,
+        },
+      })
+
+      const userToken = tokenResponse.data.access_token
+
+      // Step 2: Get user's Facebook pages
+      const pagesRes = await axios.get('https://graph.facebook.com/v19.0/me/accounts?fields=id,name,access_token', {
+        headers: { Authorization: `Bearer ${userToken}` },
+      })
+
+      const pages = pagesRes.data.data || []
+      let instagramId = null
+      let pageAccessToken = null
+
+      for (const page of pages) {
+        try {
+          const igRes = await axios.get(
+            `https://graph.facebook.com/v19.0/${page.id}?fields=instagram_business_account`,
+            {
+              headers: { Authorization: `Bearer ${page.access_token}` },
+            }
+          )
+
+          if (igRes.data.instagram_business_account?.id) {
+            instagramId = igRes.data.instagram_business_account.id
+            pageAccessToken = page.access_token
+            break
+          }
+        } catch (_) {
+          continue
+        }
+      }
+
+      if (!instagramId || !pageAccessToken) {
+        return res.status(400).json({ message: 'Instagram Business Account not found or missing permissions.' })
+      }
+
+      // Step 3: Setup retry wrapper
+      const headers = { Authorization: `Bearer ${pageAccessToken}` }
+      const IG_ID = instagramId
+
+      const retryRequest = async (url, retries = 3, delay = 1000) => {
+        for (let i = 0; i < retries; i++) {
+          try {
+            return await axios.get(url, { headers })
+          } catch (err) {
+            const isTransient = err?.response?.data?.error?.is_transient || err?.response?.data?.error?.code === 2
+            if (isTransient && i < retries - 1) {
+              await new Promise((res) => setTimeout(res, delay))
+            } else {
+              throw err
+            }
+          }
+        }
+      }
+
+      // Step 4: Fetch IG Analytics
+      const profile = await retryRequest(
+        `https://graph.facebook.com/v19.0/${IG_ID}?fields=name,username,followers_count,media_count`
+      )
+      const followersCount = profile.data.followers_count || 1
+
+      const today = Math.floor(Date.now() / 1000)
+      const thirtyDaysAgo = today - 60 * 60 * 24 * 30
+
+      const reach = await retryRequest(
+        `https://graph.facebook.com/v19.0/${IG_ID}/insights?metric=reach&period=day&since=${thirtyDaysAgo}&until=${today}`
+      )
+      const profileViews = await retryRequest(
+        `https://graph.facebook.com/v19.0/${IG_ID}/insights?metric=profile_views&period=day&metric_type=total_value`
+      )
+
+      let audienceGenderAge = null
+      let audienceCountry = null
+      let audienceCity = null
+
+      try {
+        audienceGenderAge = await retryRequest(
+          `https://graph.facebook.com/v19.0/${IG_ID}/insights?metric=engaged_audience_demographics&period=days_28&metric_type=total_value&breakdown=gender,age`
+        )
+      } catch (err) {
+        console.warn('audience_gender_age not available:', err.response?.data?.error?.message)
+      }
+
+      try {
+        audienceCountry = await retryRequest(
+          `https://graph.facebook.com/v19.0/${IG_ID}/insights?metric=reached_audience_demographics&period=days_28&metric_type=total_value&breakdown=country`
+        )
+      } catch (err) {
+        console.warn('audience_country not available:', err.response?.data?.error?.message)
+      }
+
+      try {
+        audienceCity = await retryRequest(
+          `https://graph.facebook.com/v19.0/${IG_ID}/insights?metric=follower_demographics&period=days_28&metric_type=total_value&breakdown=city`
+        )
+      } catch (err) {
+        console.warn('audience_city not available:', err.response?.data?.error?.message)
+      }
+
+      const mediaData = []
+      let nextUrl = `https://graph.facebook.com/v19.0/${IG_ID}/media?fields=id,like_count,comments_count,media_type,media_url,permalink,share_count&limit=100`
+
+      while (nextUrl) {
+        const mediaRes = await retryRequest(nextUrl)
+        const items = mediaRes.data?.data || []
+        mediaData.push(...items)
+        nextUrl = mediaRes.data?.paging?.next || null
+      }
+
+      // Set a concurrency limit
+      const CONCURRENCY_LIMIT = 10
+
+      // Break mediaData into chunks
+      const chunkArray = (arr, size) =>
+        Array.from({ length: Math.ceil(arr.length / size) }, (_, i) => arr.slice(i * size, i * size + size))
+
+      const mediaChunks = chunkArray(mediaData, CONCURRENCY_LIMIT)
+      let validPosts = 0
+      for (const chunk of mediaChunks) {
+        await Promise.allSettled(
+          chunk.map(async (post) => {
+            try {
+              const insightRes = await retryRequest(`https://graph.facebook.com/v19.0/${post.id}/insights?metric=reach`)
+              post.reach = insightRes.data?.data?.[0]?.values?.[0]?.value || 0
+              validPosts++
+            } catch (err) {
+              console.warn('Failed to fetch reach for post:', post.id)
+              post.reach = 0
+            }
+          })
+        )
+      }
+
+      const totalViews = mediaData.reduce((sum, post) => sum + (post.reach || 0), 0)
+
+      const totalLikes = mediaData.reduce((sum, post) => sum + (post.like_count || 0), 0)
+      const totalComments = mediaData.reduce((sum, post) => sum + (post.comments_count || 0), 0)
+      const totalShares = mediaData.reduce((sum, post) => sum + (post.share_count || 0), 0)
+      const totalPosts = mediaData.length
+
+      const avgLikes = totalPosts ? totalLikes / totalPosts : 0
+      const avgComments = totalPosts ? totalComments / totalPosts : 0
+      const avgShares = totalPosts ? totalShares / totalPosts : 0
+      // const totalViews = reach.data.data.reduce((sum, insight) => sum + insight.values[0].value, 0)
+      const safeFollowers = followersCount || 1
+
+      const engagementRate = +(((avgLikes + avgComments + avgShares) / totalViews) * 100).toFixed(2)
+
+      const updated = await InstaAnalytics.findOneAndUpdate(
+        { userId },
+        {
+          userId,
+          numberOfPosts: validPosts,
+          instagramUserId: IG_ID,
+          accessToken: pageAccessToken,
+          longLivedToken: userToken,
+          longLivedTokenExpiry: null,
+          lastSyncedAt: new Date(),
+          followersCount,
+          totalPosts,
+          engagementRate,
+          totalViews,
+          totalLikes,
+          totalComments,
+          totalShares,
+          avgLikes,
+          avgComments,
+          avgShares,
+          profileViews: profileViews.data?.data || [],
+          audienceGenderAge: audienceGenderAge?.data?.data || [],
+          audienceCountry: audienceCountry?.data?.data || [],
+          audienceCity: audienceCity?.data?.data || [],
+          reachBreakdown: reach.data.data,
+        },
+        { upsert: true, new: true }
+      )
+
+      res.status(StatusCodes.OK).json({
+        message: 'Instagram analytics fetched and saved successfully',
+        data: updated,
+      })
+    } catch (error) {
+      console.error('Facebook/Instagram Auth + Analytics Error:', error?.response?.data || error.message)
+      res.status(500).json({
+        error: error.message,
+        message: 'Failed to authenticate or fetch analytics',
+      })
+    }
+  }),
 }

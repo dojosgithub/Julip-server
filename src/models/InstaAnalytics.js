@@ -64,19 +64,23 @@ const InstaAnalyticsSchema = new Schema(
       type: Number,
       default: 0,
     },
-    media: [
-      {
-        media_type: String,
-        media_url: String,
-        permalink: String,
-        like_count: Number,
-        comments_count: Number,
-        share_count: {
-          type: Number,
-          default: 0,
-        },
-      },
-    ],
+    numberOfPosts: {
+      type: Number,
+      default: 0,
+    },
+    // media: [
+    //   {
+    //     media_type: String,
+    //     media_url: String,
+    //     permalink: String,
+    //     like_count: Number,
+    //     comments_count: Number,
+    //     share_count: {
+    //       type: Number,
+    //       default: 0,
+    //     },
+    //   },
+    // ],
     followersByGender: {
       type: Map,
       of: Number,
