@@ -169,7 +169,7 @@ export const CONTROLLER_ABOUT = {
         }
 
         // Validate other types
-        if (!item.value && item.type !== 'image') {
+        if ((item.value === null || item.value === undefined) && item.type !== 'image') {
           return res.status(400).json({ message: 'Each item must have a value.' })
         }
         if (typeof item.visibility !== 'boolean') {
