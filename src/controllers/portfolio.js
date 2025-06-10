@@ -957,6 +957,52 @@ export const CONTROLLER_PORTFOLIO = {
         rawAnalytics: analyticsResponse.data,
       }
 
+      const userPortfolio = Portfolio.findOne(userId)
+
+      let youtubePlatform = Audience.findById(
+        userPortfolio?.audience?.audienceList[userPortfolio?.audience?.audienceList?.length - 1]
+      )
+
+      youtubePlatform = {
+        ...youtubePlatform,
+        engagements: [
+          {
+            label: 'Subscribers',
+            visibility: 'false',
+          },
+          {
+            label: 'Engagement',
+            visibility: 'false',
+          },
+          {
+            label: `${totalDays} Day Views`,
+            visibility: 'false',
+          },
+          {
+            label: `${totalDays} Day Reach`,
+            visibility: 'false',
+          },
+          {
+            label: `Avg Likes`,
+            visibility: 'false',
+          },
+          {
+            label: `Avg Comments`,
+            visibility: 'false',
+          },
+          {
+            label: `Avg Reels Views`,
+            visibility: 'false',
+          },
+          {
+            label: `Avg Reels Watch Time`,
+            visibility: 'false',
+          },
+        ],
+      }
+
+      await youtubePlatform.save()
+
       console.log('Saving analytics for channel:', channelId)
 
       await YoutubeAnalytics.findOneAndUpdate({ userId }, dataToSave, {
@@ -964,9 +1010,13 @@ export const CONTROLLER_PORTFOLIO = {
         new: true,
         setDefaultsOnInsert: true,
       })
+      const upatedPortfolio = Portfolio.findOne(userId).populate({
+        path: `draft.audience.audienceList`,
+        model: 'Audience',
+      })
 
       // Step 10: Respond with analytics
-      res.json(dataToSave)
+      res.json({ dataToSave, upatedPortfolio })
     } catch (error) {
       console.error('Error fetching analytics:', error.response?.data || error.message)
       if (error.response?.status === 400) {
@@ -999,6 +1049,7 @@ export const CONTROLLER_PORTFOLIO = {
       console.error('Error fetching subscribers count:', error)
     }
   }),
+  //Youtube Analytics
   getYoutubeAnalytics: asyncMiddleware(async (req, res) => {
     const { userId } = req.body
     try {
