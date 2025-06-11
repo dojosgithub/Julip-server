@@ -966,6 +966,18 @@ export const CONTROLLER_PORTFOLIO = {
       const audienceId = userPortfolio?.audience?.audienceList?.[userPortfolio.audience.audienceList.length - 1]
       let youtubePlatform = await Audience.findById(audienceId)
 
+      if (!youtubePlatform) {
+        return res.status(404).json({
+          message: 'Audience record not found.',
+          conditions: {
+            userPortfolio: !!userPortfolio,
+            userPortfolioAudience: !!userPortfolio?.audience,
+            userPortfolioAudienceAudienceList: userPortfolio?.audience?.audienceList,
+            userPortfolioAudienceAudienceListLength: userPortfolio?.audience?.audienceList?.length ?? null,
+          },
+        })
+      }
+
       youtubePlatform.engagements = [
         { label: 'Subscribers', visibility: false },
         { label: 'Engagement', visibility: false },
