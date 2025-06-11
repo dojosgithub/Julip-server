@@ -383,12 +383,16 @@ export const CONTROLLER_PROFILE = {
         ...restProfile,
         ...draft,
       }
+      user.popupTracking.saveDraft = true
     } else if (version === 'published') {
       modifiedProfile = {
         ...restProfile,
         ...published,
       }
+      user.popupTracking.savePublish = true
     }
+
+    await user.save()
 
     // Send response
     res.status(StatusCodes.OK).json({

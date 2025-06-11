@@ -309,6 +309,11 @@ export const CONTROLLER_PORTFOLIO = {
       })
     }
 
+    const user = await User.findById(userId)
+    if (version === 'draft') user.popupTracking.saveDraft = true
+    else if (version === 'published') user.popupTracking.savePublish = true
+    await user.save()
+
     res.status(StatusCodes.OK).json({
       data: portfolio,
       message: 'Portfolio updated successfully.',

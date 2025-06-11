@@ -145,6 +145,8 @@ export const CONTROLLER_SHOP = {
         message: 'User ID is required.',
       })
     }
+    const user = await User.findById(userId)
+
     let updatedShop
     const shopData = {
       name,
@@ -171,6 +173,7 @@ export const CONTROLLER_SHOP = {
         path: 'draft.pinnedProducts.productsList',
         model: 'Product',
       })
+      user.popupTracking.saveDraft = true
     } else if (version === 'published') {
       updatedShop = await Shop.findOneAndUpdate(
         { userId: userId },
@@ -180,7 +183,9 @@ export const CONTROLLER_SHOP = {
         path: 'published.pinnedProducts.productsList',
         model: 'Product',
       })
+      user.popupTracking.savePublish = true
     }
+    await user.save()
 
     if (!updatedShop) {
       return res.status(StatusCodes.NOT_FOUND).json({

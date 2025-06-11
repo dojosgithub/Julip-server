@@ -181,13 +181,17 @@ export const CONTROLLER_TEMPLATE = {
         { draft: updatedData, lastPublishedAt: Date.now() },
         { new: true }
       )
+      user.popupTracking.saveDraft = true
     } else if (version == 'published') {
       updatedTemplate = await Template.findByIdAndUpdate(
         user.template,
         { published: updatedData, lastPublishedAt: Date.now() },
         { new: true }
       )
+      user.popupTracking.savePublish = true
     }
+
+    await user.save()
 
     if (!updatedTemplate) {
       return res.status(StatusCodes.NOT_FOUND).json({

@@ -7,7 +7,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 // * Models
-import { Testimonials, Service, LandingPage, Services, Faq } from '../models'
+import { Testimonials, Service, LandingPage, Services, Faq, User } from '../models'
 
 // * Middlewares
 import { asyncMiddleware } from '../middlewares'
@@ -302,6 +302,8 @@ export const CONTROLLER_SERVICES = {
         })
       }
     }
+    const user = await User.findById(userId)
+
     let servicesData
     if (!id) {
       servicesData = new Services({
@@ -351,12 +353,16 @@ export const CONTROLLER_SERVICES = {
           { draft: { collections, testimonials, faqs, visibility } },
           { new: true }
         )
+
+        user.popupTracking.saveDraft = true
       } else if (version === 'published') {
         servicesData = await Services.findByIdAndUpdate(
           id,
           { published: { collections, testimonials, faqs, visibility } },
           { new: true }
         )
+
+        user.popupTracking.savePublish = true
       }
       res.status(StatusCodes.OK).json({
         data: servicesData,

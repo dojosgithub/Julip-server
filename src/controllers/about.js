@@ -8,6 +8,7 @@ dotenv.config()
 // * Middlewares
 import { asyncMiddleware } from '../middlewares'
 
+import { User } from '../models'
 import { About } from '../models/About'
 
 const { ObjectId } = mongoose.Types
@@ -118,6 +119,8 @@ export const CONTROLLER_ABOUT = {
       if (!userId) {
         return res.status(400).json({ message: 'User ID is required.' })
       }
+      const user = await User.findById(userId)
+
       if (!Array.isArray(items)) {
         return res.status(400).json({ message: 'Items must be an array.' })
       }
@@ -191,8 +194,10 @@ export const CONTROLLER_ABOUT = {
       // Update the appropriate version (draft or published)
       if (version === 'draft') {
         about.draft.items = processedItems.sort((a, b) => a.sequence - b.sequence)
+        user.popupTracking.saveDraft = true
       } else if (version === 'published') {
         about.published.items = processedItems.sort((a, b) => a.sequence - b.sequence)
+        user.popupTracking.savePublish = true
       }
 
       // Save the updated document
