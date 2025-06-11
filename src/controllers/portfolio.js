@@ -963,7 +963,7 @@ export const CONTROLLER_PORTFOLIO = {
       }
 
       const userPortfolio = await Portfolio.findOne({ userId: userId }).lean()
-      const audienceId = userPortfolio?.audience?.audienceList?.[userPortfolio.audience.audienceList.length - 1]
+      const audienceId = userPortfolio?.draft?.audience?.audienceList?.[userPortfolio.audience.audienceList.length - 1]
       let youtubePlatform = await Audience.findById(audienceId)
 
       if (!youtubePlatform) {
@@ -971,9 +971,9 @@ export const CONTROLLER_PORTFOLIO = {
           message: 'Audience record not found.',
           conditions: {
             userPortfolio: !!userPortfolio,
-            userPortfolioAudience: !!userPortfolio?.audience,
-            userPortfolioAudienceAudienceList: userPortfolio?.audience?.audienceList,
-            userPortfolioAudienceAudienceListLength: userPortfolio?.audience?.audienceList?.length ?? null,
+            userPortfolioAudience: !!userPortfolio?.draft?.audience,
+            userPortfolioAudienceAudienceList: userPortfolio?.draft?.audience?.audienceList,
+            userPortfolioAudienceAudienceListLength: userPortfolio?.draft?.audience?.audienceList?.length ?? null,
           },
         })
       }
