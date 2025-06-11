@@ -962,49 +962,20 @@ export const CONTROLLER_PORTFOLIO = {
         rawAnalytics: analyticsResponse.data,
       }
 
-      const userPortfolio = Portfolio.findOne(userId)
+      const userPortfolio = await Portfolio.findOne({ _id: userId }).lean()
+      const audienceId = userPortfolio?.audience?.audienceList?.[userPortfolio.audience.audienceList.length - 1]
+      let youtubePlatform = await Audience.findById(audienceId)
 
-      let youtubePlatform = Audience.findById(
-        userPortfolio?.audience?.audienceList[userPortfolio?.audience?.audienceList?.length - 1]
-      )
-
-      youtubePlatform = {
-        ...youtubePlatform,
-        engagements: [
-          {
-            label: 'Subscribers',
-            visibility: 'false',
-          },
-          {
-            label: 'Engagement',
-            visibility: 'false',
-          },
-          {
-            label: `${totalDays} Day Views`,
-            visibility: 'false',
-          },
-          {
-            label: `${totalDays} Day Reach`,
-            visibility: 'false',
-          },
-          {
-            label: `Avg Likes`,
-            visibility: 'false',
-          },
-          {
-            label: `Avg Comments`,
-            visibility: 'false',
-          },
-          {
-            label: `Avg Reels Views`,
-            visibility: 'false',
-          },
-          {
-            label: `Avg Reels Watch Time`,
-            visibility: 'false',
-          },
-        ],
-      }
+      youtubePlatform.engagements = [
+        { label: 'Subscribers', visibility: false },
+        { label: 'Engagement', visibility: false },
+        { label: `${totalDays} Day Views`, visibility: false },
+        { label: `${totalDays} Day Reach`, visibility: false },
+        { label: `Avg Likes`, visibility: false },
+        { label: `Avg Comments`, visibility: false },
+        { label: `Avg Reels Views`, visibility: false },
+        { label: `Avg Reels Watch Time`, visibility: false },
+      ]
 
       await youtubePlatform.save()
 
