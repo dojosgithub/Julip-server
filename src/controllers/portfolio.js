@@ -970,6 +970,7 @@ export const CONTROLLER_PORTFOLIO = {
         return res.status(404).json({
           message: 'Audience record not found.',
           conditions: {
+            audienceId: audienceId,
             userPortfolio: !!userPortfolio,
             userPortfolioAudience: !!userPortfolio?.draft?.audience,
             userPortfolioAudienceAudienceList: userPortfolio?.draft?.audience?.audienceList,
