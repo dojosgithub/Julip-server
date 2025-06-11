@@ -125,6 +125,11 @@ export const userSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'Portfolio',
     },
+
+    popupTracking: {
+      saveDraft: { type: Boolean, default: false },
+      savePublish: { type: Boolean, default: false },
+    },
   },
   { versionKey: false, timestamps: true }
 )

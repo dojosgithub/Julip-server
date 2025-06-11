@@ -31,16 +31,29 @@ const audienceSchema = new mongoose.Schema({
         _id: { type: String }, // String ID for subdocuments
         label: {
           type: String,
-          enum: [
-            'Followers',
-            'Engagement',
-            'Total Impressions',
-            'Total Reach',
-            'Avg Comments',
-            'Avg Reels Views',
-            'Avg Reels Watch Time',
-          ],
+          // enum: [
+          //   'Followers',
+          //   'Engagement',
+          //   'Total Impressions',
+          //   'Total Reach',
+          //   'Avg Comments',
+          //   'Avg Reels Views',
+          //   'Avg Reels Watch Time',
+          // ],
         },
+        // key: {
+        //   type: String,
+        //   enum: [
+        //     'Followers',
+        //     'Engagemnet',
+        //     'TotalImpressions',
+        //     'TotalReach',
+        //     'Avg Comments',
+        //     'Avg Reel Views',
+        //     'Avg Reels Watch Time',
+        //   ],
+        // },
+
         visibility: { type: Boolean },
       },
     ],
