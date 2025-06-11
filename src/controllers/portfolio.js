@@ -962,35 +962,35 @@ export const CONTROLLER_PORTFOLIO = {
         rawAnalytics: analyticsResponse.data,
       }
 
-      const userPortfolio = await Portfolio.findOne({ userId: userId }).lean()
-      const audienceId = userPortfolio?.draft?.audience?.audienceList?.[userPortfolio.audience.audienceList.length - 1]
-      let youtubePlatform = await Audience.findById(audienceId)
+      // const userPortfolio = await Portfolio.findOne({ userId: userId }).lean()
+      // const audienceId = userPortfolio?.draft?.audience?.audienceList?.[userPortfolio.audience.audienceList.length - 1]
+      // let youtubePlatform = await Audience.findById(audienceId)
 
-      if (!youtubePlatform) {
-        return res.status(404).json({
-          message: 'Audience record not found.',
-          conditions: {
-            audienceId: audienceId,
-            userPortfolio: !!userPortfolio,
-            userPortfolioAudience: !!userPortfolio?.draft?.audience,
-            userPortfolioAudienceAudienceList: userPortfolio?.draft?.audience?.audienceList,
-            userPortfolioAudienceAudienceListLength: userPortfolio?.draft?.audience?.audienceList?.length ?? null,
-          },
-        })
-      }
+      // if (!youtubePlatform) {
+      //   return res.status(404).json({
+      //     message: 'Audience record not found.',
+      //     conditions: {
+      //       audienceId: audienceId,
+      //       userPortfolio: !!userPortfolio,
+      //       userPortfolioAudience: !!userPortfolio?.draft?.audience,
+      //       userPortfolioAudienceAudienceList: userPortfolio?.draft?.audience?.audienceList,
+      //       userPortfolioAudienceAudienceListLength: userPortfolio?.draft?.audience?.audienceList?.length ?? null,
+      //     },
+      //   })
+      // }
 
-      youtubePlatform.engagements = [
-        { label: 'Subscribers', visibility: false },
-        { label: 'Engagement', visibility: false },
-        { label: `${totalDays} Day Views`, visibility: false },
-        { label: `${totalDays} Day Reach`, visibility: false },
-        { label: `Avg Likes`, visibility: false },
-        { label: `Avg Comments`, visibility: false },
-        { label: `Avg Reels Views`, visibility: false },
-        { label: `Avg Reels Watch Time`, visibility: false },
-      ]
+      // youtubePlatform.engagements = [
+      //   { label: 'Subscribers', visibility: false },
+      //   { label: 'Engagement', visibility: false },
+      //   { label: `${totalDays} Day Views`, visibility: false },
+      //   { label: `${totalDays} Day Reach`, visibility: false },
+      //   { label: `Avg Likes`, visibility: false },
+      //   { label: `Avg Comments`, visibility: false },
+      //   { label: `Avg Reels Views`, visibility: false },
+      //   { label: `Avg Reels Watch Time`, visibility: false },
+      // ]
 
-      await youtubePlatform.save()
+      // await youtubePlatform.save()
 
       console.log('Saving analytics for channel:', channelId)
 
