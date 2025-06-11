@@ -962,7 +962,7 @@ export const CONTROLLER_PORTFOLIO = {
         rawAnalytics: analyticsResponse.data,
       }
 
-      const userPortfolio = await Portfolio.findOne({ _id: userId }).lean()
+      const userPortfolio = await Portfolio.findOne({ userId: userId }).lean()
       const audienceId = userPortfolio?.audience?.audienceList?.[userPortfolio.audience.audienceList.length - 1]
       let youtubePlatform = await Audience.findById(audienceId)
 
