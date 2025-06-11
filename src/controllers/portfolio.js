@@ -1625,70 +1625,69 @@ export const CONTROLLER_PORTFOLIO = {
     const { _id: userId } = req.decoded
 
     try {
-      // Step 1: Exchange code for access token
+      // STEP 1: Get user access token from auth code
       const tokenResponse = await axios.get('https://graph.facebook.com/v19.0/oauth/access_token', {
         params: {
           client_id: '1718472132086479',
           client_secret: '30cbe664787298c17642454aa9709cfc',
-          redirect_uri: 'https://dev.myjulip.com/dashboard/pages',
+          redirect_uri: 'https://dev.myjulip.com/auth/jwt/onboarding/',
           code: authCode,
         },
       })
 
       const userToken = tokenResponse.data.access_token
+      console.log('oooooooooooooooooooooooooppppppppp', userToken)
+      // STEP 2: Fetch pages with access tokens
 
-      // Step 2: Get user's Facebook pages
+      // const businesses = await axios.get('https://graph.facebook.com/v19.0/me/businesses', {
+      //   headers: { Authorization: `Bearer ${userToken}` },
+      // })
+      // console.log('businessessssssssssss', businesses)
+      // const businessId = businesses.data?.data?.[0]?.id // or loop to find correct one
+
       const pagesRes = await axios.get('https://graph.facebook.com/v19.0/me/accounts?fields=id,name,access_token', {
         headers: { Authorization: `Bearer ${userToken}` },
       })
 
-      const pages = pagesRes.data.data || []
-      let instagramId = null
-      let pageAccessToken = null
-
-      for (const page of pages) {
-        try {
-          const igRes = await axios.get(
-            `https://graph.facebook.com/v19.0/${page.id}?fields=instagram_business_account`,
-            {
-              headers: { Authorization: `Bearer ${page.access_token}` },
-            }
-          )
-
-          if (igRes.data.instagram_business_account?.id) {
-            instagramId = igRes.data.instagram_business_account.id
-            pageAccessToken = page.access_token
-            break
-          }
-        } catch (_) {
-          continue
-        }
+      const pages = pagesRes.data?.data || []
+      console.log('pagessssssssssss', pagesRes.data)
+      // Try to find your specific page
+      const targetPage = pages[0]
+      if (!targetPage) {
+        return res
+          .status(400)
+          .json({ availablePages: pages, message: 'Julip Facebook Page not found or not granted access.' })
       }
+
+      // STEP 3: Get IG business account from that page
+      const igRes = await axios.get(
+        `https://graph.facebook.com/v19.0/${targetPage.id}?fields=instagram_business_account`,
+        { headers: { Authorization: `Bearer ${targetPage.access_token}` } }
+      )
+
+      const instagramId = igRes.data.instagram_business_account?.id
+      const pageAccessToken = targetPage.access_token
 
       if (!instagramId || !pageAccessToken) {
-        return res.status(400).json({ message: 'Instagram Business Account not found or missing permissions.' })
+        return res.status(400).json({ message: 'Instagram Business Account not linked or missing permissions.' })
       }
 
-      // Step 3: Setup retry wrapper
-      const headers = { Authorization: `Bearer ${pageAccessToken}` }
-      const IG_ID = instagramId
-
+      // Retry utility
       const retryRequest = async (url, retries = 3, delay = 1000) => {
         for (let i = 0; i < retries; i++) {
           try {
-            return await axios.get(url, { headers })
+            return await axios.get(url, { headers: { Authorization: `Bearer ${pageAccessToken}` } })
           } catch (err) {
             const isTransient = err?.response?.data?.error?.is_transient || err?.response?.data?.error?.code === 2
-            if (isTransient && i < retries - 1) {
-              await new Promise((res) => setTimeout(res, delay))
-            } else {
-              throw err
-            }
+            if (isTransient && i < retries - 1) await new Promise((res) => setTimeout(res, delay))
+            else throw err
           }
         }
       }
 
-      // Step 4: Fetch IG Analytics
+      // STEP 4: Fetch profile + insights
+      const IG_ID = instagramId
+
       const profile = await retryRequest(
         `https://graph.facebook.com/v19.0/${IG_ID}?fields=name,username,followers_count,media_count`
       )
@@ -1700,6 +1699,9 @@ export const CONTROLLER_PORTFOLIO = {
       const reach = await retryRequest(
         `https://graph.facebook.com/v19.0/${IG_ID}/insights?metric=reach&period=day&since=${thirtyDaysAgo}&until=${today}`
       )
+      const reachValues = reach.data.data?.[0]?.values || []
+      const totalReach = reachValues.reduce((sum, entry) => sum + (entry.value || 0), 0)
+
       const profileViews = await retryRequest(
         `https://graph.facebook.com/v19.0/${IG_ID}/insights?metric=profile_views&period=day&metric_type=total_value`
       )
@@ -1710,7 +1712,7 @@ export const CONTROLLER_PORTFOLIO = {
 
       try {
         audienceGenderAge = await retryRequest(
-          `https://graph.facebook.com/v19.0/${IG_ID}/insights?metric=engaged_audience_demographics&period=days_28&metric_type=total_value&breakdown=gender,age`
+          `https://graph.facebook.com/v19.0/${IG_ID}/insights?metric=engaged_audience_demographics&period=lifetime&timeframe=this_month&metric_type=total_value&breakdown=gender,age`
         )
       } catch (err) {
         console.warn('audience_gender_age not available:', err.response?.data?.error?.message)
@@ -1718,7 +1720,7 @@ export const CONTROLLER_PORTFOLIO = {
 
       try {
         audienceCountry = await retryRequest(
-          `https://graph.facebook.com/v19.0/${IG_ID}/insights?metric=reached_audience_demographics&period=days_28&metric_type=total_value&breakdown=country`
+          `https://graph.facebook.com/v19.0/${IG_ID}/insights?metric=reached_audience_demographics&period=lifetime&timeframe=this_month&metric_type=total_value&breakdown=country`
         )
       } catch (err) {
         console.warn('audience_country not available:', err.response?.data?.error?.message)
@@ -1726,12 +1728,20 @@ export const CONTROLLER_PORTFOLIO = {
 
       try {
         audienceCity = await retryRequest(
-          `https://graph.facebook.com/v19.0/${IG_ID}/insights?metric=follower_demographics&period=days_28&metric_type=total_value&breakdown=city`
+          `https://graph.facebook.com/v19.0/${IG_ID}/insights?metric=follower_demographics&period=lifetime&metric_type=total_value&breakdown=city`
         )
       } catch (err) {
         console.warn('audience_city not available:', err.response?.data?.error?.message)
       }
-
+      console.log(
+        'audienceCity ➤',
+        JSON.stringify(audienceCity.data?.data?.[0]?.total_value, null, 2),
+        '\naudienceCountry ➤',
+        JSON.stringify(audienceCountry.data?.data?.[0]?.total_value, null, 2),
+        '\naudienceGenderAge ➤',
+        JSON.stringify(audienceGenderAge.data?.data?.[0]?.total_value, null, 2)
+      )
+      // STEP 5: Fetch media and their metrics
       const mediaData = []
       let nextUrl = `https://graph.facebook.com/v19.0/${IG_ID}/media?fields=id,like_count,comments_count,media_type,media_url,permalink,share_count&limit=100`
 
@@ -1742,10 +1752,7 @@ export const CONTROLLER_PORTFOLIO = {
         nextUrl = mediaRes.data?.paging?.next || null
       }
 
-      // Set a concurrency limit
       const CONCURRENCY_LIMIT = 10
-
-      // Break mediaData into chunks
       const chunkArray = (arr, size) =>
         Array.from({ length: Math.ceil(arr.length / size) }, (_, i) => arr.slice(i * size, i * size + size))
 
@@ -1758,8 +1765,7 @@ export const CONTROLLER_PORTFOLIO = {
               const insightRes = await retryRequest(`https://graph.facebook.com/v19.0/${post.id}/insights?metric=reach`)
               post.reach = insightRes.data?.data?.[0]?.values?.[0]?.value || 0
               validPosts++
-            } catch (err) {
-              console.warn('Failed to fetch reach for post:', post.id)
+            } catch (_) {
               post.reach = 0
             }
           })
@@ -1767,7 +1773,6 @@ export const CONTROLLER_PORTFOLIO = {
       }
 
       const totalViews = mediaData.reduce((sum, post) => sum + (post.reach || 0), 0)
-
       const totalLikes = mediaData.reduce((sum, post) => sum + (post.like_count || 0), 0)
       const totalComments = mediaData.reduce((sum, post) => sum + (post.comments_count || 0), 0)
       const totalShares = mediaData.reduce((sum, post) => sum + (post.share_count || 0), 0)
@@ -1776,8 +1781,6 @@ export const CONTROLLER_PORTFOLIO = {
       const avgLikes = totalPosts ? totalLikes / totalPosts : 0
       const avgComments = totalPosts ? totalComments / totalPosts : 0
       const avgShares = totalPosts ? totalShares / totalPosts : 0
-      // const totalViews = reach.data.data.reduce((sum, insight) => sum + insight.values[0].value, 0)
-      const safeFollowers = followersCount || 1
 
       const engagementRate = +(((avgLikes + avgComments + avgShares) / totalViews) * 100).toFixed(2)
 
@@ -1794,7 +1797,7 @@ export const CONTROLLER_PORTFOLIO = {
           followersCount,
           totalPosts,
           engagementRate,
-          totalViews,
+          impressions: totalViews,
           totalLikes,
           totalComments,
           totalShares,
@@ -1802,10 +1805,11 @@ export const CONTROLLER_PORTFOLIO = {
           avgComments,
           avgShares,
           profileViews: profileViews.data?.data || [],
-          audienceGenderAge: audienceGenderAge?.data?.data || [],
-          audienceCountry: audienceCountry?.data?.data || [],
-          audienceCity: audienceCity?.data?.data || [],
+          audienceGenderAge: audienceGenderAge.data?.data?.[0]?.total_value || [],
+          audienceCountry: audienceCountry.data?.data?.[0]?.total_value || [],
+          audienceCity: audienceCity.data?.data?.[0]?.total_value || [],
           reachBreakdown: reach.data.data,
+          totalReach30Days: totalReach,
         },
         { upsert: true, new: true }
       )

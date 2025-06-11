@@ -64,9 +64,29 @@ const InstaAnalyticsSchema = new Schema(
       type: Number,
       default: 0,
     },
+    impressions: {
+      type: Number,
+      default: 0,
+    },
+    totalReach30Days: {
+      type: Number,
+      default: 0,
+    },
     numberOfPosts: {
       type: Number,
       default: 0,
+    },
+    audienceGenderAge: {
+      type: Array,
+      default: [],
+    },
+    audienceCountry: {
+      type: Array,
+      default: [],
+    },
+    audienceCity: {
+      type: Array,
+      default: [],
     },
     // media: [
     //   {
