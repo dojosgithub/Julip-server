@@ -981,14 +981,14 @@ export const CONTROLLER_PORTFOLIO = {
       }
 
       youtubePlatform.engagements = [
-        { label: 'Subscribers', visibility: false },
-        { label: 'Engagement', visibility: false },
-        { label: `${totalDays} Day Views`, visibility: false },
-        { label: `${totalDays} Day Reach`, visibility: false },
-        { label: `Avg Likes`, visibility: false },
-        { label: `Avg Comments`, visibility: false },
-        { label: `Avg Reels Views`, visibility: false },
-        { label: `Avg Reels Watch Time`, visibility: false },
+        { label: 'Subscribers', visibility: true },
+        { label: 'Engagement', visibility: true },
+        { label: `${totalDays} Day Views`, visibility: true },
+        { label: `${totalDays} Day Reach`, visibility: true },
+        { label: `Avg Likes`, visibility: true },
+        { label: `Avg Comments`, visibility: true },
+        { label: `Avg Reels Views`, visibility: true },
+        { label: `Avg Reels Watch Time`, visibility: true },
       ]
 
       await youtubePlatform.save()
