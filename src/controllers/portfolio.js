@@ -963,14 +963,15 @@ export const CONTROLLER_PORTFOLIO = {
       }
 
       const userPortfolio = await Portfolio.findOne({ userId: userId }).lean()
-      const audienceId = userPortfolio?.draft?.audience?.audienceList?.[userPortfolio.draft.audience.audienceList.length - 1]
+      const audienceId =
+        userPortfolio?.draft?.audience?.audienceList?.[userPortfolio.draft.audience.audienceList.length - 1]
       let youtubePlatform = await Audience.findById(audienceId)
 
       if (!youtubePlatform) {
         return res.status(404).json({
           message: 'Audience record not found.',
           conditions: {
-            audienceId: audienceId,
+            audienceId,
             userPortfolio: !!userPortfolio,
             userPortfolioAudience: !!userPortfolio?.draft?.audience,
             userPortfolioAudienceAudienceList: userPortfolio?.draft?.audience?.audienceList,
@@ -999,7 +1000,7 @@ export const CONTROLLER_PORTFOLIO = {
         new: true,
         setDefaultsOnInsert: true,
       })
-      const upatedPortfolio = Portfolio.findOne(userId).populate({
+      const upatedPortfolio = await Portfolio.findOne(userId).populate({
         path: `draft.audience.audienceList`,
         model: 'Audience',
       })
