@@ -1000,7 +1000,7 @@ export const CONTROLLER_PORTFOLIO = {
         new: true,
         setDefaultsOnInsert: true,
       })
-      const upatedPortfolio = await Portfolio.findOne(userId).populate({
+      const upatedPortfolio = await Portfolio.findOne({ userId }).populate({
         path: `draft.audience.audienceList`,
         model: 'Audience',
       })
