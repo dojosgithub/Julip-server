@@ -1851,7 +1851,7 @@ export const CONTROLLER_PORTFOLIO = {
         { label: `Total Reach (30 Day)`, visibility: true },
         { label: `Avg Likes (${totalPosts} Posts)`, visibility: true },
         { label: `Avg Comments (${totalPosts} Posts)`, visibility: true },
-        { label: 'Total likes', visibility: true },
+        { label: 'Total Likes', visibility: true },
         { label: 'Total Comments', visibility: true },
       ]
 
