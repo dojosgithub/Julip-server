@@ -1857,7 +1857,6 @@ export const CONTROLLER_PORTFOLIO = {
 
       await instaPlatform.save()
 
-      console.log('Saving analytics for channel:', channelId)
       const updated = await InstaAnalytics.findOneAndUpdate(
         { userId },
         {
