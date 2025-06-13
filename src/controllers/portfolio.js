@@ -1851,8 +1851,8 @@ export const CONTROLLER_PORTFOLIO = {
         { label: `Total Reach (30 Day)`, visibility: true },
         { label: `Avg Likes (${totalPosts} Posts)`, visibility: true },
         { label: `Avg Comments (${totalPosts} Posts)`, visibility: true },
-        { label: `Avg Reels Views (${totalPosts} Posts)`, visibility: true },
-        { label: `Avg Reels Watch Time (${totalPosts} Posts)`, visibility: true },
+        { label: 'Total Likes', visibility: true },
+        { label: 'Total Comments', visibility: true },
       ]
 
       await instaPlatform.save()
