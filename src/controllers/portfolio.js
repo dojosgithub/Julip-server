@@ -1765,7 +1765,7 @@ export const CONTROLLER_PORTFOLIO = {
         JSON.stringify(audienceCity.data?.data?.[0]?.total_value, null, 2),
         '\naudienceCountry ➤',
         JSON.stringify(audienceCountry.data?.data?.[0]?.total_value, null, 2),
-        '\naudienceGenderAge ➤',
+        '\naudienceGenderAge ➤  ',
         JSON.stringify(audienceGenderAge.data?.data?.[0]?.total_value, null, 2)
       )
       // STEP 5: Fetch media and their metrics
