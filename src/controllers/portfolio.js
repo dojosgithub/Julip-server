@@ -1825,6 +1825,39 @@ export const CONTROLLER_PORTFOLIO = {
 
       const engagementRate = +(((avgLikes + avgComments + avgShares) / totalViews) * 100).toFixed(2)
 
+      // youtube working
+      const userPortfolio = await Portfolio.findOne({ userId: userId }).lean()
+      const audienceId =
+        userPortfolio?.draft?.audience?.audienceList?.[userPortfolio.draft.audience.audienceList.length - 1]
+      let instaPlatform = await Audience.findById(audienceId)
+
+      if (!instaPlatform) {
+        return res.status(404).json({
+          message: 'Audience record not found.',
+          conditions: {
+            audienceId,
+            userPortfolio: !!userPortfolio,
+            userPortfolioAudience: !!userPortfolio?.draft?.audience,
+            userPortfolioAudienceAudienceList: userPortfolio?.draft?.audience?.audienceList,
+            userPortfolioAudienceAudienceListLength: userPortfolio?.draft?.audience?.audienceList?.length ?? null,
+          },
+        })
+      }
+
+      instaPlatform.engagements = [
+        { label: 'Followers', visibility: true },
+        { label: 'Engagement', visibility: true },
+        { label: `Total Impressions (${totalPosts} Posts)`, visibility: true },
+        { label: `Total Reach (30 Day)`, visibility: true },
+        { label: `Avg Likes (${totalPosts} Posts)`, visibility: true },
+        { label: `Avg Comments (${totalPosts} Posts)`, visibility: true },
+        { label: `Avg Reels Views (${totalPosts} Posts)`, visibility: true },
+        { label: `Avg Reels Watch Time (${totalPosts} Posts)`, visibility: true },
+      ]
+
+      await instaPlatform.save()
+
+      console.log('Saving analytics for channel:', channelId)
       const updated = await InstaAnalytics.findOneAndUpdate(
         { userId },
         {
