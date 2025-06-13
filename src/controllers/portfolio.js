@@ -962,19 +962,33 @@ export const CONTROLLER_PORTFOLIO = {
         rawAnalytics: analyticsResponse.data,
       }
 
-      const userPortfolio = await Portfolio.findOne({ _id: userId }).lean()
-      const audienceId = userPortfolio?.audience?.audienceList?.[userPortfolio.audience.audienceList.length - 1]
+      const userPortfolio = await Portfolio.findOne({ userId: userId }).lean()
+      const audienceId =
+        userPortfolio?.draft?.audience?.audienceList?.[userPortfolio.draft.audience.audienceList.length - 1]
       let youtubePlatform = await Audience.findById(audienceId)
 
+      if (!youtubePlatform) {
+        return res.status(404).json({
+          message: 'Audience record not found.',
+          conditions: {
+            audienceId,
+            userPortfolio: !!userPortfolio,
+            userPortfolioAudience: !!userPortfolio?.draft?.audience,
+            userPortfolioAudienceAudienceList: userPortfolio?.draft?.audience?.audienceList,
+            userPortfolioAudienceAudienceListLength: userPortfolio?.draft?.audience?.audienceList?.length ?? null,
+          },
+        })
+      }
+
       youtubePlatform.engagements = [
-        { label: 'Subscribers', visibility: false },
-        { label: 'Engagement', visibility: false },
-        { label: `${totalDays} Day Views`, visibility: false },
-        { label: `${totalDays} Day Reach`, visibility: false },
-        { label: `Avg Likes`, visibility: false },
-        { label: `Avg Comments`, visibility: false },
-        { label: `Avg Reels Views`, visibility: false },
-        { label: `Avg Reels Watch Time`, visibility: false },
+        { label: 'Subscribers', visibility: true },
+        { label: 'Engagement', visibility: true },
+        { label: `${totalDays} Day Views`, visibility: true },
+        { label: `${totalDays} Day Reach`, visibility: true },
+        { label: `Avg Likes`, visibility: true },
+        { label: `Avg Comments`, visibility: true },
+        { label: `Avg Reels Views`, visibility: true },
+        { label: `Avg Reels Watch Time`, visibility: true },
       ]
 
       await youtubePlatform.save()
@@ -986,7 +1000,7 @@ export const CONTROLLER_PORTFOLIO = {
         new: true,
         setDefaultsOnInsert: true,
       })
-      const upatedPortfolio = Portfolio.findOne(userId).populate({
+      const upatedPortfolio = await Portfolio.findOne({ userId }).populate({
         path: `draft.audience.audienceList`,
         model: 'Audience',
       })
@@ -1811,6 +1825,39 @@ export const CONTROLLER_PORTFOLIO = {
 
       const engagementRate = +(((avgLikes + avgComments + avgShares) / totalViews) * 100).toFixed(2)
 
+      // youtube working
+      const userPortfolio = await Portfolio.findOne({ userId: userId }).lean()
+      const audienceId =
+        userPortfolio?.draft?.audience?.audienceList?.[userPortfolio.draft.audience.audienceList.length - 1]
+      let instaPlatform = await Audience.findById(audienceId)
+
+      if (!instaPlatform) {
+        return res.status(404).json({
+          message: 'Audience record not found.',
+          conditions: {
+            audienceId,
+            userPortfolio: !!userPortfolio,
+            userPortfolioAudience: !!userPortfolio?.draft?.audience,
+            userPortfolioAudienceAudienceList: userPortfolio?.draft?.audience?.audienceList,
+            userPortfolioAudienceAudienceListLength: userPortfolio?.draft?.audience?.audienceList?.length ?? null,
+          },
+        })
+      }
+
+      instaPlatform.engagements = [
+        { label: 'Followers', visibility: true },
+        { label: 'Engagement', visibility: true },
+        { label: `Total Impressions (${totalPosts} Posts)`, visibility: true },
+        { label: `Total Reach (30 Day)`, visibility: true },
+        { label: `Avg Likes (${totalPosts} Posts)`, visibility: true },
+        { label: `Avg Comments (${totalPosts} Posts)`, visibility: true },
+        { label: `Avg Reels Views (${totalPosts} Posts)`, visibility: true },
+        { label: `Avg Reels Watch Time (${totalPosts} Posts)`, visibility: true },
+      ]
+
+      await instaPlatform.save()
+
+      console.log('Saving analytics for channel:', channelId)
       const updated = await InstaAnalytics.findOneAndUpdate(
         { userId },
         {
