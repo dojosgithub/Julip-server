@@ -983,8 +983,8 @@ export const CONTROLLER_PORTFOLIO = {
       youtubePlatform.engagements = [
         { label: 'Subscribers', visibility: true },
         { label: 'Engagement', visibility: true },
-        { label: `${totalDays} Day Views`, visibility: true },
-        { label: `${totalDays} Day Reach`, visibility: true },
+        { label: totalDays > 0 ? `${totalDays} Day Views` : 'Total Views', visibility: true },
+        { label: totalDays > 0 ? `${totalDays} Day Reach` : 'Total Reach', visibility: true },
         { label: `Avg Likes`, visibility: true },
         { label: `Avg Comments`, visibility: true },
         { label: `Avg Reels Views`, visibility: true },
