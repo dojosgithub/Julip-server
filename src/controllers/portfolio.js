@@ -1868,6 +1868,7 @@ export const CONTROLLER_PORTFOLIO = {
           longLivedTokenExpiry: null,
           lastSyncedAt: new Date(),
           followersCount,
+          avgViews: totalViews / totalPosts || 0,
           totalPosts,
           engagementRate,
           impressions: totalViews,
