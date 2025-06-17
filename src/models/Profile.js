@@ -59,6 +59,9 @@ const profileContentSchema = {
     url: {
       type: String,
     },
+    visibility: {
+      type: Boolean,
+    },
   },
   image: {
     type: String,

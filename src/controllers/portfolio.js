@@ -222,7 +222,8 @@ export const CONTROLLER_PORTFOLIO = {
   updatePortfolio: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
     const { version = 'draft' } = req.query // 'draft' or 'published'
-    const { name, location, speciality, brand, audience, sample, testimonials, contact, visibility } = req.body
+    const { name, location, speciality, brand, audience, sample, testimonials, contact, visibility, componentOrder } =
+      req.body
 
     let portfolio = await Portfolio.findOne({ userId }).lean()
 
@@ -241,6 +242,7 @@ export const CONTROLLER_PORTFOLIO = {
       [`${updatePath}.testimonials`]: testimonials,
       [`${updatePath}.contact`]: contact,
       [`${updatePath}.visibility`]: visibility,
+      [`${updatePath}.componentOrder`]: componentOrder,
     }
 
     // Update nested fields within the brand object
