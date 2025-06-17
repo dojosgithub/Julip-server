@@ -969,31 +969,24 @@ export const CONTROLLER_PORTFOLIO = {
         userPortfolio?.draft?.audience?.audienceList?.[userPortfolio.draft.audience.audienceList.length - 1]
       let youtubePlatform = await Audience.findById(audienceId)
 
+      let labelMessage = ''
       if (!youtubePlatform) {
-        return res.status(404).json({
-          message: 'Audience record not found.',
-          conditions: {
-            audienceId,
-            userPortfolio: !!userPortfolio,
-            userPortfolioAudience: !!userPortfolio?.draft?.audience,
-            userPortfolioAudienceAudienceList: userPortfolio?.draft?.audience?.audienceList,
-            userPortfolioAudienceAudienceListLength: userPortfolio?.draft?.audience?.audienceList?.length ?? null,
-          },
-        })
+        labelMessage = 'Failed to update labels'
+      } else {
+        youtubePlatform.engagements = [
+          { label: 'Subscribers', visibility: true },
+          { label: 'Engagement', visibility: true },
+          { label: totalDays > 0 ? `${totalDays} Day Views` : 'Total Views', visibility: true },
+          { label: totalDays > 0 ? `${totalDays} Day Reach` : 'Total Reach', visibility: true },
+          { label: `Avg Likes`, visibility: true },
+          { label: `Avg Comments`, visibility: true },
+          { label: `Avg Reels Views`, visibility: true },
+          { label: `Avg Reels Watch Time`, visibility: true },
+        ]
+
+        await youtubePlatform.save()
+        labelMessage = 'Labels updated successfully'
       }
-
-      youtubePlatform.engagements = [
-        { label: 'Subscribers', visibility: true },
-        { label: 'Engagement', visibility: true },
-        { label: totalDays > 0 ? `${totalDays} Day Views` : 'Total Views', visibility: true },
-        { label: totalDays > 0 ? `${totalDays} Day Reach` : 'Total Reach', visibility: true },
-        { label: `Avg Likes`, visibility: true },
-        { label: `Avg Comments`, visibility: true },
-        { label: `Avg Reels Views`, visibility: true },
-        { label: `Avg Reels Watch Time`, visibility: true },
-      ]
-
-      await youtubePlatform.save()
 
       console.log('Saving analytics for channel:', channelId)
 
@@ -1002,13 +995,9 @@ export const CONTROLLER_PORTFOLIO = {
         new: true,
         setDefaultsOnInsert: true,
       })
-      const upatedPortfolio = await Portfolio.findOne({ userId }).populate({
-        path: `draft.audience.audienceList`,
-        model: 'Audience',
-      })
 
       // Step 10: Respond with analytics
-      res.json({ dataToSave, upatedPortfolio })
+      res.json({ dataToSave, labelMessage })
     } catch (error) {
       console.error('Error fetching analytics:', error.response?.data || error.message)
       if (error.response?.status === 400) {
