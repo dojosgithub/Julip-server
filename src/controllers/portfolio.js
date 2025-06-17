@@ -1828,34 +1828,27 @@ export const CONTROLLER_PORTFOLIO = {
       // youtube working
       const userPortfolio = await Portfolio.findOne({ userId: userId }).lean()
       const audienceId =
-        userPortfolio?.draft?.audience?.audienceList?.[userPortfolio.draft.audience.audienceList.length - 1]
+        userPortfolio?.draft?.audience?.audienceList?.[userPortfolio?.draft?.audience?.audienceList?.length - 1]
       let instaPlatform = await Audience.findById(audienceId)
 
+      let labelMessage = ''
       if (!instaPlatform) {
-        return res.status(404).json({
-          message: 'Audience record not found.',
-          conditions: {
-            audienceId,
-            userPortfolio: !!userPortfolio,
-            userPortfolioAudience: !!userPortfolio?.draft?.audience,
-            userPortfolioAudienceAudienceList: userPortfolio?.draft?.audience?.audienceList,
-            userPortfolioAudienceAudienceListLength: userPortfolio?.draft?.audience?.audienceList?.length ?? null,
-          },
-        })
+        labelMessage = 'Failed to update labels'
+      } else {
+        instaPlatform.engagements = [
+          { label: 'Followers', visibility: true },
+          { label: 'Engagement', visibility: true },
+          { label: `Total Impressions (${totalPosts} Posts)`, visibility: true },
+          { label: `Total Reach (30 Day)`, visibility: true },
+          { label: `Avg Likes (${totalPosts} Posts)`, visibility: true },
+          { label: `Avg Comments (${totalPosts} Posts)`, visibility: true },
+          { label: 'Total Likes', visibility: true },
+          { label: 'Total Comments', visibility: true },
+        ]
+
+        await instaPlatform.save()
+        labelMessage = 'Labels updated successfully'
       }
-
-      instaPlatform.engagements = [
-        { label: 'Followers', visibility: true },
-        { label: 'Engagement', visibility: true },
-        { label: `Total Impressions (${totalPosts} Posts)`, visibility: true },
-        { label: `Total Reach (30 Day)`, visibility: true },
-        { label: `Avg Likes (${totalPosts} Posts)`, visibility: true },
-        { label: `Avg Comments (${totalPosts} Posts)`, visibility: true },
-        { label: 'Total Likes', visibility: true },
-        { label: 'Total Comments', visibility: true },
-      ]
-
-      await instaPlatform.save()
 
       const updated = await InstaAnalytics.findOneAndUpdate(
         { userId },
@@ -1891,6 +1884,7 @@ export const CONTROLLER_PORTFOLIO = {
       res.status(StatusCodes.OK).json({
         message: 'Instagram analytics fetched and saved successfully',
         data: updated,
+        labelMessage,
       })
     } catch (error) {
       console.error('Facebook/Instagram Auth + Analytics Error:', error?.response?.data || error.message)
