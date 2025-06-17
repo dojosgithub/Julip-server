@@ -25,7 +25,7 @@ export const seviceSchema = new Schema(
     },
     currency: {
       type: String,
-      enum: ['USD', 'EUR', 'GBP', 'JPY', 'AUD'],
+      enum: ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'NZ'],
     },
     buttonTitle: {
       type: String, // Optional field
