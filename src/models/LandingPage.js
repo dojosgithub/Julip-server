@@ -28,7 +28,7 @@ export const landingPageSchema = new Schema(
     },
     currency: {
       type: String,
-      enum: ['USD', 'EUR', 'GBP', 'JPY', 'AUD'],
+      enum: ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'NZ'],
     },
     price: {
       type: Number,
