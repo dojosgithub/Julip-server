@@ -239,6 +239,42 @@ export const CONTROLLER_ANALYTICS = {
       data,
     })
   }),
+
+  streamAnalytics: asyncMiddleware(async (req, res) => {
+    const { userId, days } = req.query
+
+    if (!userId) {
+      return res.status(400).json({ message: 'Missing userId' })
+    }
+
+    res.set({
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    })
+    res.flushHeaders()
+
+    const daysAgo = parseInt(days) || 7
+
+    let previousData = null
+    const sendData = async () => {
+      const current = await getAnalyticsData(userId, daysAgo)
+      const serialized = JSON.stringify(current)
+
+      if (serialized !== previousData) {
+        res.write(`data: ${serialized}\n\n`)
+        previousData = serialized
+      }
+    }
+
+    await sendData()
+
+    const interval = setInterval(sendData, 10000) // every 10 seconds
+
+    req.on('close', () => {
+      clearInterval(interval)
+    })
+  }),
 }
 
 export const getAnalyticsData = async (userId, daysAgo) => {
