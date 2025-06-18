@@ -1740,6 +1740,7 @@ export const CONTROLLER_PORTFOLIO = {
       const reach = await retryRequest(
         `https://graph.facebook.com/v19.0/${IG_ID}/insights?metric=reach&period=day&since=${thirtyDaysAgo}&until=${today}`
       )
+      console.log('reachhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh', reachValues.length)
       const reachValues = reach.data.data?.[0]?.values || []
       const totalReach = reachValues.reduce((sum, entry) => sum + (entry.value || 0), 0)
 
