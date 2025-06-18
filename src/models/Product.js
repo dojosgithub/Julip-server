@@ -16,7 +16,7 @@ export const productSchema = new Schema(
     },
     currency: {
       type: String,
-      enum: ['USD', 'EUR', 'GBP', 'JPY', 'AUD'],
+      enum: ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'NZ'],
       default: 'USD',
     },
     image: {

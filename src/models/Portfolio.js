@@ -111,6 +111,11 @@ const portfolioContentSchema = {
       default: null,
     },
   },
+  componentOrder: {
+    type: [String],
+    default: ['speciality', 'location', 'brand', 'audience', 'sample', 'testimonials', 'contact'],
+  },
+
   visibility: {
     type: Boolean,
     default: false,

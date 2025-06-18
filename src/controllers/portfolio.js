@@ -222,7 +222,8 @@ export const CONTROLLER_PORTFOLIO = {
   updatePortfolio: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
     const { version = 'draft' } = req.query // 'draft' or 'published'
-    const { name, location, speciality, brand, audience, sample, testimonials, contact, visibility } = req.body
+    const { name, location, speciality, brand, audience, sample, testimonials, contact, visibility, componentOrder } =
+      req.body
 
     let portfolio = await Portfolio.findOne({ userId }).lean()
 
@@ -241,6 +242,7 @@ export const CONTROLLER_PORTFOLIO = {
       [`${updatePath}.testimonials`]: testimonials,
       [`${updatePath}.contact`]: contact,
       [`${updatePath}.visibility`]: visibility,
+      [`${updatePath}.componentOrder`]: componentOrder,
     }
 
     // Update nested fields within the brand object
@@ -967,31 +969,24 @@ export const CONTROLLER_PORTFOLIO = {
         userPortfolio?.draft?.audience?.audienceList?.[userPortfolio.draft.audience.audienceList.length - 1]
       let youtubePlatform = await Audience.findById(audienceId)
 
+      let labelMessage = ''
       if (!youtubePlatform) {
-        return res.status(404).json({
-          message: 'Audience record not found.',
-          conditions: {
-            audienceId,
-            userPortfolio: !!userPortfolio,
-            userPortfolioAudience: !!userPortfolio?.draft?.audience,
-            userPortfolioAudienceAudienceList: userPortfolio?.draft?.audience?.audienceList,
-            userPortfolioAudienceAudienceListLength: userPortfolio?.draft?.audience?.audienceList?.length ?? null,
-          },
-        })
+        labelMessage = 'Failed to update labels'
+      } else {
+        youtubePlatform.engagements = [
+          { label: 'Subscribers', visibility: true },
+          { label: 'Engagement', visibility: true },
+          { label: totalDays > 0 ? `${totalDays} Day Views` : 'Total Views', visibility: true },
+          { label: totalDays > 0 ? `${totalDays} Day Reach` : 'Total Reach', visibility: true },
+          { label: `Avg Likes`, visibility: true },
+          { label: `Avg Comments`, visibility: true },
+          { label: `Avg Reels Views`, visibility: true },
+          { label: `Avg Reels Watch Time`, visibility: true },
+        ]
+
+        await youtubePlatform.save()
+        labelMessage = 'Labels updated successfully'
       }
-
-      youtubePlatform.engagements = [
-        { label: 'Subscribers', visibility: true },
-        { label: 'Engagement', visibility: true },
-        { label: `${totalDays} Day Views`, visibility: true },
-        { label: `${totalDays} Day Reach`, visibility: true },
-        { label: `Avg Likes`, visibility: true },
-        { label: `Avg Comments`, visibility: true },
-        { label: `Avg Reels Views`, visibility: true },
-        { label: `Avg Reels Watch Time`, visibility: true },
-      ]
-
-      await youtubePlatform.save()
 
       console.log('Saving analytics for channel:', channelId)
 
@@ -1000,13 +995,9 @@ export const CONTROLLER_PORTFOLIO = {
         new: true,
         setDefaultsOnInsert: true,
       })
-      const upatedPortfolio = await Portfolio.findOne({ userId }).populate({
-        path: `draft.audience.audienceList`,
-        model: 'Audience',
-      })
 
       // Step 10: Respond with analytics
-      res.json({ dataToSave, upatedPortfolio })
+      res.json({ dataToSave, labelMessage })
     } catch (error) {
       console.error('Error fetching analytics:', error.response?.data || error.message)
       if (error.response?.status === 400) {
@@ -1829,34 +1820,27 @@ export const CONTROLLER_PORTFOLIO = {
       // youtube working
       const userPortfolio = await Portfolio.findOne({ userId: userId }).lean()
       const audienceId =
-        userPortfolio?.draft?.audience?.audienceList?.[userPortfolio.draft.audience.audienceList.length - 1]
+        userPortfolio?.draft?.audience?.audienceList?.[userPortfolio?.draft?.audience?.audienceList?.length - 1]
       let instaPlatform = await Audience.findById(audienceId)
 
+      let labelMessage = ''
       if (!instaPlatform) {
-        return res.status(404).json({
-          message: 'Audience record not found.',
-          conditions: {
-            audienceId,
-            userPortfolio: !!userPortfolio,
-            userPortfolioAudience: !!userPortfolio?.draft?.audience,
-            userPortfolioAudienceAudienceList: userPortfolio?.draft?.audience?.audienceList,
-            userPortfolioAudienceAudienceListLength: userPortfolio?.draft?.audience?.audienceList?.length ?? null,
-          },
-        })
+        labelMessage = 'Failed to update labels'
+      } else {
+        instaPlatform.engagements = [
+          { label: 'Followers', visibility: true },
+          { label: 'Engagement', visibility: true },
+          { label: `Total Impressions (${totalPosts} Posts)`, visibility: true },
+          { label: `Total Reach (30 Day)`, visibility: true },
+          { label: `Avg Likes (${totalPosts} Posts)`, visibility: true },
+          { label: `Avg Comments (${totalPosts} Posts)`, visibility: true },
+          { label: 'Total Likes', visibility: true },
+          { label: 'Total Comments', visibility: true },
+        ]
+
+        await instaPlatform.save()
+        labelMessage = 'Labels updated successfully'
       }
-
-      instaPlatform.engagements = [
-        { label: 'Followers', visibility: true },
-        { label: 'Engagement', visibility: true },
-        { label: `Total Impressions (${totalPosts} Posts)`, visibility: true },
-        { label: `Total Reach (30 Day)`, visibility: true },
-        { label: `Avg Likes (${totalPosts} Posts)`, visibility: true },
-        { label: `Avg Comments (${totalPosts} Posts)`, visibility: true },
-        { label: 'Total Likes', visibility: true },
-        { label: 'Total Comments', visibility: true },
-      ]
-
-      await instaPlatform.save()
 
       const updated = await InstaAnalytics.findOneAndUpdate(
         { userId },
@@ -1892,6 +1876,7 @@ export const CONTROLLER_PORTFOLIO = {
       res.status(StatusCodes.OK).json({
         message: 'Instagram analytics fetched and saved successfully',
         data: updated,
+        labelMessage,
       })
     } catch (error) {
       console.error('Facebook/Instagram Auth + Analytics Error:', error?.response?.data || error.message)
