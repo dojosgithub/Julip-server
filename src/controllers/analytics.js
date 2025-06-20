@@ -261,10 +261,10 @@ export const CONTROLLER_ANALYTICS = {
       const current = await getAnalyticsData(userId, daysAgo)
       const serialized = JSON.stringify(current)
 
-      if (serialized !== previousData) {
-        res.write(`data: ${serialized}\n\n`)
-        previousData = serialized
-      }
+      if (!serialized || serialized === previousData) return
+
+      res.write(`data: ${serialized}\n\n`)
+      previousData = serialized
     }
 
     await sendData()
