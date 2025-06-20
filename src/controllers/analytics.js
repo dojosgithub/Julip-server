@@ -247,32 +247,44 @@ export const CONTROLLER_ANALYTICS = {
       return res.status(400).json({ message: 'Missing userId' })
     }
 
-    res.set({
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
-    })
+    // Setup headers for SSE
+    res.setHeader('Content-Type', 'text/event-stream')
+    res.setHeader('Cache-Control', 'no-cache')
+    res.setHeader('Connection', 'keep-alive')
     res.flushHeaders()
 
-    const daysAgo = parseInt(days) || 7
-
+    // Parse days in decimal base system
+    const daysAgo = parseInt(days, 10) || 7
     let previousData = null
+
     const sendData = async () => {
-      const current = await getAnalyticsData(userId, daysAgo)
-      const serialized = JSON.stringify(current)
+      try {
+        const current = await getAnalyticsData(userId, daysAgo)
 
-      if (!serialized || serialized === previousData) return
+        if (!current) return // Avoid sending null/undefined
 
-      res.write(`data: ${serialized}\n\n`)
-      previousData = serialized
+        const serialized = JSON.stringify(current)
+        if (serialized === previousData) return
+
+        res.write(`data: ${serialized}\n\n`)
+        previousData = serialized
+      } catch (error) {
+        console.error('Error sending SSE data:', error)
+        res.write(`event: error\ndata: ${JSON.stringify({ message: 'Internal server error' })}\n\n`)
+      }
     }
 
+    // Initial send
     await sendData()
 
-    const interval = setInterval(sendData, 10000) // every 10 seconds
+    // Keep sending every 10 seconds
+    const interval = setInterval(sendData, 10000)
 
+    // Cleanup on client disconnect
     req.on('close', () => {
       clearInterval(interval)
+      res.end() // close the stream
+      console.log(`SSE connection closed for userId: ${userId}`)
     })
   }),
 }
@@ -284,7 +296,14 @@ export const getAnalyticsData = async (userId, daysAgo) => {
   const analytics = await Analytics.findOne({ userId })
 
   if (!analytics) {
-    return null
+    return {
+      webClicksByCountry: {},
+      webViewsByCountry: {},
+      webClicks: 0,
+      webViews: 0,
+      tabViews: [],
+      products: [],
+    }
   }
 
   const webClicks = analytics.webClicks.filter(({ timestamp }) => new Date(timestamp) >= cutoffDate)
