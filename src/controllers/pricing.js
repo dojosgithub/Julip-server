@@ -70,7 +70,7 @@ export const CONTROLLER_PRICING = {
 
     if (!user.referralLink && pricing === 'Premium') {
       // Generate and save a new referral link only if it doesn't exist
-      const referralLink = `${process.env.FRONTEND_URL_DEV}/auth/jwt/register?ref=${userId}`
+      const referralLink = `${process.env.FRONTEND_URL_DEV}/dashboard/register?ref=${userId}`
       user.referralLink = referralLink
     }
 

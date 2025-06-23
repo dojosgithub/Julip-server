@@ -1349,7 +1349,7 @@ export const CONTROLLER_PORTFOLIO = {
         params: {
           client_id: '1363115408334174',
           client_secret: '68a3da17413addbccea98e288e1e248f',
-          redirect_uri: 'https://dev.myjulip.com/auth/jwt/onboarding/',
+          redirect_uri: 'https://dev.myjulip.com/dashboard/',
           code: cleanCode,
         },
       })

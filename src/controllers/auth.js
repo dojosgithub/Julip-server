@@ -916,7 +916,7 @@ rdmyJfzE
           client_secret: clientSecret,
           code,
           grant_type: 'authorization_code',
-          redirect_uri: 'https://dev.myjulip.com/auth/jwt/login/',
+          redirect_uri: 'https://dev.myjulip.com/dashboard/login/',
         },
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -1067,7 +1067,7 @@ rdmyJfzE
   //         client_secret: clientSecret,
   //         code,
   //         grant_type: 'authorization_code',
-  //         redirect_uri: 'https://dev.myjulip.com/auth/jwt/login/',
+  //         redirect_uri: 'https://dev.myjulip.com/dashboard/login/',
   //       },
   //       headers: {
   //         'Content-Type': 'application/x-www-form-urlencoded',
