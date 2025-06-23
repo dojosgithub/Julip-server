@@ -4,7 +4,6 @@ import _, { isEmpty } from 'lodash'
 
 export const decodeRoleTokenMiddleware = (req, res, next) => {
   const roleToken = req.cookies.roleToken
-  console.log('roleToken', roleToken)
   if (roleToken)
     jwt.verify(roleToken, process.env.USER_ROLE_JWT_SECRET_KEY, async (err, decoded) => {
       if (err) {

@@ -7,88 +7,133 @@ import mongooseAggregatePaginate from 'mongoose-aggregate-paginate-v2'
 
 export const userSchema = new Schema(
   {
-    firstName: String,
-    lastName: String,
+    fullName: String,
     email: {
       type: String,
       required: true,
       unique: true,
     },
-    gender: String,
-    file: Object,
-    age: String,
-    weight: {
-      value: String,
-      unit: {
-        type: String,
-        enum: ['imperial', 'metric'],
-      },
+    appleSub: {
+      type: String,
     },
-    height: {
-      value: String,
-      unit: {
-        type: String,
-        enum: ['imperial', 'metric'],
-      },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    }, // added
+    resetToken: String, // added
+    resetTokenExpiry: Date, // added
+    stripeAccountId: String, // added
+    referralLink: {
+      type: String,
+      unique: true,
+    }, // Unique referral code for each user
+    referredBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    }, // Reference to the user who referred this user
+    referralRewards: {
+      type: Number,
+      default: 0,
+    }, // Total referral rewards earned by the user
+    successfulReferrals: {
+      type: Number,
+      default: 0,
     },
-    followers: { type: [Schema.Types.ObjectId], ref: 'User', default: [] },
-    following: { type: [Schema.Types.ObjectId], ref: 'User', default: [] },
-    password: { type: String, select: false },
-    location: String,
-    username: String,
-    accountType: String,
-    about: String,
-    role: Object,
-    userTypes: Array,
-    refreshTokens: [String],
 
-    challenges: [
+    referredUsers: [
       {
         type: Schema.Types.ObjectId,
-        ref: 'Challenge',
+        ref: 'User',
       },
     ],
+    userName: {
+      type: String,
+      unique: true,
+      sparse: true, // Ensures null values are not indexed for uniqueness
+    }, // added
+    isSlugCreated: {
+      type: Boolean,
+      default: false,
+    },
+    isProfileCreated: {
+      type: Boolean,
+      default: false,
+    },
+    isTemplateSelected: {
+      type: Boolean,
+      default: false,
+    },
 
-    badges: [
-      {
-        badgeId: {
-          type: Schema.Types.ObjectId,
-          ref: 'Badge',
-        },
-        name: String,
-        quantity: Number,
-        _type: String,
-        image: String,
-      },
-    ],
-
+    isPricingSelected: {
+      type: Boolean,
+      default: false,
+    },
+    avatar: Object,
+    password: { type: String, select: false },
+    // username: String,
+    accountType: String,
+    role: Object,
+    subscriptionId: {
+      type: String,
+    },
+    userTypes: {
+      type: String,
+      enum: ['Premium', 'Basic'],
+      default: 'Basic',
+    },
+    startedAsPremium: {
+      type: Boolean,
+      default: false,
+    },
+    refreshTokens: [String],
+    isLoggedIn: {
+      type: Boolean,
+      default: false,
+    },
     lastActive: {
       type: Date,
     },
-
-    points: {
-      type: Number,
-      default: 0,
+    profile: {
+      type: Schema.Types.ObjectId,
+      ref: 'Profile',
+    },
+    shop: {
+      type: Schema.Types.ObjectId,
+      ref: 'Shop',
+    },
+    about: {
+      type: Schema.Types.ObjectId,
+      ref: 'About',
+    },
+    services: {
+      type: Schema.Types.ObjectId,
+      ref: 'Services',
+    },
+    template: {
+      type: Schema.Types.ObjectId,
+      ref: 'Template',
+    },
+    analytics: {
+      type: Schema.Types.ObjectId,
+      ref: 'Analytics',
+    },
+    pages: {
+      type: Schema.Types.ObjectId,
+      ref: 'Pages',
+    },
+    portfolio: {
+      type: Schema.Types.ObjectId,
+      ref: 'Portfolio',
     },
 
-    fcmToken: String,
-    totalCaloriesBurnt: {
-      type: Number,
-      default: 0,
-    },
-    totalTimeInSeconds: {
-      type: Number,
-      default: 0,
-    },
-
-    level: {
-      type: String,
-      default: 'Beginner',
+    popupTracking: {
+      saveDraft: { type: Boolean, default: false },
+      savePublish: { type: Boolean, default: false },
     },
   },
   { versionKey: false, timestamps: true }
 )
-
+//
 userSchema.methods.createEmailVerifyToken = function () {
   const emailToken = crypto.randomBytes(32).toString('hex')
 
@@ -114,18 +159,18 @@ export const validateRegistration = (obj) => {
     email: Joi.string().email({ minDomainSegments: 2 }).required(),
     password: Joi.string().required(),
     gender: Joi.string(),
-    age: Joi.string(),
-    location: Joi.string(),
+    // age: Joi.string(),
+    // location: Joi.string(),
     username: Joi.string(),
-    about: Joi.string(),
-    weight: Joi.object({
-      value: Joi.number(),
-      unit: Joi.string().valid('imperial', 'metric'),
-    }),
-    height: Joi.object({
-      value: Joi.number(),
-      unit: Joi.string().valid('imperial', 'metric'),
-    }),
+    // about: Joi.string(),
+    // weight: Joi.object({
+    //   value: Joi.number(),
+    //   unit: Joi.string().valid('imperial', 'metric'),
+    // }),
+    // height: Joi.object({
+    //   value: Joi.number(),
+    //   unit: Joi.string().valid('imperial', 'metric'),
+    // }),
   }).options({ abortEarly: false })
 
   return schema.validate(obj)

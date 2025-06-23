@@ -19,9 +19,6 @@ import {
   getRoleShortName,
 } from '../utils'
 
-import badges from '../../badgesData.json'
-import exercise from '../../exerciseData.json'
-
 // Suppress Mongoose Deprecation Warning
 mongoose.set('strictQuery', true)
 

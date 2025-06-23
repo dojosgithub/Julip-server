@@ -11,32 +11,37 @@ import { CONTROLLER_AUTH } from '../controllers'
 // * Middlewares
 import { validateMiddleware, permitMiddleware, Authenticate } from '../middlewares'
 import { parser } from '../utils/cloudinary'
-import { totpRateLimiter } from '../utils/rateLimiter'
 import { USER_TYPES } from '../utils'
 
 const router = Router()
 
 // Zeal App User Routes
 
-router.post('/get-code', CONTROLLER_AUTH.getCode)
+// router.post('/get-code', CONTROLLER_AUTH.getCode)
 
 router.post('/verify-account', CONTROLLER_AUTH.verifyAccount)
 
 router.post('/sign-up', CONTROLLER_AUTH.signUp)
 
-router.post('/sign-out', CONTROLLER_AUTH.signOut)
+router.get('/sign-out', Authenticate(), CONTROLLER_AUTH.signOut)
 
 router.post('/sign-in', CONTROLLER_AUTH.signIn)
 
 router.post('/forgot-password', CONTROLLER_AUTH.forgotPassword)
 
-router.post('/verify', CONTROLLER_AUTH.verifyUpdatePasswordCode)
+router.post('/forgot-password-link', CONTROLLER_AUTH.forgotPasswordLink)
 
-router.post(
-  '/forgot-password-update',
+router.post('/reset-password', CONTROLLER_AUTH.resetPassword)
 
-  CONTROLLER_AUTH.forgotPasswordUpdate
-)
+router.post('/reset-password-authrnticated', Authenticate(), CONTROLLER_AUTH.resetPasswordAuthenticatedUser)
+
+router.post('/verify', Authenticate(), CONTROLLER_AUTH.verifyUpdatePasswordCode)
+
+router.post('/verify-email', Authenticate(), CONTROLLER_AUTH.verifyEmail)
+
+router.post('/get-code', Authenticate(), CONTROLLER_AUTH.resendEmailVerificationCode)
+
+router.post('/create-slug', Authenticate(), CONTROLLER_AUTH.createSlug)
 
 router.post(
   '/sendNotification',
@@ -52,6 +57,10 @@ router.put(
   CONTROLLER_AUTH.changePassword
 )
 
-router.post('/oauth', CONTROLLER_AUTH.OAuth)
+router.post('/google/callback', CONTROLLER_AUTH.OAuth2)
+
+router.post('/sendemail', CONTROLLER_AUTH.checkemail)
+
+router.post('/apple/callback', CONTROLLER_AUTH.handleAppleCallback)
 
 export default router

@@ -4,5 +4,12 @@ export const corsConfig = {
   optionsSuccessStatus: 200,
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
   preflightContinue: false,
-  allowedHeaders: ['Authorization', 'Content-Type', 'Origin', 'Accept', 'Access-Control-Allow-Request-Method'],
+  allowedHeaders: [
+    'Authorization',
+    'Content-Type',
+    'Origin',
+    'Accept',
+    'Access-Control-Allow-Request-Method',
+    'Access-Control-Allow-Origin',
+  ],
 }

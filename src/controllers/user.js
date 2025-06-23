@@ -7,8 +7,6 @@ const axios = require('axios')
 import passport from 'passport'
 import dotenv from 'dotenv'
 
-const admin = require('firebase-admin')
-
 dotenv.config()
 
 // * Models
@@ -97,7 +95,7 @@ const { ObjectId } = mongoose.Types
 export const CONTROLLER_USER = {
   // ZEAL FITNESS APP APIS
 
-  profile: asyncMiddleware(async (req, res) => {
+  getUser: asyncMiddleware(async (req, res) => {
     const { _id } = req.decoded
     const id = req.query.id
     // console.log('id', id)
@@ -127,9 +125,8 @@ export const CONTROLLER_USER = {
     })
   }),
 
-  updateProfile: asyncMiddleware(async (req, res) => {
+  updateUser: asyncMiddleware(async (req, res) => {
     const id = req.query.id
-    console.log(id)
 
     let body = JSON.parse(req.body.body)
     body = {
@@ -339,4 +336,67 @@ export const CONTROLLER_USER = {
   //     res.status(500).send('An error occurred during Google login.')
   //   }
   // }),
+
+  getUserSettings: asyncMiddleware(async (req, res) => {
+    const { _id: id } = req.decoded
+    const user = await User.findById(id).select('fullName avatar').lean()
+
+    if (!user)
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'User not found.',
+      })
+
+    res.status(StatusCodes.OK).json({
+      data: {
+        user,
+      },
+      message: 'User Details Fetched Successfully',
+    })
+  }),
+  saveUserSettings: asyncMiddleware(async (req, res) => {
+    const { _id: id } = req.decoded
+    let body = JSON.parse(req.body.body)
+
+    const modifiedBody = {
+      ...body,
+      avatar: req.file && req.file.path,
+    }
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { avatar: modifiedBody.avatar, fullName: modifiedBody.fullName },
+      { new: true }
+    )
+
+    if (!user)
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: 'User not found.',
+      })
+
+    res.status(StatusCodes.OK).json({
+      // data: {
+      //   user,
+      // },
+      message: 'Settings saved successfully',
+    })
+  }),
+  resetPasswordAuthenticatedUser: asyncMiddleware(async (req, res) => {
+    const { newPassword } = req.body
+    const { _id: userId } = req.decoded
+
+    // Find the user by the reset token and check token validity
+    const user = await User.findById(userId)
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired reset token.' })
+    }
+
+    // Update the user's password
+    const hashedPassword = await generatePassword(newPassword)
+    user.password = hashedPassword
+
+    await user.save()
+
+    res.json({ message: 'Password updated successfully.', user })
+  }),
 }
