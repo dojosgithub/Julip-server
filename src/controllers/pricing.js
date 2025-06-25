@@ -142,12 +142,17 @@ export const CONTROLLER_PRICING = {
         invoice_settings: { default_payment_method: paymentMethodId },
       })
 
-      // Create subscription with a 14-day free trial
+      // Calculate trial end date (7 months from now)
+      const currentDate = new Date()
+      const trialEndDateObj = new Date(currentDate.setMonth(currentDate.getMonth() + 7))
+      const trialEndTimestamp = Math.floor(trialEndDateObj.getTime() / 1000) // Stripe expects UNIX timestamp in seconds
+
+      // Create subscription with a 7-month free trial
       const subscription = await stripe.subscriptions.create({
         customer: customerId,
         items: [{ price: priceId }],
         default_payment_method: paymentMethodId,
-        trial_period_days: 14, // Add trial period
+        trial_end: trialEndTimestamp, // Currently for beta users. Change it back to 14 after 7 months!
         expand: ['latest_invoice.payment_intent'],
       })
       console.log('zxcvbnm', subscription)
