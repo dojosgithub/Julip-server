@@ -329,11 +329,12 @@ export const CONTROLLER_SCRAPE = {
 
         const request = await client.get(url, {
           js_render: 'true',
+          proxy_country: 'us',
           premium_proxy: 'true',
         })
 
         const data = await request.text() // Get the raw HTML response
-        console.log('Raw HTML received')
+        console.log('Raw HTML received', data)
 
         // Parse the HTML with cheerio
         const cheerio = require('cheerio')
