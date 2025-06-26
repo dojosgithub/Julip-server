@@ -325,7 +325,7 @@ export const CONTROLLER_SCRAPE = {
     const { url } = req.body
     try {
       if (url.includes('chewy.com')) {
-        const client = new ZenRows('1a4b70cef75946e38721336fa7c116ed1a892c0e')
+        const client = new ZenRows('32ea790503a9730ae015722e3d0b526596cd4312')
 
         const request = await client.get(url, {
           js_render: 'true',
@@ -333,7 +333,7 @@ export const CONTROLLER_SCRAPE = {
         })
 
         const data = await request.text() // Get the raw HTML response
-        console.log('Raw HTML received')
+        console.log('Raw HTML received', data)
 
         // Parse the HTML with cheerio
         const cheerio = require('cheerio')
@@ -385,13 +385,15 @@ export const CONTROLLER_SCRAPE = {
           data: extractedData,
           message: 'Product data fetched successfully.(ZenRows)',
         })
-      } else if (url.includes('walmart.com')) {
-        const productData = await scrapeWalmartData(url)
-        return res.status(StatusCodes.OK).json({
-          data: productData,
-          message: 'Walmart product data fetched successfully.',
-        })
-      } else {
+      }
+      //  else if (url.includes('walmart.com')) {
+      //   const productData = await scrapeWalmartData(url)
+      //   return res.status(StatusCodes.OK).json({
+      //     data: productData,
+      //     message: 'Walmart product data fetched successfully.',
+      //   })
+      // }
+      else {
         // Default: Use Diffbot
         const response = await axios.get('https://api.diffbot.com/v3/product', {
           params: {
