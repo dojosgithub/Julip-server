@@ -334,7 +334,6 @@ export const CONTROLLER_SCRAPE = {
         })
 
         const data = await request.text() // Get the raw HTML response
-        console.log('Raw HTML received', data)
 
         // Parse the HTML with cheerio
         const cheerio = require('cheerio')
@@ -367,6 +366,23 @@ export const CONTROLLER_SCRAPE = {
               if (offer?.price) {
                 extractedData.price = `${symbol}${offer.price}`
               }
+            } else if (jsonData.hasVariant && Array.isArray(jsonData.hasVariant)) {
+              const matchingVariant = jsonData.hasVariant.find((variant) => variant.image === jsonData.image)
+              console.log('matchingVariant', matchingVariant)
+              if (matchingVariant?.offers) {
+                const variantOffers = Array.isArray(matchingVariant.offers)
+                  ? matchingVariant.offers
+                  : [matchingVariant.offers]
+
+                const offer = variantOffers[0]
+                const currency = offer?.priceCurrency
+                const symbol = currencySymbols[currency] || currency || ''
+                if (offer?.price) {
+                  extractedData.price = `${symbol}${offer.price}`
+                }
+              }
+
+              // CASE 3: Single top-level offer object
             } else if (jsonData.offers?.price) {
               const currency = jsonData.offers?.priceCurrency
               const symbol = currencySymbols[currency] || currency || ''
