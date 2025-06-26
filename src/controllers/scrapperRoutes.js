@@ -325,7 +325,7 @@ export const CONTROLLER_SCRAPE = {
     const { url } = req.body
     try {
       if (url.includes('chewy.com')) {
-        const client = new ZenRows('1a4b70cef75946e38721336fa7c116ed1a892c0e')
+        const client = new ZenRows('32ea790503a9730ae015722e3d0b526596cd4312')
 
         const request = await client.get(url, {
           js_render: 'true',
