@@ -329,6 +329,7 @@ export const CONTROLLER_SCRAPE = {
 
         const request = await client.get(url, {
           js_render: 'true',
+          proxy_country: 'us',
           premium_proxy: 'true',
         })
 
