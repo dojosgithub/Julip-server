@@ -159,6 +159,7 @@ export const CONTROLLER_AUTH = {
       accountType: 'Julip-Account',
       userTypes: USER_TYPES.Basic,
       role: { name: SYSTEM_USER_ROLE.USR, shortName: getRoleShortName(USER_TYPES.USR, SYSTEM_USER_ROLE.USR) },
+      ...(referralLink ? { referralLink } : {}),
     })
 
     // If a referral code is provided, find the referrer

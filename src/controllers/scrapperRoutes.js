@@ -325,7 +325,7 @@ export const CONTROLLER_SCRAPE = {
     const { url } = req.body
     try {
       if (url.includes('chewy.com')) {
-        const client = new ZenRows('32ea790503a9730ae015722e3d0b526596cd4312')
+        const client = new ZenRows(process.env.ZENROWS_TOKEN)
 
         const request = await client.get(url, {
           js_render: 'true',
@@ -414,7 +414,7 @@ export const CONTROLLER_SCRAPE = {
         // Default: Use Diffbot
         const response = await axios.get('https://api.diffbot.com/v3/product', {
           params: {
-            token: 'e27411d975d8692c44ba04748233a7fd',
+            token: process.env.DIFFBOT_TOKEN,
             url: url,
           },
         })
