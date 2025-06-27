@@ -528,8 +528,8 @@ export const CONTROLLER_PRICING = {
       account: account.id,
       // refresh_url: 'https://yourplatform.com/reauth', // Redirect URL if onboarding is incomplete
       // return_url: 'https://yourplatform.com/success', // Redirect URL after successful onboarding
-      refresh_url: 'https://dev.myjulip.com/dashboard/about/', // Redirect URL if onboarding is incomplete
-      return_url: 'https://dev.myjulip.com/dashboard/pages/', // Redirect URL after successful onboarding
+      refresh_url: 'https://myjulip.com/dashboard/about/', // Redirect URL if onboarding is incomplete
+      return_url: 'https://myjulip.com/dashboard/pages/', // Redirect URL after successful onboarding
       type: 'account_onboarding',
     })
 
@@ -756,8 +756,8 @@ export const CONTROLLER_PRICING = {
         // Generate an account link for onboarding
         const accountLink = await stripe.accountLinks.create({
           account: stripeId,
-          refresh_url: 'https://dev.myjulip.com/dashboard/about/', // Redirect if onboarding is incomplete
-          return_url: 'https://dev.myjulip.com/dashboard/about/', // Redirect after onboarding is complete
+          refresh_url: 'https://myjulip.com/dashboard/about/', // Redirect if onboarding is incomplete
+          return_url: 'https://myjulip.com/dashboard/about/', // Redirect after onboarding is complete
           type: 'account_onboarding',
         })
 
