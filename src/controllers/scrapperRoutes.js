@@ -325,15 +325,15 @@ export const CONTROLLER_SCRAPE = {
     const { url } = req.body
     try {
       if (url.includes('chewy.com')) {
-        const client = new ZenRows('32ea790503a9730ae015722e3d0b526596cd4312')
+        const client = new ZenRows(process.env.ZENROWS_TOKEN)
 
         const request = await client.get(url, {
           js_render: 'true',
+          proxy_country: 'us',
           premium_proxy: 'true',
         })
 
         const data = await request.text() // Get the raw HTML response
-        console.log('Raw HTML received', data)
 
         // Parse the HTML with cheerio
         const cheerio = require('cheerio')
@@ -366,6 +366,23 @@ export const CONTROLLER_SCRAPE = {
               if (offer?.price) {
                 extractedData.price = `${symbol}${offer.price}`
               }
+            } else if (jsonData.hasVariant && Array.isArray(jsonData.hasVariant)) {
+              const matchingVariant = jsonData.hasVariant.find((variant) => variant.image === jsonData.image)
+              console.log('matchingVariant', matchingVariant)
+              if (matchingVariant?.offers) {
+                const variantOffers = Array.isArray(matchingVariant.offers)
+                  ? matchingVariant.offers
+                  : [matchingVariant.offers]
+
+                const offer = variantOffers[0]
+                const currency = offer?.priceCurrency
+                const symbol = currencySymbols[currency] || currency || ''
+                if (offer?.price) {
+                  extractedData.price = `${symbol}${offer.price}`
+                }
+              }
+
+              // CASE 3: Single top-level offer object
             } else if (jsonData.offers?.price) {
               const currency = jsonData.offers?.priceCurrency
               const symbol = currencySymbols[currency] || currency || ''
@@ -397,7 +414,7 @@ export const CONTROLLER_SCRAPE = {
         // Default: Use Diffbot
         const response = await axios.get('https://api.diffbot.com/v3/product', {
           params: {
-            token: 'e27411d975d8692c44ba04748233a7fd',
+            token: process.env.DIFFBOT_TOKEN,
             url: url,
           },
         })
