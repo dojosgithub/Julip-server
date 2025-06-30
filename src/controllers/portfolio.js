@@ -778,6 +778,7 @@ export const CONTROLLER_PORTFOLIO = {
   youtubeAccessToken: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
     const { code } = req.query
+
     try {
       const authCode = decodeURIComponent(code)
 
@@ -789,36 +790,46 @@ export const CONTROLLER_PORTFOLIO = {
       params.append('code', authCode)
       params.append('access_type', 'offline')
 
-      // Make the POST request to exchange the authorization code for an access token and refresh token
+      // Exchange authorization code for tokens
       const response = await axios.post('https://oauth2.googleapis.com/token', params, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       })
+
       const { access_token, refresh_token, expires_in, refresh_token_expires_in } = response.data
 
-      // Calculate actual refresh token expiry date
-      const refreshTokenExpiry = new Date(Date.now() + refresh_token_expires_in * 1000)
+      // Optional: calculate refresh token expiry only if it's returned
+      let refreshTokenExpiry = undefined
+      if (refresh_token_expires_in) {
+        refreshTokenExpiry = new Date(Date.now() + refresh_token_expires_in * 1000)
+      }
 
-      await YoutubeAnalytics.findOneAndUpdate(
-        { userId },
-        {
-          userId,
-          accessToken: access_token,
-          refreshToken: refresh_token,
-          refreshTokenExpiry, // stored based on Google's response
-          lastSyncedAt: new Date(),
-        },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
-      )
-      // You will receive both access_token and refresh_token in the response
+      // Prepare update payload
+      const updateData = {
+        userId,
+        accessToken: access_token,
+        refreshToken: refresh_token,
+        lastSyncedAt: new Date(),
+      }
+
+      if (refreshTokenExpiry) {
+        updateData.refreshTokenExpiry = refreshTokenExpiry
+      }
+
+      // Save tokens to DB
+      await YoutubeAnalytics.findOneAndUpdate({ userId }, updateData, {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true,
+      })
+
       res.json({
-        data: response.data, // This includes access_token, refresh_token, expires_in, token_type
+        data: response.data,
       })
     } catch (error) {
       console.error('Error fetching accessToken:', error.response?.data || error.message)
 
-      // Handle 400 Bad Request errors specifically
       if (error.response?.status === 400) {
         console.error('Full Error Details:', JSON.stringify(error.response?.data, null, 2))
         return res.status(400).json({
@@ -827,7 +838,6 @@ export const CONTROLLER_PORTFOLIO = {
         })
       }
 
-      // Handle other errors
       res.status(error.response?.status || 500).json({
         error: error.response?.data || error.message,
       })
