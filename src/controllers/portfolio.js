@@ -1657,6 +1657,10 @@ export const CONTROLLER_PORTFOLIO = {
     const { _id: userId } = req.decoded
 
     try {
+      const safeGetTotalValue = (apiResponse) => {
+        return apiResponse?.data?.data?.[0]?.total_value || []
+      }
+
       // STEP 1: Get user access token from auth code
       const tokenResponse = await axios.get('https://graph.facebook.com/v19.0/oauth/access_token', {
         params: {
@@ -1768,11 +1772,11 @@ export const CONTROLLER_PORTFOLIO = {
       }
       console.log(
         'audienceCity ➤',
-        JSON.stringify(audienceCity.data?.data?.[0]?.total_value, null, 2),
+        JSON.stringify(safeGetTotalValue(audienceCity), null, 2),
         '\naudienceCountry ➤',
-        JSON.stringify(audienceCountry.data?.data?.[0]?.total_value, null, 2),
+        JSON.stringify(safeGetTotalValue(audienceCountry), null, 2),
         '\naudienceGenderAge ➤  ',
-        JSON.stringify(audienceGenderAge.data?.data?.[0]?.total_value, null, 2)
+        JSON.stringify(safeGetTotalValue(audienceGenderAge), null, 2)
       )
       // STEP 5: Fetch media and their metrics
       const mediaData = []
@@ -1864,9 +1868,9 @@ export const CONTROLLER_PORTFOLIO = {
           avgComments,
           avgShares,
           profileViews: profileViews.data?.data || [],
-          audienceGenderAge: audienceGenderAge.data?.data?.[0]?.total_value || [],
-          audienceCountry: audienceCountry.data?.data?.[0]?.total_value || [],
-          audienceCity: audienceCity.data?.data?.[0]?.total_value || [],
+          audienceGenderAge: safeGetTotalValue(audienceGenderAge),
+          audienceCountry: safeGetTotalValue(audienceCountry),
+          audienceCity: safeGetTotalValue(audienceCity),
           reachBreakdown: reach.data.data,
           totalReach30Days: totalReach,
         },
