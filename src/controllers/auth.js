@@ -487,7 +487,7 @@ export const CONTROLLER_AUTH = {
     }
     console.log('qwerty', resetToken)
     // Create the reset URL
-    const resetUrl = `${baseUrl}/auth-demo/modern/reset-password?token=${resetToken.resetPasswordToken}`
+    const resetUrl = `${baseUrl}/dashboard/reset-password?token=${resetToken.resetPasswordToken}`
 
     // Send email with the reset URL
     const { fullName } = user
