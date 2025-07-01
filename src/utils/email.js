@@ -123,55 +123,61 @@ export default class Email {
     await this.send(null, `${arg?.isDevServer ? 'DEV' : 'PROD'} - ${process.env.CLIENT_NAME} : server error`, arg)
   }
 
-  async sendForgotPassword(arg) {
-    await this.send('forgot-password', 'Reset Password', arg)
-  }
   async welcomeToZeal(arg) {
-    await this.send('welcome-to-zeal', 'Welcome to Julip', arg)
+    await this.send('welcome-to-zeal', 'Welcome to Julippppp test', arg)
   }
-  async welcomeToZealPro(arg) {
-    await this.send('welcome', 'Welcome to Julip', arg)
-  }
+
   async welcomeToZealBasic(arg) {
     await this.send('welcome-basic', 'Welcome to Julip', arg)
   }
   async emailConfirmation(arg) {
     await this.send('confirm-email', 'Welcome to Julip', arg)
   }
-  async downgrade(arg) {
-    await this.send('downgrade', 'Downgraded', arg)
-  }
-
-  async upgrade(arg) {
-    await this.send('Upgrade', 'Upgrade', arg)
-  }
 
   async confirmPassword(arg) {
     await this.send('forgot-password', 'Forgot Password', arg)
   }
-  async confirmEmail(arg) {
-    await this.send('confirm-email', 'Email Confirmation', arg)
+
+  async downgrade(arg) {
+    await this.send('downgrade', 'You want to downsize your Julip —Here’s What You Need to Know ✨', arg)
   }
 
+  async upgrade(arg) {
+    await this.send('Upgrade', 'You want to downsize your Julip —Here’s What You Need to Know ✨', arg)
+  }
+
+  async sendForgotPassword(arg) {
+    await this.send('forgot-password', 'It happens to us too | Forgot your Password', arg)
+  }
+  async confirmEmail(arg) {
+    await this.send('confirm-email', 'Double Checking it`s YOU 👀 Safety FIRST!', arg)
+  }
+  async welcomeToZealPro(arg) {
+    await this.send('welcome', 'Welcome to Julip! 🪐 Let’s build your page in under 15 minutes', arg)
+  }
   async registerAccount(arg) {
     await this.send('register', 'Registration Code', arg)
   }
   async trialDay3(arg) {
-    await this.send('trial-day-3', 'Trial Ending Soon', arg)
+    await this.send('trial-day-3', 'Don’t lose out on this opportunity 😳', arg)
   }
   async trialDay5(arg) {
-    await this.send('trial-day-5', 'Trial Ending Soon', arg)
+    await this.send('trial-day-5', 'This one tweak can help you secure more UGC deals!', arg)
   }
   async trialDay10(arg) {
-    await this.send('trial-day-10', 'Trial Ending Soon', arg)
+    await this.send('trial-day-10', 'Your Julip Page checklist ✅', arg)
   }
   async trialDay12(arg) {
-    await this.send('trial-day-12', 'Trial Ending Soon', arg)
+    await this.send('trial-day-12', 'Earn more with your Julip shop!', arg)
   }
   async trialDay13(arg) {
-    await this.send('trial-day-13', 'Trial Ending Soon', arg)
+    await this.send('trial-day-13', 'AHHHH! ONLY 48 hours left before your Julip disappears.', arg)
   }
   async trialFinalDay(arg) {
-    await this.send('trial-day-14', 'Trial Ending Soon', arg)
+    await this.send(
+      'trial-day-14',
+      '🚨LAST CHANCE: "You`re like really pretty, but your Julip is about to get a MAJOR downgrade" 🚨',
+      arg
+    )
   }
 }
