@@ -778,7 +778,6 @@ export const CONTROLLER_PORTFOLIO = {
   youtubeAccessToken: asyncMiddleware(async (req, res) => {
     const { _id: userId } = req.decoded
     const { code } = req.query
-
     try {
       const authCode = decodeURIComponent(code)
 
@@ -790,46 +789,36 @@ export const CONTROLLER_PORTFOLIO = {
       params.append('code', authCode)
       params.append('access_type', 'offline')
 
-      // Exchange authorization code for tokens
+      // Make the POST request to exchange the authorization code for an access token and refresh token
       const response = await axios.post('https://oauth2.googleapis.com/token', params, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       })
-
       const { access_token, refresh_token, expires_in, refresh_token_expires_in } = response.data
 
-      // Optional: calculate refresh token expiry only if it's returned
-      let refreshTokenExpiry = undefined
-      if (refresh_token_expires_in) {
-        refreshTokenExpiry = new Date(Date.now() + refresh_token_expires_in * 1000)
-      }
+      // Calculate actual refresh token expiry date
+      const refreshTokenExpiry = new Date(Date.now() + refresh_token_expires_in * 1000)
 
-      // Prepare update payload
-      const updateData = {
-        userId,
-        accessToken: access_token,
-        refreshToken: refresh_token,
-        lastSyncedAt: new Date(),
-      }
-
-      if (refreshTokenExpiry) {
-        updateData.refreshTokenExpiry = refreshTokenExpiry
-      }
-
-      // Save tokens to DB
-      await YoutubeAnalytics.findOneAndUpdate({ userId }, updateData, {
-        upsert: true,
-        new: true,
-        setDefaultsOnInsert: true,
-      })
-
+      await YoutubeAnalytics.findOneAndUpdate(
+        { userId },
+        {
+          userId,
+          accessToken: access_token,
+          refreshToken: refresh_token,
+          refreshTokenExpiry, // stored based on Google's response
+          lastSyncedAt: new Date(),
+        },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      )
+      // You will receive both access_token and refresh_token in the response
       res.json({
-        data: response.data,
+        data: response.data, // This includes access_token, refresh_token, expires_in, token_type
       })
     } catch (error) {
       console.error('Error fetching accessToken:', error.response?.data || error.message)
 
+      // Handle 400 Bad Request errors specifically
       if (error.response?.status === 400) {
         console.error('Full Error Details:', JSON.stringify(error.response?.data, null, 2))
         return res.status(400).json({
@@ -838,6 +827,7 @@ export const CONTROLLER_PORTFOLIO = {
         })
       }
 
+      // Handle other errors
       res.status(error.response?.status || 500).json({
         error: error.response?.data || error.message,
       })
@@ -1359,7 +1349,7 @@ export const CONTROLLER_PORTFOLIO = {
         params: {
           client_id: '1363115408334174',
           client_secret: '68a3da17413addbccea98e288e1e248f',
-          redirect_uri: 'https://dev.myjulip.com/dashboard/',
+          redirect_uri: 'https://dev.myjulip.com/dashboard/onboarding/',
           code: cleanCode,
         },
       })
@@ -1667,6 +1657,10 @@ export const CONTROLLER_PORTFOLIO = {
     const { _id: userId } = req.decoded
 
     try {
+      const safeGetTotalValue = (apiResponse) => {
+        return apiResponse?.data?.data?.[0]?.total_value || []
+      }
+
       // STEP 1: Get user access token from auth code
       const tokenResponse = await axios.get('https://graph.facebook.com/v19.0/oauth/access_token', {
         params: {
@@ -1778,11 +1772,11 @@ export const CONTROLLER_PORTFOLIO = {
       }
       console.log(
         'audienceCity ➤',
-        JSON.stringify(audienceCity.data?.data?.[0]?.total_value, null, 2),
+        JSON.stringify(safeGetTotalValue(audienceCity), null, 2),
         '\naudienceCountry ➤',
-        JSON.stringify(audienceCountry.data?.data?.[0]?.total_value, null, 2),
+        JSON.stringify(safeGetTotalValue(audienceCountry), null, 2),
         '\naudienceGenderAge ➤  ',
-        JSON.stringify(audienceGenderAge.data?.data?.[0]?.total_value, null, 2)
+        JSON.stringify(safeGetTotalValue(audienceGenderAge), null, 2)
       )
       // STEP 5: Fetch media and their metrics
       const mediaData = []
@@ -1874,9 +1868,9 @@ export const CONTROLLER_PORTFOLIO = {
           avgComments,
           avgShares,
           profileViews: profileViews.data?.data || [],
-          audienceGenderAge: audienceGenderAge.data?.data?.[0]?.total_value || [],
-          audienceCountry: audienceCountry.data?.data?.[0]?.total_value || [],
-          audienceCity: audienceCity.data?.data?.[0]?.total_value || [],
+          audienceGenderAge: safeGetTotalValue(audienceGenderAge),
+          audienceCountry: safeGetTotalValue(audienceCountry),
+          audienceCity: safeGetTotalValue(audienceCity),
           reachBreakdown: reach.data.data,
           totalReach30Days: totalReach,
         },
