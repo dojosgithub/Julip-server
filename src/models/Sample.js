@@ -11,7 +11,6 @@ export const sampleSchema = new Schema(
           type: String,
         },
         tile: { type: String },
-        buttonTitle: { type: String },
         visibility: { type: Boolean },
       },
     ],

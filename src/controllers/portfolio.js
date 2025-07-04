@@ -287,7 +287,6 @@ export const CONTROLLER_PORTFOLIO = {
                   $set: {
                     'sampleList.$.url': sampleItem.url,
                     'sampleList.$.tile': sampleItem.tile,
-                    'sampleList.$.buttonTitle': sampleItem.buttonTitle,
                     'sampleList.$.visibility': sampleItem.visibility,
                   },
                 }
