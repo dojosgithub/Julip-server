@@ -236,7 +236,9 @@ export const CONTROLLER_PRICING = {
         { new: true }
       )
       const user = await User.findByIdAndUpdate(userId, { userTypes: 'Premium' }, { new: true })
-
+      const sendEmail = await new Email({ email })
+      const emailProps = { firstName: fullName }
+      sendEmail.upgrade(emailProps)
       res.status(200).json({ message: 'Subscription updated successfully', subscription })
     } catch (err) {
       console.error('Error updating subscription:', err)
@@ -351,6 +353,7 @@ export const CONTROLLER_PRICING = {
       user.subscriptionId = subscription.id
       user.userTypes = 'Premium'
       await user.save()
+
       const { email, fullName } = user
       const sendEmail = await new Email({ email })
       const emailProps = { firstName: fullName }

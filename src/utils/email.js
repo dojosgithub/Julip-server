@@ -143,7 +143,7 @@ export default class Email {
   }
 
   async upgrade(arg) {
-    await this.send('Upgrade', 'You want to downsize your Julip —Here’s What You Need to Know ✨', arg)
+    await this.send('Upgrade', 'Welcome to Julip Pro! :ringed_planet: You just made the BEST decision', arg)
   }
 
   async sendForgotPassword(arg) {
