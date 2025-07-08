@@ -30,7 +30,7 @@ export const CONTROLLER_PRODUCT = {
     const { url, brandName, price, title, currency, description, buttonTitle } = parsedbody
     image = parsedbody.image
 
-    if (!url || !brandName || !price || !title || !description) {
+    if (!url || !brandName || !title || !description) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: 'All required fields must be provided.',
       })

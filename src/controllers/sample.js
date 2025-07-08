@@ -44,7 +44,7 @@ export const CONTROLLER_SAMPLE = {
   // Create and update a sample item by category name and item name
   createAndUpdateSampleItemByName: asyncMiddleware(async (req, res) => {
     const { id } = req.query
-    const { categoryName, itemName, url, tile, buttonTitle, visibility } = req.body
+    const { categoryName, itemName, url, tile, visibility } = req.body
 
     if (!id) {
       return res.status(StatusCodes.BAD_REQUEST).json({
@@ -86,7 +86,6 @@ export const CONTROLLER_SAMPLE = {
       item = {
         url: url || '',
         tile: tile || '',
-        buttonTitle: buttonTitle || '',
         visibility: visibility || '',
       }
       category.sampleList.push(item)
@@ -94,7 +93,6 @@ export const CONTROLLER_SAMPLE = {
       // Update the existing item
       if (url) item.url = url
       if (tile) item.tile = tile
-      if (buttonTitle) item.buttonTitle = buttonTitle
       if (visibility) item.visibility = visibility
     }
 
