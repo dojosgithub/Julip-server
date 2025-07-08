@@ -142,17 +142,12 @@ export const CONTROLLER_PRICING = {
         invoice_settings: { default_payment_method: paymentMethodId },
       })
 
-      // Calculate trial end date (7 months from now)
-      const currentDate = new Date()
-      const trialEndDateObj = new Date(currentDate.setMonth(currentDate.getMonth() + 7))
-      const trialEndTimestamp = Math.floor(trialEndDateObj.getTime() / 1000) // Stripe expects UNIX timestamp in seconds
-
-      // Create subscription with a 7-month free trial
+      // Create subscription with a 14-day free trial
       const subscription = await stripe.subscriptions.create({
         customer: customerId,
         items: [{ price: priceId }],
         default_payment_method: paymentMethodId,
-        trial_end: trialEndTimestamp, // Currently for beta users. Change it back to 14 after 7 months!
+        trial_period_days: 14, // Add trial period
         expand: ['latest_invoice.payment_intent'],
       })
       console.log('zxcvbnm', subscription)
@@ -241,7 +236,9 @@ export const CONTROLLER_PRICING = {
         { new: true }
       )
       const user = await User.findByIdAndUpdate(userId, { userTypes: 'Premium' }, { new: true })
-
+      const sendEmail = await new Email({ email })
+      const emailProps = { firstName: fullName }
+      sendEmail.upgrade(emailProps)
       res.status(200).json({ message: 'Subscription updated successfully', subscription })
     } catch (err) {
       console.error('Error updating subscription:', err)
@@ -356,6 +353,7 @@ export const CONTROLLER_PRICING = {
       user.subscriptionId = subscription.id
       user.userTypes = 'Premium'
       await user.save()
+
       const { email, fullName } = user
       const sendEmail = await new Email({ email })
       const emailProps = { firstName: fullName }
@@ -533,8 +531,8 @@ export const CONTROLLER_PRICING = {
       account: account.id,
       // refresh_url: 'https://yourplatform.com/reauth', // Redirect URL if onboarding is incomplete
       // return_url: 'https://yourplatform.com/success', // Redirect URL after successful onboarding
-      refresh_url: 'https://dev.myjulip.com/dashboard/about/', // Redirect URL if onboarding is incomplete
-      return_url: 'https://dev.myjulip.com/dashboard/pages/', // Redirect URL after successful onboarding
+      refresh_url: 'https://myjulip.com/dashboard/about/', // Redirect URL if onboarding is incomplete
+      return_url: 'https://myjulip.com/dashboard/pages/', // Redirect URL after successful onboarding
       type: 'account_onboarding',
     })
 
@@ -761,8 +759,8 @@ export const CONTROLLER_PRICING = {
         // Generate an account link for onboarding
         const accountLink = await stripe.accountLinks.create({
           account: stripeId,
-          refresh_url: 'https://dev.myjulip.com/dashboard/about/', // Redirect if onboarding is incomplete
-          return_url: 'https://dev.myjulip.com/dashboard/about/', // Redirect after onboarding is complete
+          refresh_url: 'https://myjulip.com/dashboard/about/', // Redirect if onboarding is incomplete
+          return_url: 'https://myjulip.com/dashboard/about/', // Redirect after onboarding is complete
           type: 'account_onboarding',
         })
 
