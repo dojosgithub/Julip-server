@@ -476,11 +476,15 @@ export const CONTROLLER_AUTH = {
     user.resetTokenExpiry = resetTokenExpiry
     await user.save()
     let baseUrl
-    if (process.env.FRONTEND_URL.includes('localhost')) {
+
+    const origin = req.get('Origin') || req.get('Referer') || 'Unknown'
+    console.log('Request Origin:', origin)
+
+    if (origin.includes('localhost')) {
       baseUrl = process.env.FRONTEND_URL_LOCAL
-    } else if (process.env.FRONTEND_URL.includes('dev')) {
+    } else if (origin.includes('dev')) {
       baseUrl = process.env.FRONTEND_URL_DEV
-    } else if (process.env.FRONTEND_URL.includes('qa')) {
+    } else if (origin.includes('qa')) {
       baseUrl = process.env.FRONTEND_URL_QA
     } else {
       baseUrl = process.env.FRONTEND_URL_PROD
