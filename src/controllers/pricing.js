@@ -147,7 +147,7 @@ export const CONTROLLER_PRICING = {
         customer: customerId,
         items: [{ price: priceId }],
         default_payment_method: paymentMethodId,
-        trial_period_days: 14, // Add trial period
+        trial_period_days: 210, // Add trial period
         expand: ['latest_invoice.payment_intent'],
       })
       console.log('zxcvbnm', subscription)
