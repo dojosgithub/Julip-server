@@ -1176,11 +1176,7 @@ export const CONTROLLER_PORTFOLIO = {
       const safeTotalComments = isNaN(totalComments) ? 0 : totalComments
       const safeTotalShares = isNaN(totalShares) ? 0 : totalShares
       const engagementRateRaw =
-        ((avgLikes / (safeTotalLikes || 1) +
-          avgComments / (safeTotalComments || 1) +
-          avgShares / (safeTotalShares || 1)) /
-          safeFollowerCount) *
-        100
+        (((safeTotalLikes || 1) + (safeTotalComments || 1) + (safeTotalShares || 1)) / safeFollowerCount) * 100
 
       const engagementRate = isNaN(engagementRateRaw) ? 0 : +engagementRateRaw.toFixed(2)
       console.log(' userProfile.follower_count', engagementRate, userProfile.follower_count)

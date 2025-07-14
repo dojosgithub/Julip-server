@@ -23,17 +23,10 @@ router.post('/linkedin-details', Authenticate(), CONTROLLER_PORTFOLIO.getLinkedI
 
 router.post('/linkedin-details2', Authenticate(), CONTROLLER_PORTFOLIO.getLinkedInData)
 
-router.get('/youtube-access-token', Authenticate(), CONTROLLER_PORTFOLIO.youtubeAccessToken)
-
 router.post('/youtube-channel-id', Authenticate(), CONTROLLER_PORTFOLIO.youtubeApiKey)
-
-router.post('/youtube-analytics', Authenticate(), CONTROLLER_PORTFOLIO.youtubeAnalytics)
-
-router.get('/get-youtube-analytics', Authenticate(), CONTROLLER_PORTFOLIO.getYoutubeAnalytics)
 
 router.post('/youtube-subscriber', Authenticate(), CONTROLLER_PORTFOLIO.youtubeSubscriber)
 
-router.post('/tiktok-details', Authenticate(), CONTROLLER_PORTFOLIO.fetchTikTokData)
 router.post('/get-tiktok-analytics', CONTROLLER_PORTFOLIO.getTiktokAnalytics)
 router.post('/get-insta-analytics', CONTROLLER_PORTFOLIO.getInstaAnalytics)
 router.post('/get-youtube-analytics', CONTROLLER_PORTFOLIO.getYoutubeAnalytics)
@@ -45,7 +38,10 @@ router.get('/insta-demo', Authenticate(), CONTROLLER_PORTFOLIO.fetchInstaDemogra
 router.get('/auth1', Authenticate(), CONTROLLER_PORTFOLIO.fbSocialAccessToken2)
 
 router.post('/insta2', Authenticate(), CONTROLLER_PORTFOLIO.fbSocialAccessToken2)
-
+// working apis only
+router.post('/tiktok-details', Authenticate(), CONTROLLER_PORTFOLIO.fetchTikTokData)
 router.get('/fb-insta-analytics', Authenticate(), CONTROLLER_PORTFOLIO.fbInstaAnalyticsHandler)
-
+router.get('/youtube-access-token', Authenticate(), CONTROLLER_PORTFOLIO.youtubeAccessToken)
+router.post('/youtube-analytics', Authenticate(), CONTROLLER_PORTFOLIO.youtubeAnalytics)
+router.get('/get-youtube-analytics', Authenticate(), CONTROLLER_PORTFOLIO.getYoutubeAnalytics)
 export default router
