@@ -1069,194 +1069,7 @@ export const CONTROLLER_PORTFOLIO = {
   // const accessToken = 'act.YRB3VcJdCmUupAX1iMIcBxjoI4O0kqFaXmuP3YXHVSDeE3QrnR6NnuufDDT7!5878.va'
   // TIKTOK
   // TIKTOK
-  fetchTikTokData: asyncMiddleware(async (req, res) => {
-    const { code } = req.query
-    const { _id: userId } = req.decoded
-    // const accessToken = 'act.YRB3VcJdCmUupAX1iMIcBxjoI4O0kqFaXmuP3YXHVSDeE3QrnR6NnuufDDT7!5878.va'
-    try {
-      // Step 1: Exchange code for access token
-      const tokenResponse = await axios.post(
-        'https://open.tiktokapis.com/v2/oauth/token/',
-        new URLSearchParams({
-          client_key: process.env.TIKTOK_CLIENT_KEY,
-          client_secret: process.env.TIKTOK_CLIENT_SECRET,
-          code: code.split('&')[0],
-          grant_type: 'authorization_code',
-          redirect_uri: process.env.TIKTOK_REDIRECT_URI,
-        }),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        }
-      )
 
-      const accessToken = tokenResponse.data.access_token
-      const openId = tokenResponse.data.open_id
-
-      const refreshToken = tokenResponse.data.refresh_token
-      const accessTokenExpiresIn = tokenResponse.data.expires_in // in seconds
-      const refreshTokenExpiresIn = tokenResponse.data.refresh_token_expires_in // also in seconds if present
-
-      const accessTokenExpiry = new Date(Date.now() + accessTokenExpiresIn * 1000)
-      const refreshTokenExpiry = refreshTokenExpiresIn ? new Date(Date.now() + refreshTokenExpiresIn * 1000) : null
-      console.log('qwertyuiop[', tokenResponse.data)
-      // Step 2: Fetch user profile
-      const userProfileResponse = await axios.get('https://open.tiktokapis.com/v2/user/info/', {
-        params: {
-          fields: 'follower_count,display_name,open_id,avatar_url',
-        },
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      })
-
-      const userProfile = userProfileResponse.data.data
-      console.log('userProfileResponse', userProfileResponse)
-      console.log('userProfileResponse.data', userProfileResponse.data.data.user.follower_count)
-      console.log('userProfileResponse.data.user', userProfileResponse.data.user)
-      // Step 3: Fetch user's videos
-      const videoListResponse = await axios.post(
-        'https://open.tiktokapis.com/v2/video/list/?fields=cover_image_url,id,title',
-        {
-          max_count: 20,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      )
-
-      const videos = videoListResponse.data.data.videos || []
-      const videoIds = videos.map((v) => v.id)
-
-      if (videoIds.length === 0) {
-        return res.status(StatusCodes.OK).json({
-          message: 'No videos found',
-          followers: userProfile.follower_count,
-        })
-      }
-
-      // Step 4: Fetch insights for each video
-      const insightsResponse = await axios.post(
-        'https://open.tiktokapis.com/v2/video/query/?fields=id,title,view_count,like_count,comment_count,share_count',
-        {
-          filters: {
-            video_ids: videoIds,
-          },
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      )
-
-      const insights = insightsResponse.data.data.videos
-
-      // Step 5: Aggregate metrics
-      const totalLikes = insights.reduce((sum, v) => sum + (v.like_count || 0), 0)
-      const totalComments = insights.reduce((sum, v) => sum + (v.comment_count || 0), 0)
-      const totalViews = insights.reduce((sum, v) => sum + (v.view_count || 0), 0)
-      const totalShares = insights.reduce((sum, v) => sum + (v.share_count || 0), 0)
-
-      const count = insights.length
-      const avgLikes = +(totalLikes / count || 0).toFixed(2)
-      const avgComments = +(totalComments / count || 0).toFixed(2)
-      const avgViews = +(totalViews / count || 0).toFixed(2)
-      const avgShares = +(totalShares / count || 0).toFixed(2)
-      const safeFollowerCount =
-        userProfileResponse.data.data.user.follower_count > 0 ? userProfileResponse.data.data.user.follower_count : 1
-
-      const safeTotalLikes = isNaN(totalLikes) ? 0 : totalLikes
-      const safeTotalComments = isNaN(totalComments) ? 0 : totalComments
-      const safeTotalShares = isNaN(totalShares) ? 0 : totalShares
-      const engagementRateRaw =
-        (((safeTotalLikes || 1) + (safeTotalComments || 1) + (safeTotalShares || 1)) / safeFollowerCount) * 100
-
-      const engagementRate = isNaN(engagementRateRaw) ? 0 : +engagementRateRaw.toFixed(2)
-      console.log(' userProfile.follower_count', engagementRate, userProfile.follower_count)
-
-      // const demographics = await axios.get('https://open.tiktokapis.com/v2/insight/audience/', {
-      //   params: {
-      //     start_date: '2024-04-01',
-      //     end_date: '2024-04-30',
-      //     metrics: 'age,gender,country',
-      //   },
-      //   headers: {
-      //     Authorization: `Bearer ${accessToken}`,
-      //     'Content-Type': 'application/json',
-      //   },
-      // })
-
-      // const demographicsResponse = demographics.data
-      // console.log('demographicsResponse', demographicsResponse)
-      // // Save or transform as needed
-      // res.status(200).json({
-      //   message: 'TikTok demographics fetched successfully',
-      //   data,
-      // })
-      await TikTokAnalytics.findOneAndUpdate(
-        { userId }, // or however you identify the user
-        {
-          userId,
-          accessToken,
-          accessTokenExpiry,
-          engagementRate,
-          refreshToken,
-          refreshTokenExpiry,
-          openId,
-          avatar: userProfileResponse.data.data.user.avatar_url,
-          displayName: userProfileResponse.data.data.user.display_name,
-          followers: userProfileResponse.data.data.user.follower_count,
-          lastSyncedAt: new Date(),
-          totalLikes,
-          totalComments,
-          totalShares,
-          totalViews,
-          avgLikes,
-          avgComments,
-          avgShares,
-          avgViews,
-          videos: insights.map((video) => ({
-            id: video.id,
-            title: video.title,
-            view_count: video.view_count,
-            like_count: video.like_count,
-            comment_count: video.comment_count,
-            share_count: video.share_count,
-            cover_image_url: video.cover_image_url,
-          })),
-        },
-        { upsert: true, new: true }
-      )
-      // Step 6: Respond with the aggregated data
-      res.status(StatusCodes.OK).json({
-        avatar: userProfileResponse.data.data.user.avatar_url,
-        displayName: userProfileResponse.data.data.user.display_name,
-        followers: userProfileResponse.data.data.user.follower_count,
-        totalLikes,
-        totalComments,
-        totalShares,
-        totalViews,
-        avgLikes,
-        avgComments,
-        avgShares,
-        avgViews,
-        videos: insights,
-      })
-    } catch (error) {
-      console.error('Error fetching TikTok data:', error.response?.data || error.message)
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-        message: 'Error fetching TikTok data',
-        error: error.response?.data || error.message,
-      })
-    }
-  }),
   // fetchDemographics: asyncMiddleware(async (req, res) => {
   //   const { code } = req.query
   //   console.log('working')
@@ -1883,6 +1696,196 @@ export const CONTROLLER_PORTFOLIO = {
       res.status(500).json({
         error: error.message,
         message: 'Failed to authenticate or fetch analytics',
+      })
+    }
+  }),
+  fetchTikTokData: asyncMiddleware(async (req, res) => {
+    const { code } = req.query
+    const { _id: userId } = req.decoded
+    // const accessToken = 'act.YRB3VcJdCmUupAX1iMIcBxjoI4O0kqFaXmuP3YXHVSDeE3QrnR6NnuufDDT7!5878.va'
+    try {
+      // Step 1: Exchange code for access token
+      const tokenResponse = await axios.post(
+        'https://open.tiktokapis.com/v2/oauth/token/',
+        new URLSearchParams({
+          client_key: process.env.TIKTOK_CLIENT_KEY,
+          client_secret: process.env.TIKTOK_CLIENT_SECRET,
+          code: code.split('&')[0],
+          grant_type: 'authorization_code',
+          redirect_uri: process.env.TIKTOK_REDIRECT_URI,
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      )
+
+      const accessToken = tokenResponse.data.access_token
+      const openId = tokenResponse.data.open_id
+
+      const refreshToken = tokenResponse.data.refresh_token
+      const accessTokenExpiresIn = tokenResponse.data.expires_in // in seconds
+      const refreshTokenExpiresIn = tokenResponse.data.refresh_token_expires_in // also in seconds if present
+
+      const accessTokenExpiry = new Date(Date.now() + accessTokenExpiresIn * 1000)
+      const refreshTokenExpiry = refreshTokenExpiresIn ? new Date(Date.now() + refreshTokenExpiresIn * 1000) : null
+      console.log('qwertyuiop[', tokenResponse.data)
+      // Step 2: Fetch user profile
+      const userProfileResponse = await axios.get('https://open.tiktokapis.com/v2/user/info/', {
+        params: {
+          fields: 'follower_count,display_name,open_id,avatar_url',
+        },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const userProfile = userProfileResponse.data.data
+      console.log('userProfileResponse', userProfileResponse)
+      console.log('userProfileResponse.data', userProfileResponse.data.data.user.follower_count)
+      console.log('userProfileResponse.data.user', userProfileResponse.data.user)
+      // Step 3: Fetch user's videos
+      const videoListResponse = await axios.post(
+        'https://open.tiktokapis.com/v2/video/list/?fields=cover_image_url,id,title',
+        {
+          max_count: 20,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      const videos = videoListResponse.data.data.videos || []
+      const videoIds = videos.map((v) => v.id)
+
+      if (videoIds.length === 0) {
+        return res.status(StatusCodes.OK).json({
+          message: 'No videos found',
+          followers: userProfile.follower_count,
+        })
+      }
+
+      // Step 4: Fetch insights for each video
+      const insightsResponse = await axios.post(
+        'https://open.tiktokapis.com/v2/video/query/?fields=id,title,view_count,like_count,comment_count,share_count',
+        {
+          filters: {
+            video_ids: videoIds,
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      const insights = insightsResponse.data.data.videos
+
+      // Step 5: Aggregate metrics
+      const totalLikes = insights.reduce((sum, v) => sum + (v.like_count || 0), 0)
+      const totalComments = insights.reduce((sum, v) => sum + (v.comment_count || 0), 0)
+      const totalViews = insights.reduce((sum, v) => sum + (v.view_count || 0), 0)
+      const totalShares = insights.reduce((sum, v) => sum + (v.share_count || 0), 0)
+
+      const count = insights.length
+      const avgLikes = +(totalLikes / count || 0).toFixed(2)
+      const avgComments = +(totalComments / count || 0).toFixed(2)
+      const avgViews = +(totalViews / count || 0).toFixed(2)
+      const avgShares = +(totalShares / count || 0).toFixed(2)
+      const safeFollowerCount =
+        userProfileResponse.data.data.user.follower_count > 0 ? userProfileResponse.data.data.user.follower_count : 1
+
+      const safeTotalLikes = isNaN(totalLikes) ? 0 : totalLikes
+      const safeTotalComments = isNaN(totalComments) ? 0 : totalComments
+      const safeTotalShares = isNaN(totalShares) ? 0 : totalShares
+      const engagementRateRaw =
+        (((safeTotalLikes || 1) + (safeTotalComments || 1) + (safeTotalShares || 1)) / safeFollowerCount) * 100
+
+      const engagementRate = isNaN(engagementRateRaw) ? 0 : +engagementRateRaw.toFixed(2)
+      console.log(' userProfile.follower_count', engagementRate, userProfile.follower_count)
+
+      // const demographics = await axios.get('https://open.tiktokapis.com/v2/insight/audience/', {
+      //   params: {
+      //     start_date: '2024-04-01',
+      //     end_date: '2024-04-30',
+      //     metrics: 'age,gender,country',
+      //   },
+      //   headers: {
+      //     Authorization: `Bearer ${accessToken}`,
+      //     'Content-Type': 'application/json',
+      //   },
+      // })
+
+      // const demographicsResponse = demographics.data
+      // console.log('demographicsResponse', demographicsResponse)
+      // // Save or transform as needed
+      // res.status(200).json({
+      //   message: 'TikTok demographics fetched successfully',
+      //   data,
+      // })
+      await TikTokAnalytics.findOneAndUpdate(
+        { userId }, // or however you identify the user
+        {
+          userId,
+          accessToken,
+          accessTokenExpiry,
+          engagementRate,
+          refreshToken,
+          refreshTokenExpiry,
+          openId,
+          avatar: userProfileResponse.data.data.user.avatar_url,
+          displayName: userProfileResponse.data.data.user.display_name,
+          followers: userProfileResponse.data.data.user.follower_count,
+          lastSyncedAt: new Date(),
+          totalLikes,
+          totalComments,
+          totalShares,
+          totalViews,
+          avgLikes,
+          avgComments,
+          avgShares,
+          avgViews,
+          totalPosts: videos.length,
+          videos: insights.map((video) => ({
+            id: video.id,
+            title: video.title,
+            view_count: video.view_count,
+            like_count: video.like_count,
+            comment_count: video.comment_count,
+            share_count: video.share_count,
+            cover_image_url: video.cover_image_url,
+          })),
+        },
+        { upsert: true, new: true }
+      )
+      // Step 6: Respond with the aggregated data
+      res.status(StatusCodes.OK).json({
+        avatar: userProfileResponse.data.data.user.avatar_url,
+        displayName: userProfileResponse.data.data.user.display_name,
+        followers: userProfileResponse.data.data.user.follower_count,
+        totalLikes,
+        totalComments,
+        totalShares,
+        totalViews,
+        avgLikes,
+        avgComments,
+        avgShares,
+        avgViews,
+        totalPosts,
+        videos: insights,
+      })
+    } catch (error) {
+      console.error('Error fetching TikTok data:', error.response?.data || error.message)
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: 'Error fetching TikTok data',
+        error: error.response?.data || error.message,
       })
     }
   }),
