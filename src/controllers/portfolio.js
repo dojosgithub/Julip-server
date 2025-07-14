@@ -798,7 +798,9 @@ export const CONTROLLER_PORTFOLIO = {
       const { access_token, refresh_token, expires_in, refresh_token_expires_in } = response.data
 
       // Calculate actual refresh token expiry date
-      const refreshTokenExpiry = new Date(Date.now() + refresh_token_expires_in * 1000)
+      const refreshTokenExpiry = refresh_token_expires_in
+        ? new Date(Date.now() + refresh_token_expires_in * 1000)
+        : null
 
       await YoutubeAnalytics.findOneAndUpdate(
         { userId },
