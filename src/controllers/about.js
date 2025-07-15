@@ -131,7 +131,7 @@ export const CONTROLLER_ABOUT = {
       // Process and validate items
       const processedItems = items.map((item, index) => {
         if (!item.type || !validTypes.includes(item.type)) {
-          return res.status(400).json({ message: `Invalid item type: ${item.type}` })
+          throw new Error(`Invalid item type: ${item.type}`)
         }
 
         if (item.type === 'image') {
@@ -152,7 +152,7 @@ export const CONTROLLER_ABOUT = {
 
           // If item.value is an empty object or invalid, require a new file upload
           if (!req.files || !req.files[imageFileIndex]) {
-            return res.status(400).json({ message: 'Image file is missing for an image item.' })
+            throw new Error('Image file is missing for an image item.')
           }
 
           // Use the uploaded file's path
@@ -173,10 +173,11 @@ export const CONTROLLER_ABOUT = {
 
         // Validate other types
         if ((item.value === null || item.value === undefined) && item.type !== 'image') {
-          return res.status(400).json({ message: 'Each item must have a value.' })
+          throw new Error('Each item must have a value.')
         }
+
         if (typeof item.visibility !== 'boolean') {
-          return res.status(400).json({ message: 'Each item must have a visibility property of true or false.' })
+          throw new Error('Each item must have a visibility property of true or false.')
         }
 
         return {
