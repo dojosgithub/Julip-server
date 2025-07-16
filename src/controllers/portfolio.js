@@ -983,8 +983,8 @@ export const CONTROLLER_PORTFOLIO = {
           { label: `Avg Likes`, visibility: true },
           { label: `Avg Comments`, visibility: true },
           { label: `Avg Shares`, visibility: true },
-          { label: `Avg Reels Views`, visibility: true },
-          { label: `Avg Reels Watch Time`, visibility: true },
+          { label: `Avg Views`, visibility: true },
+          { label: `Avg Watch Time`, visibility: true },
         ]
 
         await youtubePlatform.save()
