@@ -439,10 +439,7 @@ export const CONTROLLER_SHOP = {
     const { collectionName, products } = req.body // Collection name and product IDs from request body
     const { version = 'draft' } = req.query
     // Find the user's shop
-    const shop = await Shop.findOne({ userId }).populate({
-      path: `${version}.collections.products`,
-      model: 'Product',
-    })
+    const shop = await Shop.findOne({ userId })
 
     if (!shop) {
       return res.status(404).json({
@@ -578,8 +575,10 @@ export const CONTROLLER_SHOP = {
     }
 
     // Update the products in the collection (if provided)
-    if (Array.isArray(products)) {
-      collection.products = products
+    if (products) {
+      if (mongoose.Types.ObjectId.isValid(products)) {
+        collection.products.push(new mongoose.Types.ObjectId(products)) // Convert to ObjectId before pushing
+      }
     }
 
     // Save the updated shop document
