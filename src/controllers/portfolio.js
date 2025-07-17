@@ -1910,6 +1910,13 @@ export const CONTROLLER_PORTFOLIO = {
         avgViews,
         totalPosts: videos.length,
         videos: insights,
+
+        labelsUpdate: {
+          userPortfolio,
+          audienceId,
+          tiktokPlatform,
+          labelMessage,
+        },
       })
     } catch (error) {
       console.error('Error fetching TikTok data:', error.response?.data || error.message)
