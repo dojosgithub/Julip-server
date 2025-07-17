@@ -1908,7 +1908,7 @@ export const CONTROLLER_PORTFOLIO = {
         avgComments,
         avgShares,
         avgViews,
-        totalPosts,
+        totalPosts: videos.length,
         videos: insights,
       })
     } catch (error) {
