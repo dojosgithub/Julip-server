@@ -1868,6 +1868,33 @@ export const CONTROLLER_PORTFOLIO = {
         },
         { upsert: true, new: true }
       )
+
+      // Change Labels:
+      const userPortfolio = await Portfolio.findOne({ userId: userId }).lean()
+      const audienceId =
+        userPortfolio?.draft?.audience?.audienceList?.[userPortfolio.draft.audience.audienceList.length - 1]
+      let tiktokPlatform = await Audience.findById(audienceId)
+
+      let labelMessage = ''
+      if (!tiktokPlatform) {
+        labelMessage = 'Failed to update labels'
+      } else {
+        tiktokPlatform.engagements = [
+          { label: 'Followers', visibility: true },
+          { label: 'Engagement', visibility: true },
+          { label: 'Total Impressions', visibility: true },
+          { label: 'Total Videos', visibility: true },
+          { label: `Total Likes`, visibility: true },
+          { label: `Total Comments`, visibility: true },
+          { label: `Avg Likes`, visibility: true },
+          { label: `Avg Comments`, visibility: true },
+          { label: `Avg Views`, visibility: true },
+        ]
+
+        await tiktokPlatform.save()
+        labelMessage = 'Labels updated successfully'
+      }
+
       // Step 6: Respond with the aggregated data
       res.status(StatusCodes.OK).json({
         avatar: userProfileResponse.data.data.user.avatar_url,
