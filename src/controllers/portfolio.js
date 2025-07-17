@@ -976,15 +976,23 @@ export const CONTROLLER_PORTFOLIO = {
         labelMessage = 'Failed to update labels'
       } else {
         youtubePlatform.engagements = [
-          { label: 'Subscribers', visibility: true },
-          { label: 'Engagement', visibility: true },
-          { label: totalDays > 0 ? `${totalDays} Day Views` : 'Total Views', visibility: true },
-          { label: totalDays > 0 ? `${totalDays} Day Reach` : 'Total Reach', visibility: true },
-          { label: `Avg Likes`, visibility: true },
-          { label: `Avg Comments`, visibility: true },
-          { label: `Avg Shares`, visibility: true },
-          { label: `Avg Views`, visibility: true },
-          { label: `Avg Watch Time`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: 'Subscribers', visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: 'Engagement', visibility: true },
+          {
+            _id: new mongoose.Types.ObjectId(),
+            label: totalDays > 0 ? `${totalDays} Day Views` : 'Total Views',
+            visibility: true,
+          },
+          {
+            _id: new mongoose.Types.ObjectId(),
+            label: totalDays > 0 ? `${totalDays} Day Reach` : 'Total Reach',
+            visibility: true,
+          },
+          { _id: new mongoose.Types.ObjectId(), label: `Avg Likes`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Avg Comments`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Avg Shares`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Avg Views`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Avg Watch Time`, visibility: true },
         ]
 
         await youtubePlatform.save()
@@ -1644,14 +1652,14 @@ export const CONTROLLER_PORTFOLIO = {
         labelMessage = 'Failed to update labels'
       } else {
         instaPlatform.engagements = [
-          { label: 'Followers', visibility: true },
-          { label: 'Engagement', visibility: true },
-          { label: `Total Impressions (${totalPosts} Posts)`, visibility: true },
-          { label: `Total Reach (30 Day)`, visibility: true },
-          { label: `Avg Likes (${totalPosts} Posts)`, visibility: true },
-          { label: `Avg Comments (${totalPosts} Posts)`, visibility: true },
-          { label: 'Total Likes', visibility: true },
-          { label: 'Total Comments', visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: 'Followers', visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: 'Engagement', visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Total Impressions (${totalPosts} Posts)`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Total Reach (30 Day)`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Avg Likes (${totalPosts} Posts)`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Avg Comments (${totalPosts} Posts)`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: 'Total Likes', visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: 'Total Comments', visibility: true },
         ]
 
         await instaPlatform.save()
@@ -1880,15 +1888,15 @@ export const CONTROLLER_PORTFOLIO = {
         labelMessage = 'Failed to update labels'
       } else {
         tiktokPlatform.engagements = [
-          { label: 'Followers', visibility: true },
-          { label: 'Engagement', visibility: true },
-          { label: 'Total Impressions', visibility: true },
-          { label: 'Total Videos', visibility: true },
-          { label: `Total Likes`, visibility: true },
-          { label: `Total Comments`, visibility: true },
-          { label: `Avg Likes`, visibility: true },
-          { label: `Avg Comments`, visibility: true },
-          { label: `Avg Views`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: 'Followers', visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: 'Engagement', visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: 'Total Impressions', visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: 'Total Videos', visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Total Likes`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Total Comments`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Avg Likes`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Avg Comments`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Avg Views`, visibility: true },
         ]
 
         await tiktokPlatform.save()
