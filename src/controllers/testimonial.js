@@ -62,6 +62,8 @@ export const CONTROLLER_TESTIMONIALS = {
 
     if (req.file) {
       image = req.file.path
+    } else {
+      image = parsedbody.image
     }
     const updatedTestimonial = await Testimonials.findByIdAndUpdate(
       id,
