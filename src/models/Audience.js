@@ -20,9 +20,9 @@ const audienceSchema = new mongoose.Schema({
       },
     ],
     default: [
-      { key: 'gender', label: 'Gender', visibility: false },
-      { key: 'age', label: 'Age', visibility: false },
-      { key: 'location', label: 'Location', visibility: false },
+      { _id: new mongoose.Types.ObjectId(), key: 'gender', label: 'Gender', visibility: false },
+      { _id: new mongoose.Types.ObjectId(), key: 'age', label: 'Age', visibility: false },
+      { _id: new mongoose.Types.ObjectId(), key: 'location', label: 'Location', visibility: false },
     ],
   },
   engagements: {
@@ -58,13 +58,13 @@ const audienceSchema = new mongoose.Schema({
       },
     ],
     default: [
-      { label: 'Followers', visibility: false },
-      { label: 'Engagement', visibility: false },
-      { label: 'Total Impressions', visibility: false },
-      { label: 'Total Reach', visibility: false },
-      { label: 'Avg Comments', visibility: false },
-      { label: 'Avg Reels Views', visibility: false },
-      { label: 'Avg Reels Watch Time', visibility: false },
+      { _id: new mongoose.Types.ObjectId(), label: 'Followers', visibility: false },
+      { _id: new mongoose.Types.ObjectId(), label: 'Engagement', visibility: false },
+      { _id: new mongoose.Types.ObjectId(), label: 'Total Impressions', visibility: false },
+      { _id: new mongoose.Types.ObjectId(), label: 'Total Reach', visibility: false },
+      { _id: new mongoose.Types.ObjectId(), label: 'Avg Comments', visibility: false },
+      { _id: new mongoose.Types.ObjectId(), label: 'Avg Reels Views', visibility: false },
+      { _id: new mongoose.Types.ObjectId(), label: 'Avg Reels Watch Time', visibility: false },
     ],
   },
 })

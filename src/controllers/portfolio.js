@@ -797,7 +797,9 @@ export const CONTROLLER_PORTFOLIO = {
       const { access_token, refresh_token, expires_in, refresh_token_expires_in } = response.data
 
       // Calculate actual refresh token expiry date
-      const refreshTokenExpiry = new Date(Date.now() + refresh_token_expires_in * 1000)
+      const refreshTokenExpiry = refresh_token_expires_in
+        ? new Date(Date.now() + refresh_token_expires_in * 1000)
+        : null
 
       await YoutubeAnalytics.findOneAndUpdate(
         { userId },
@@ -973,14 +975,23 @@ export const CONTROLLER_PORTFOLIO = {
         labelMessage = 'Failed to update labels'
       } else {
         youtubePlatform.engagements = [
-          { label: 'Subscribers', visibility: true },
-          { label: 'Engagement', visibility: true },
-          { label: totalDays > 0 ? `${totalDays} Day Views` : 'Total Views', visibility: true },
-          { label: totalDays > 0 ? `${totalDays} Day Reach` : 'Total Reach', visibility: true },
-          { label: `Avg Likes`, visibility: true },
-          { label: `Avg Comments`, visibility: true },
-          { label: `Avg Reels Views`, visibility: true },
-          { label: `Avg Reels Watch Time`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: 'Subscribers', visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: 'Engagement', visibility: true },
+          {
+            _id: new mongoose.Types.ObjectId(),
+            label: totalDays > 0 ? `${totalDays} Day Views` : 'Total Views',
+            visibility: true,
+          },
+          {
+            _id: new mongoose.Types.ObjectId(),
+            label: totalDays > 0 ? `${totalDays} Day Reach` : 'Total Reach',
+            visibility: true,
+          },
+          { _id: new mongoose.Types.ObjectId(), label: `Avg Likes`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Avg Comments`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Avg Shares`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Avg Views`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Avg Watch Time`, visibility: true },
         ]
 
         await youtubePlatform.save()
@@ -1068,198 +1079,7 @@ export const CONTROLLER_PORTFOLIO = {
   // const accessToken = 'act.YRB3VcJdCmUupAX1iMIcBxjoI4O0kqFaXmuP3YXHVSDeE3QrnR6NnuufDDT7!5878.va'
   // TIKTOK
   // TIKTOK
-  fetchTikTokData: asyncMiddleware(async (req, res) => {
-    const { code } = req.query
-    const { _id: userId } = req.decoded
-    // const accessToken = 'act.YRB3VcJdCmUupAX1iMIcBxjoI4O0kqFaXmuP3YXHVSDeE3QrnR6NnuufDDT7!5878.va'
-    try {
-      // Step 1: Exchange code for access token
-      const tokenResponse = await axios.post(
-        'https://open.tiktokapis.com/v2/oauth/token/',
-        new URLSearchParams({
-          client_key: process.env.TIKTOK_CLIENT_KEY,
-          client_secret: process.env.TIKTOK_CLIENT_SECRET,
-          code: code.split('&')[0],
-          grant_type: 'authorization_code',
-          redirect_uri: process.env.TIKTOK_REDIRECT_URI,
-        }),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        }
-      )
 
-      const accessToken = tokenResponse.data.access_token
-      const openId = tokenResponse.data.open_id
-
-      const refreshToken = tokenResponse.data.refresh_token
-      const accessTokenExpiresIn = tokenResponse.data.expires_in // in seconds
-      const refreshTokenExpiresIn = tokenResponse.data.refresh_token_expires_in // also in seconds if present
-
-      const accessTokenExpiry = new Date(Date.now() + accessTokenExpiresIn * 1000)
-      const refreshTokenExpiry = refreshTokenExpiresIn ? new Date(Date.now() + refreshTokenExpiresIn * 1000) : null
-      console.log('qwertyuiop[', tokenResponse.data)
-      // Step 2: Fetch user profile
-      const userProfileResponse = await axios.get('https://open.tiktokapis.com/v2/user/info/', {
-        params: {
-          fields: 'follower_count,display_name,open_id,avatar_url',
-        },
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      })
-
-      const userProfile = userProfileResponse.data.data
-      console.log('userProfileResponse', userProfileResponse)
-      console.log('userProfileResponse.data', userProfileResponse.data.data.user.follower_count)
-      console.log('userProfileResponse.data.user', userProfileResponse.data.user)
-      // Step 3: Fetch user's videos
-      const videoListResponse = await axios.post(
-        'https://open.tiktokapis.com/v2/video/list/?fields=cover_image_url,id,title',
-        {
-          max_count: 20,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      )
-
-      const videos = videoListResponse.data.data.videos || []
-      const videoIds = videos.map((v) => v.id)
-
-      if (videoIds.length === 0) {
-        return res.status(StatusCodes.OK).json({
-          message: 'No videos found',
-          followers: userProfile.follower_count,
-        })
-      }
-
-      // Step 4: Fetch insights for each video
-      const insightsResponse = await axios.post(
-        'https://open.tiktokapis.com/v2/video/query/?fields=id,title,view_count,like_count,comment_count,share_count',
-        {
-          filters: {
-            video_ids: videoIds,
-          },
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      )
-
-      const insights = insightsResponse.data.data.videos
-
-      // Step 5: Aggregate metrics
-      const totalLikes = insights.reduce((sum, v) => sum + (v.like_count || 0), 0)
-      const totalComments = insights.reduce((sum, v) => sum + (v.comment_count || 0), 0)
-      const totalViews = insights.reduce((sum, v) => sum + (v.view_count || 0), 0)
-      const totalShares = insights.reduce((sum, v) => sum + (v.share_count || 0), 0)
-
-      const count = insights.length
-      const avgLikes = +(totalLikes / count || 0).toFixed(2)
-      const avgComments = +(totalComments / count || 0).toFixed(2)
-      const avgViews = +(totalViews / count || 0).toFixed(2)
-      const avgShares = +(totalShares / count || 0).toFixed(2)
-      const safeFollowerCount =
-        userProfileResponse.data.data.user.follower_count > 0 ? userProfileResponse.data.data.user.follower_count : 1
-
-      const safeTotalLikes = isNaN(totalLikes) ? 0 : totalLikes
-      const safeTotalComments = isNaN(totalComments) ? 0 : totalComments
-      const safeTotalShares = isNaN(totalShares) ? 0 : totalShares
-      const engagementRateRaw =
-        ((avgLikes / (safeTotalLikes || 1) +
-          avgComments / (safeTotalComments || 1) +
-          avgShares / (safeTotalShares || 1)) /
-          safeFollowerCount) *
-        100
-
-      const engagementRate = isNaN(engagementRateRaw) ? 0 : +engagementRateRaw.toFixed(2)
-      console.log(' userProfile.follower_count', engagementRate, userProfile.follower_count)
-
-      // const demographics = await axios.get('https://open.tiktokapis.com/v2/insight/audience/', {
-      //   params: {
-      //     start_date: '2024-04-01',
-      //     end_date: '2024-04-30',
-      //     metrics: 'age,gender,country',
-      //   },
-      //   headers: {
-      //     Authorization: `Bearer ${accessToken}`,
-      //     'Content-Type': 'application/json',
-      //   },
-      // })
-
-      // const demographicsResponse = demographics.data
-      // console.log('demographicsResponse', demographicsResponse)
-      // // Save or transform as needed
-      // res.status(200).json({
-      //   message: 'TikTok demographics fetched successfully',
-      //   data,
-      // })
-      await TikTokAnalytics.findOneAndUpdate(
-        { userId }, // or however you identify the user
-        {
-          userId,
-          accessToken,
-          accessTokenExpiry,
-          engagementRate,
-          refreshToken,
-          refreshTokenExpiry,
-          openId,
-          avatar: userProfileResponse.data.data.user.avatar_url,
-          displayName: userProfileResponse.data.data.user.display_name,
-          followers: userProfileResponse.data.data.user.follower_count,
-          lastSyncedAt: new Date(),
-          totalLikes,
-          totalComments,
-          totalShares,
-          totalViews,
-          avgLikes,
-          avgComments,
-          avgShares,
-          avgViews,
-          videos: insights.map((video) => ({
-            id: video.id,
-            title: video.title,
-            view_count: video.view_count,
-            like_count: video.like_count,
-            comment_count: video.comment_count,
-            share_count: video.share_count,
-            cover_image_url: video.cover_image_url,
-          })),
-        },
-        { upsert: true, new: true }
-      )
-      // Step 6: Respond with the aggregated data
-      res.status(StatusCodes.OK).json({
-        avatar: userProfileResponse.data.data.user.avatar_url,
-        displayName: userProfileResponse.data.data.user.display_name,
-        followers: userProfileResponse.data.data.user.follower_count,
-        totalLikes,
-        totalComments,
-        totalShares,
-        totalViews,
-        avgLikes,
-        avgComments,
-        avgShares,
-        avgViews,
-        videos: insights,
-      })
-    } catch (error) {
-      console.error('Error fetching TikTok data:', error.response?.data || error.message)
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-        message: 'Error fetching TikTok data',
-        error: error.response?.data || error.message,
-      })
-    }
-  }),
   // fetchDemographics: asyncMiddleware(async (req, res) => {
   //   const { code } = req.query
   //   console.log('working')
@@ -1348,7 +1168,7 @@ export const CONTROLLER_PORTFOLIO = {
         params: {
           client_id: '1363115408334174',
           client_secret: '68a3da17413addbccea98e288e1e248f',
-          redirect_uri: 'https://dev.myjulip.com/dashboard/onboarding/',
+          redirect_uri: 'https://myjulip.com/dashboard/',
           code: cleanCode,
         },
       })
@@ -1665,7 +1485,7 @@ export const CONTROLLER_PORTFOLIO = {
         params: {
           client_id: '1718472132086479',
           client_secret: '30cbe664787298c17642454aa9709cfc',
-          redirect_uri: 'https://dev.myjulip.com/dashboard/pages',
+          redirect_uri: 'https://myjulip.com/dashboard/pages',
           code: authCode,
         },
       })
@@ -1831,14 +1651,14 @@ export const CONTROLLER_PORTFOLIO = {
         labelMessage = 'Failed to update labels'
       } else {
         instaPlatform.engagements = [
-          { label: 'Followers', visibility: true },
-          { label: 'Engagement', visibility: true },
-          { label: `Total Impressions (${totalPosts} Posts)`, visibility: true },
-          { label: `Total Reach (30 Day)`, visibility: true },
-          { label: `Avg Likes (${totalPosts} Posts)`, visibility: true },
-          { label: `Avg Comments (${totalPosts} Posts)`, visibility: true },
-          { label: 'Total Likes', visibility: true },
-          { label: 'Total Comments', visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: 'Followers', visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: 'Engagement', visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Total Impressions (${totalPosts} Posts)`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Total Reach (30 Day)`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Avg Likes (${totalPosts} Posts)`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Avg Comments (${totalPosts} Posts)`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: 'Total Likes', visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: 'Total Comments', visibility: true },
         ]
 
         await instaPlatform.save()
@@ -1886,6 +1706,230 @@ export const CONTROLLER_PORTFOLIO = {
       res.status(500).json({
         error: error.message,
         message: 'Failed to authenticate or fetch analytics',
+      })
+    }
+  }),
+  fetchTikTokData: asyncMiddleware(async (req, res) => {
+    const { code } = req.query
+    const { _id: userId } = req.decoded
+    // const accessToken = 'act.YRB3VcJdCmUupAX1iMIcBxjoI4O0kqFaXmuP3YXHVSDeE3QrnR6NnuufDDT7!5878.va'
+    try {
+      // Step 1: Exchange code for access token
+      const tokenResponse = await axios.post(
+        'https://open.tiktokapis.com/v2/oauth/token/',
+        new URLSearchParams({
+          client_key: process.env.TIKTOK_CLIENT_KEY,
+          client_secret: process.env.TIKTOK_CLIENT_SECRET,
+          code: code.split('&')[0],
+          grant_type: 'authorization_code',
+          redirect_uri: process.env.TIKTOK_REDIRECT_URI,
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      )
+
+      const accessToken = tokenResponse.data.access_token
+      const openId = tokenResponse.data.open_id
+
+      const refreshToken = tokenResponse.data.refresh_token
+      const accessTokenExpiresIn = tokenResponse.data.expires_in // in seconds
+      const refreshTokenExpiresIn = tokenResponse.data.refresh_token_expires_in // also in seconds if present
+
+      const accessTokenExpiry = new Date(Date.now() + accessTokenExpiresIn * 1000)
+      const refreshTokenExpiry = refreshTokenExpiresIn ? new Date(Date.now() + refreshTokenExpiresIn * 1000) : null
+      console.log('qwertyuiop[', tokenResponse.data)
+      // Step 2: Fetch user profile
+      const userProfileResponse = await axios.get('https://open.tiktokapis.com/v2/user/info/', {
+        params: {
+          fields: 'follower_count,display_name,open_id,avatar_url',
+        },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const userProfile = userProfileResponse.data.data
+      console.log('userProfileResponse', userProfileResponse)
+      console.log('userProfileResponse.data', userProfileResponse.data.data.user.follower_count)
+      console.log('userProfileResponse.data.user', userProfileResponse.data.user)
+      // Step 3: Fetch user's videos
+      const videoListResponse = await axios.post(
+        'https://open.tiktokapis.com/v2/video/list/?fields=cover_image_url,id,title',
+        {
+          max_count: 20,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      const videos = videoListResponse.data.data.videos || []
+      const videoIds = videos.map((v) => v.id)
+
+      if (videoIds.length === 0) {
+        return res.status(StatusCodes.OK).json({
+          message: 'No videos found',
+          followers: userProfile.follower_count,
+        })
+      }
+
+      // Step 4: Fetch insights for each video
+      const insightsResponse = await axios.post(
+        'https://open.tiktokapis.com/v2/video/query/?fields=id,title,view_count,like_count,comment_count,share_count',
+        {
+          filters: {
+            video_ids: videoIds,
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      const insights = insightsResponse.data.data.videos
+
+      // Step 5: Aggregate metrics
+      const totalLikes = insights.reduce((sum, v) => sum + (v.like_count || 0), 0)
+      const totalComments = insights.reduce((sum, v) => sum + (v.comment_count || 0), 0)
+      const totalViews = insights.reduce((sum, v) => sum + (v.view_count || 0), 0)
+      const totalShares = insights.reduce((sum, v) => sum + (v.share_count || 0), 0)
+
+      const count = insights.length
+      const avgLikes = +(totalLikes / count || 0).toFixed(2)
+      const avgComments = +(totalComments / count || 0).toFixed(2)
+      const avgViews = +(totalViews / count || 0).toFixed(2)
+      const avgShares = +(totalShares / count || 0).toFixed(2)
+      const safeFollowerCount =
+        userProfileResponse.data.data.user.follower_count > 0 ? userProfileResponse.data.data.user.follower_count : 1
+
+      const safeTotalLikes = isNaN(totalLikes) ? 0 : totalLikes
+      const safeTotalComments = isNaN(totalComments) ? 0 : totalComments
+      const safeTotalShares = isNaN(totalShares) ? 0 : totalShares
+      const engagementRateRaw =
+        (((safeTotalLikes || 1) + (safeTotalComments || 1) + (safeTotalShares || 1)) / totalViews) * 100
+
+      const engagementRate = isNaN(engagementRateRaw) ? 0 : +engagementRateRaw.toFixed(2)
+      console.log(' userProfile.follower_count', engagementRate, userProfile.follower_count)
+
+      // const demographics = await axios.get('https://open.tiktokapis.com/v2/insight/audience/', {
+      //   params: {
+      //     start_date: '2024-04-01',
+      //     end_date: '2024-04-30',
+      //     metrics: 'age,gender,country',
+      //   },
+      //   headers: {
+      //     Authorization: `Bearer ${accessToken}`,
+      //     'Content-Type': 'application/json',
+      //   },
+      // })
+
+      // const demographicsResponse = demographics.data
+      // console.log('demographicsResponse', demographicsResponse)
+      // // Save or transform as needed
+      // res.status(200).json({
+      //   message: 'TikTok demographics fetched successfully',
+      //   data,
+      // })
+      await TikTokAnalytics.findOneAndUpdate(
+        { userId }, // or however you identify the user
+        {
+          userId,
+          accessToken,
+          accessTokenExpiry,
+          engagementRate,
+          refreshToken,
+          refreshTokenExpiry,
+          openId,
+          avatar: userProfileResponse.data.data.user.avatar_url,
+          displayName: userProfileResponse.data.data.user.display_name,
+          followers: userProfileResponse.data.data.user.follower_count,
+          lastSyncedAt: new Date(),
+          totalLikes,
+          totalComments,
+          totalShares,
+          totalViews,
+          avgLikes,
+          avgComments,
+          avgShares,
+          avgViews,
+          totalPosts: videos.length,
+          videos: insights.map((video) => ({
+            id: video.id,
+            title: video.title,
+            view_count: video.view_count,
+            like_count: video.like_count,
+            comment_count: video.comment_count,
+            share_count: video.share_count,
+            cover_image_url: video.cover_image_url,
+          })),
+        },
+        { upsert: true, new: true }
+      )
+
+      // Change Labels:
+      const userPortfolio = await Portfolio.findOne({ userId: userId }).lean()
+      const audienceId =
+        userPortfolio?.draft?.audience?.audienceList?.[userPortfolio.draft.audience.audienceList.length - 1]
+      let tiktokPlatform = await Audience.findById(audienceId)
+
+      let labelMessage = ''
+      if (!tiktokPlatform) {
+        labelMessage = 'Failed to update labels'
+      } else {
+        tiktokPlatform.engagements = [
+          { _id: new mongoose.Types.ObjectId(), label: 'Followers', visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: 'Engagement', visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: 'Total Impressions', visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: 'Total Videos', visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Total Likes`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Total Comments`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Avg Likes`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Avg Comments`, visibility: true },
+          { _id: new mongoose.Types.ObjectId(), label: `Avg Views`, visibility: true },
+        ]
+
+        await tiktokPlatform.save()
+        labelMessage = 'Labels updated successfully'
+      }
+
+      // Step 6: Respond with the aggregated data
+      res.status(StatusCodes.OK).json({
+        avatar: userProfileResponse.data.data.user.avatar_url,
+        displayName: userProfileResponse.data.data.user.display_name,
+        followers: userProfileResponse.data.data.user.follower_count,
+        totalLikes,
+        totalComments,
+        totalShares,
+        totalViews,
+        avgLikes,
+        avgComments,
+        avgShares,
+        avgViews,
+        totalPosts: videos.length,
+        videos: insights,
+
+        labelsUpdate: {
+          userPortfolio,
+          audienceId,
+          tiktokPlatform,
+          labelMessage,
+        },
+      })
+    } catch (error) {
+      console.error('Error fetching TikTok data:', error.response?.data || error.message)
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: 'Error fetching TikTok data',
+        error: error.response?.data || error.message,
       })
     }
   }),

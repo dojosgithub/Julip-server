@@ -171,7 +171,7 @@ app.post('api/auth/google/callback', async (req, res) => {
 
 // Abhiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii  KKKKKK Liyay temporary
 // Route to initiate Instagram OAuth
-const redirectUri = 'https://dev.myjulip.com/auth/jwt/onboarding/'
+const redirectUri = 'https://myjulip.com/dashboard/'
 const clientId = '1089027439925876'
 const clientSecret = 'a224feadf5c45dba7ef34501e0b7c0a1'
 app.get('api/fb-callback', (req, res) => {
